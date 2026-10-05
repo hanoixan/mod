@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 1b60f483, stand-in 57f4d071
+stamp: source 83f878dd, stand-in 06d1175d
 ---
 # module: file_listing_test
 

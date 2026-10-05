@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source c1c569fc, stand-in 61beeecb
+stamp: source 4f3df07c, stand-in 0903d143
 ---
 # resource: tests/CMakeLists.txt
 

@@ -1,6 +1,7 @@
 ---
 role: product
 untested: exercised through every EventQueue test, which posts move-only lambdas
+stamp: source c4cb5917, stand-in c756e97d
 ---
 # module: unique_function
 

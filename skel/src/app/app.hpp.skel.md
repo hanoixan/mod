@@ -1,7 +1,7 @@
 ---
 role: product
 untested: needs a real terminal and every component wired together; it is exercised by running mod, and no automated test drives it
-stamp: source c30dd177, stand-in b9f902c0
+stamp: source c30dd177, stand-in 690f0036
 ---
 # module: app
 

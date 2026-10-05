@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./cli_options.hpp.skel.md
-stamp: source 4aa9b788, stand-in d36d2f2c
+stamp: source 8c8a3302, stand-in d36d2f2c
 ---
 # module: cli_options (implementation)
 

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 24819b03, stand-in cf3d7c58
+stamp: source 24819b03, stand-in ba0cd80d
 ---
 # module: lsp_client
 

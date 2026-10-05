@@ -1,5 +1,6 @@
 ---
 role: test
+stamp: source b2aa4478, stand-in 6c5600ac
 ---
 # module: path_text_test
 

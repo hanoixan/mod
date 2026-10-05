@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./terminal.hpp.skel.md
-stamp: source 99268116, stand-in 63e054f9
+stamp: source 4a714780, stand-in 63e054f9
 ---
 # module: terminal_posix
 

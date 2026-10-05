@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 1ac5f522, stand-in 0ac50350
+stamp: source e7a3d4b7, stand-in e26830d3
 ---
 # module: folder_tree_view_test
 

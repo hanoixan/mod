@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source c3a7e509, stand-in 5f1fa279
+stamp: source 8d4b313f, stand-in 35bd4e0f
 ---
 # module: scripted_terminal
 

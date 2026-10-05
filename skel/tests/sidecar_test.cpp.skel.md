@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source b5d2dec6, stand-in f6ad82d7
+stamp: source e55a5650, stand-in 931b4939
 ---
 # module: sidecar_test
 

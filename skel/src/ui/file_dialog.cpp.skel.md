@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./file_dialog.hpp.skel.md
-stamp: source 08492906, stand-in acde88cb
+stamp: source ae63a7c9, stand-in acde88cb
 ---
 # module: file_dialog (implementation)
 

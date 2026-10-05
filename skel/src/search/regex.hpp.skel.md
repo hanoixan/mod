@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source e87965c1, stand-in 2b4fd836
+stamp: source f1a208e6, stand-in ee7a656e
 ---
 # module: regex
 
@@ -29,7 +29,7 @@ A thin wrapper that isolates the regex engine, [PCRE2](https://www.pcre.org/curr
 
 ## class: Regex
 
-- **Inputs:** `pattern`: a UTF-8 string; `options`: `{ case_insensitive, literal (no regex), whole_word }`.
+- **Inputs:** `pattern`: a UTF-8 string; `options`: `{ case_insensitive, literal (no regex), whole_word, allow_jit }`; `allow_jit` (true by default) is false only in tests, to run PCRE2's interpreter as a build without JIT does.
 - **State changes:** immutable after compilation.
 - **Owns:** the compiled PCRE2 pattern (`pcre2_code_8`), its match data block and match context, all released in the destructor. Move-only.
 - **Access:** main thread.
@@ -47,7 +47,7 @@ A thin wrapper that isolates the regex engine, [PCRE2](https://www.pcre.org/curr
 
 ### function: search_window
 
-- **Inputs:** `window`: contiguous bytes that start at a line start; `window_offset`: the window's absolute offset; `from`: the absolute offset to start from; `at_eof`: whether the window ends at the end of the document; `cursor`: an optional `LineCursor { valid; searched_to; line; line_feed; }` a caller keeps while it searches one window again and again from ever later points: the line holding `from` is then found by looking back only as far as the last call, and a call still on the same line reuses its end, so collecting every match of one long line costs linear, not quadratic, time.
+- **Inputs:** `window`: contiguous bytes that start at a line start; `window_offset`: the window's absolute offset; `from`: the absolute offset to start from; `at_eof`: whether the window ends at the end of the document; `cursor`: an optional `LineCursor { valid; searched_to; line; line_feed; utf_known; utf_valid; utf_end; }` (the last three: without JIT, whether that line up to `utf_end` is valid UTF-8, checked once per line) a caller keeps while it searches one window again and again from ever later points: the line holding `from` is then found by looking back only as far as the last call, and a call still on the same line reuses its end, so collecting every match of one long line costs linear, not quadratic, time.
 - **Returns:** the first `Match` starting at or after `from` and fully inside one line of the window; `need_more`, if the window's last line is not complete (no line feed before the window end and `!at_eof`) and a match in it might continue past the window end; or `none`.
 
 The window is split at line feeds, and each line is matched as its own subject: the subject runs from the line start to just before its line break (excluding the LF and a CR immediately before it), so no match can include a line break and lookbehind cannot see the previous line. Lines are tried in order, starting with the line that contains `from`. Only the last line of the window can be incomplete; partial matching applies to it alone.

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source e12666a9, stand-in e6ff835f
+stamp: source 5a054ff8, stand-in 0ea2572a
 ---
 # module: sidecar
 

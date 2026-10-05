@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source 4d8514ae, stand-in 48d709c9
+stamp: source c54600c9, stand-in fce03171
 ---
 # data: CMakePresets
 

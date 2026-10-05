@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./process.hpp.skel.md
-stamp: source e6362edf, stand-in bacb6d3b
+stamp: source 630f7d66, stand-in 4bac6ea7
 ---
 # module: process_posix
 

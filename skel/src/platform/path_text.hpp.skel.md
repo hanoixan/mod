@@ -1,5 +1,6 @@
 ---
 role: product
+stamp: source f577d40f, stand-in 030dd9bf
 ---
 # module: path_text
 

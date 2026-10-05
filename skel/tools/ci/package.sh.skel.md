@@ -1,7 +1,7 @@
 ---
 role: product
 untested: a build script; CI runs it on every push, and it installs and runs each package it makes
-stamp: source bbe42d15, stand-in f6c5c316
+stamp: source bbe42d15, stand-in 98e76ae0
 ---
 # module: package.sh
 

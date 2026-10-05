@@ -1,6 +1,7 @@
 ---
 role: product
 untested: a build script; CI runs it on every push and smoke tests the zip it makes
+stamp: source 1603d9cf, stand-in 6bc36eb4
 ---
 # module: package_windows.sh
 

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./lsp_client.hpp.skel.md
-stamp: source 83b2692c, stand-in 0c042773
+stamp: source 9aa86a46, stand-in 0c042773
 ---
 # module: lsp_client (implementation)
 

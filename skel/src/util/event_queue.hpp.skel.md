@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source d256af25, stand-in fa941ec6
+stamp: source b515767c, stand-in bf30f20f
 ---
 # module: event_queue
 

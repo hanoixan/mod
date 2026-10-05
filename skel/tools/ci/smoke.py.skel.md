@@ -1,6 +1,7 @@
 ---
 role: product
 untested: a CI script; every CI and release run exercises it on each platform
+stamp: source d5ae2b2e, stand-in 417d15dc
 ---
 # module: smoke.py
 

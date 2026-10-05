@@ -1,7 +1,7 @@
 ---
 role: product
 untested: an installer run by people; checked by hand in containers against a local copy of a release
-stamp: source 37f26110, stand-in b6a0c882
+stamp: source ebfe7a03, stand-in 16761607
 ---
 # module: install.sh
 

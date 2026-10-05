@@ -1,5 +1,6 @@
 ---
 role: test
+stamp: source 9c2bbacf, stand-in 1494a577
 ---
 # module: fs_probe
 

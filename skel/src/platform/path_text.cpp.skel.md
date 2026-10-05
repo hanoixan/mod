@@ -1,6 +1,7 @@
 ---
 role: product
 unit: ./path_text.hpp.skel.md
+stamp: source 81f99a34, stand-in 66462fb6
 ---
 # module: path_text (implementation)
 

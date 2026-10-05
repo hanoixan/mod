@@ -1,6 +1,7 @@
 ---
 role: product
 untested: an installer run by people; checked by hand on Windows against a release
+stamp: source 5134483a, stand-in a8b85f66
 ---
 # module: install.ps1
 

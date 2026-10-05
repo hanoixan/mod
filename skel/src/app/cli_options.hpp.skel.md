@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source a6ca2e42, stand-in 9d8e0d0b
+stamp: source a6ca2e42, stand-in 9a186197
 ---
 # module: cli_options
 

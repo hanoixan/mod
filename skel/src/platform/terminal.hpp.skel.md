@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source cd2a7daf, stand-in 2d821882
+stamp: source 9e9a5659, stand-in 029c1713
 ---
 # module: terminal
 

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source ba165883, stand-in cbdef0f8
+stamp: source 207688b0, stand-in b8afb4e1
 ---
 # module: piece_tree
 

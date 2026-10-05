@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 787ee9d0, stand-in ce8bf49c
+stamp: source 3cbaefb4, stand-in 3b8a526d
 ---
 # module: document
 
