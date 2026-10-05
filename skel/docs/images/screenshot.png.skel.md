@@ -1,7 +1,7 @@
 ---
 role: product
 kind: resource
-stamp: source a89cf6cb, stand-in f96fff56
+stamp: source 62f05334, stand-in f96fff56
 ---
 # resource: screenshot.png
 
