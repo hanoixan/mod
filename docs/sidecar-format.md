@@ -1,10 +1,10 @@
-# The `.mod` sidecar format, version 1
+# The `.history` sidecar format, version 1
 
 `mod` keeps the complete, branching undo history of an edited file in a *sidecar* file next to it. This document specifies that file completely, so that any program can read or write one without reading `mod`'s source.
 
 ## 1. Purpose and naming
 
-The sidecar of a file is named `<file name>.mod`: the file's full name with `.mod` appended (`notes.txt` → `notes.txt.mod`, `a.c` → `a.c.mod`), in the same directory. There is one sidecar per file. It is found by name only: a file renamed by another program starts without history.
+The sidecar of a file is named `<file name>.history`: the file's full name with `.history` appended (`notes.txt` → `notes.txt.history`, `a.c` → `a.c.history`), in the same directory. There is one sidecar per file. It is found by name only: a file renamed by another program starts without history.
 
 A Save As in `mod` copies the sidecar to the new file's name. From then on the two copies evolve independently, so node ids are unique within one sidecar only, and two sidecars can share a common prefix of records.
 
@@ -146,7 +146,7 @@ A writer takes an exclusive advisory lock on the whole file (`flock(LOCK_EX | LO
 
 ## 10. Privacy notice
 
-**The sidecar holds every byte ever deleted from the file.** Text removed from the document, including passwords and keys, stays recoverable by anyone who can read `<file>.mod`. `mod` creates the sidecar with the same permission bits as the edited file and gives it a visible name so its existence is obvious. To purge it, delete the sidecar (Clear History… in `mod`'s Undo History pane), or prune the old part of it (Trim History… in the Undo History pane, section 11). A Save As makes a second copy under the new name.
+**The sidecar holds every byte ever deleted from the file.** Text removed from the document, including passwords and keys, stays recoverable by anyone who can read `<file>.history`. `mod` creates the sidecar with the same permission bits as the edited file and gives it a visible name so its existence is obvious. To purge it, delete the sidecar (Clear History… in `mod`'s Undo History pane), or prune the old part of it (Trim History… in the Undo History pane, section 11). A Save As makes a second copy under the new name.
 
 ## 11. Pruning
 

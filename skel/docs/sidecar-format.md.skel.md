@@ -1,14 +1,14 @@
 ---
 role: product
-stamp: source 2a8d6806, stand-in 8421559c
+stamp: source 63208a53, stand-in 18a67560
 ---
 # resource: sidecar-format.md
 
-The **public specification** of the `.mod` sidecar format. It exists so that "anyone can load it": other users, other tools, and future versions of `mod`. It must be complete enough to write an independent reader and writer from it alone, without reading `mod`'s source.
+The **public specification** of the `.history` sidecar format. It exists so that "anyone can load it": other users, other tools, and future versions of `mod`. It must be complete enough to write an independent reader and writer from it alone, without reading `mod`'s source.
 
 The document must contain the following:
 
-1. **Purpose and naming:** `<file name>.mod`, in the same directory as the edited file. One sidecar per file. A Save As copies the sidecar to the new file's name; the copies then evolve independently, so node ids are unique within one sidecar only, and two sidecars can share a common prefix of records.
+1. **Purpose and naming:** `<file name>.history`, in the same directory as the edited file. One sidecar per file. A Save As copies the sidecar to the new file's name; the copies then evolve independently, so node ids are unique within one sidecar only, and two sidecars can share a common prefix of records.
 2. **Encoding conventions:** every integer is little-endian and fixed-width. Strings are UTF-8 with a `u32` length prefix. There is no padding.
 3. **File header (32 bytes):** magic `"MODHIST\0"` (8 bytes), `u16 format_version` (= 1), `u16 hash_algorithm` (1 = SHA-256; 0 and every other value are invalid in format version 1, and a reader must refuse the file), `u32 flags` (reserved, 0), `u64 created_unix_ms`, `u64 reserved`. A reader that does not know `format_version` must refuse to append.
    The `hash` type used in the records below is 32 raw bytes: the SHA-256 digest ([FIPS 180-4](https://csrc.nist.gov/pubs/fips/180-4/upd1/final)) of the whole file content, in standard digest byte order (the order `sha256sum` prints).

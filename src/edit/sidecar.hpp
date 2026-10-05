@@ -28,7 +28,7 @@
 
 namespace mod {
 
-// `<dir>/<full file name>.mod` for an already resolved document path.
+// `<dir>/<full file name>.history` for an already resolved document path.
 std::filesystem::path sidecar_path_for(const std::filesystem::path& document_path);
 
 // Injection points for tests; empty members fall back to the system.
@@ -71,7 +71,7 @@ struct NodeOp {
 // Converts a node's ops for `append_node`; `Pieces` become views through `frozen_bytes`.
 std::vector<NodeOp> to_node_ops(std::span<const EditOp> ops, const PieceTree& text);
 
-// Persists an UndoTree to `<real path>.mod` as an append-only, checksummed record log.
+// Persists an UndoTree to `<real path>.history` as an append-only, checksummed record log.
 // Main-thread API; every file write happens on one internal writer thread.
 class Sidecar {
 public:

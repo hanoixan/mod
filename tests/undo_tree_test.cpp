@@ -338,6 +338,30 @@ TEST_CASE("Document coalescing rules") {
     }
 }
 
+TEST_CASE("history is kept in <file>.history, and an old <file>.history is never read") {
+    const fs::path p = scratch("renamed.txt");
+    fs::remove(p.parent_path() / "renamed.txt.history");
+    fs::remove(p.parent_path() / "renamed.txt.mod");
+    EventQueue q({});
+    write_file(p, "one\n");
+    {
+        auto doc = Document::open(p, q, persisted());
+        REQUIRE(doc);
+        REQUIRE(wait_for_root_hash(q, **doc));
+        type(**doc, 0, "X");
+        REQUIRE((*doc)->save());
+    }
+    const fs::path side = p.parent_path() / "renamed.txt.history";
+    CHECK(fs::exists(side));
+    CHECK_FALSE(fs::exists(p.parent_path() / "renamed.txt.mod"));
+    // The same history under the old name: not loaded, so the file opens with no undo.
+    fs::rename(side, p.parent_path() / "renamed.txt.mod");
+    auto doc = Document::open(p, q, persisted());
+    REQUIRE(doc);
+    REQUIRE(wait_for_root_hash(q, **doc));
+    CHECK_FALSE((*doc)->undo());
+}
+
 TEST_CASE("session edits made while verifying are re-rooted on a mismatch") {
     const fs::path p = scratch("reroot.txt");
     EventQueue q({});

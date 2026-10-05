@@ -6,7 +6,7 @@ role: product
 Every on-disk artifact that `mod` reads or writes. There is no cloud and no IaC tool. This file records storage requirements so that they are explicit and reviewable. It has the placeholder `.iac` extension because nothing is provisioned. Each resource is created at runtime by the code listed under it.
 
 - **Required:** always.
-- **Failure modes:** a full disk, a read-only filesystem, network filesystems with weak `rename` and `flock` semantics (NFS, SMB, where advisory locks may be ignored), and case-insensitive filesystems (macOS, Windows), where `Notes.md.mod` and `notes.md.mod` collide. Handled per resource.
+- **Failure modes:** a full disk, a read-only filesystem, network filesystems with weak `rename` and `flock` semantics (NFS, SMB, where advisory locks may be ignored), and case-insensitive filesystems (macOS, Windows), where `Notes.md.history` and `notes.md.history` collide. Handled per resource.
 - **Depends on:** none
 - **Unknowns:** none. Sidecar lifecycle decisions are recorded in [sidecar.hpp](../src/edit/sidecar.hpp.skel.md).
 
@@ -36,7 +36,7 @@ The temporary file `$TMPDIR/mod-stage-<random>` (or `/tmp/...` when `TMPDIR` is 
 
 ## resource: sidecar_file
 
-The `<name>.mod` undo-history log. Format: [sidecar-format.md](../docs/sidecar-format.md.skel.md).
+The `<name>.history` undo-history log. Format: [sidecar-format.md](../docs/sidecar-format.md.skel.md).
 
 - **Data requirements:**
 - **Referred by:** [sidecar](../src/edit/sidecar.hpp.skel.md)
@@ -46,7 +46,7 @@ The `<name>.mod` undo-history log. Format: [sidecar-format.md](../docs/sidecar-f
   - **Consistency:** durability is at the record level, with crash-tolerant tail truncation. The file is fsynced once per document save, after the SAVE record, and after a Save As copy; never per edit. A power failure can lose the records written since the last save. A single writer is enforced with an advisory lock.
   - **Permissions:** the same permission bits as the target file, because it contains deleted text and is privacy-sensitive.
   - **Retention:** indefinite. `mod` never cleans up orphaned sidecars (document renamed, moved or deleted by another program). The only deletions are the user's Clear History… in the Undo History pane, which deletes the sidecar and starts a new one, and a prune, which removes the history older than the age the user enters for good.
-  - **Naming:** visible, `<name>.mod` (for example `notes.txt.mod`), never a hidden dot-file.
+  - **Naming:** visible, `<name>.history` (for example `notes.txt.history`), never a hidden dot-file.
   - **Copies:** Save As writes a full copy for the new file name, so one history can exist in several sidecars. A valid, unlocked sidecar already at the new name is replaced by the copy; a file at that name that is not a sidecar is never touched.
   - **Portability:** must be readable on any OS and architecture: little-endian, documented.
 

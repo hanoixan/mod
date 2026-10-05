@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 2686efc5, stand-in 45f4e988
+stamp: source 2686efc5, stand-in aa81962b
 ---
 # module: history_view
 
@@ -10,7 +10,7 @@ It is opened by the `UndoHistory` command, from Edit > Undo History… only; it 
 
 Moving the selection does not change the document, but the text beside the pane **previews** the selected state: App shows it with [Document.begin_preview](../edit/document.hpp.skel.md#function-begin_preview), at the same lines that were in view when the pane opened, the step's inserted text highlighted and its removed text struck through. Only Enter changes the document, jumping to the selected state. Esc closes the panel and leaves the document exactly as it was. **Tab** and **Shift+Tab** move the focus between the pane and the previewed text; with the text focused, Up, Down, PageUp, PageDown, Home and End scroll it, read-only, and Enter and Esc work as in the pane. `selected_node()` gives the node of the selected row (none for a connector row or a read-only one, which preview the current state).
 
-The pane also holds what manages the history as a whole, in a footer under the list: **Clear History…** (C), **Trim History…** (T) and the **Persist History** checkbox (P), which says whether the history is written to the `.mod` file beside the document (see [Document.set_persist_history](../edit/document.hpp.skel.md#function-set_persist_history)); it is off by default. They are not in any menu. Each asks its questions in a prompt over the pane, and the pane stays open and shows the history as it is afterwards.
+The pane also holds what manages the history as a whole, in a footer under the list: **Clear History…** (C), **Trim History…** (T) and the **Persist History** checkbox (P), which says whether the history is written to the `.history` file beside the document (see [Document.set_persist_history](../edit/document.hpp.skel.md#function-set_persist_history)); it is off by default. They are not in any menu. Each asks its questions in a prompt over the pane, and the pane stays open and shows the history as it is afterwards.
 
 #### Layout
 

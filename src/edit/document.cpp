@@ -139,7 +139,7 @@ Result<std::unique_ptr<Document>> Document::open(const fs::path& path, EventQueu
         doc->root_pending_ = root;
         doc->first_session_id_ = root;
         if (outcome->state == LoadOutcome::read_only) doc->status_message_ = "history is open in another mod";
-        if (outcome->state == LoadOutcome::disabled) doc->status_message_ = "history disabled: " + real->filename().string() + ".mod is not a history file";
+        if (outcome->state == LoadOutcome::disabled) doc->status_message_ = "history disabled: " + real->filename().string() + ".history is not a history file";
     }
 
     if (mapping && mapping->size() > 0) {

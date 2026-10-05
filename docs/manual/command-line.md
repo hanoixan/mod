@@ -11,7 +11,7 @@ Each path opens as a document; the first is shown. Without any, mod starts with 
 | Option | Effect |
 |---|---|
 | `-ro`, `--read-only` | Opens the named files in [read-only mode](read-only.md), as if View > Read Only were chosen in each. Files you open later open as usual. |
-| `--persist-history` | Turns on Persist History for the named files, so their [undo history](undo-history.md) is kept in a `.mod` file beside each. The history file is written from the first change on; if one is there that mod cannot read, mod asks before replacing it. |
+| `--persist-history` | Turns on Persist History for the named files, so their [undo history](undo-history.md) is kept in a `.history` file beside each. The history file is written from the first change on; if one is there that mod cannot read, mod asks before replacing it. |
 | `--` | Ends the options: what follows is a path, even if it starts with `-`. |
 
 ## Settings for one session

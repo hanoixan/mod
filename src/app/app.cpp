@@ -629,7 +629,7 @@ void App::quit_on_escapes() {
 void App::request_exit() { exit_next(ws_.unsaved()); }
 
 void App::confirm_clear_history() {
-    const std::string gone = shown().doc->persist_history() ? std::format("Deleted text kept in {}.mod will be gone.", file_name())
+    const std::string gone = shown().doc->persist_history() ? std::format("Deleted text kept in {}.history will be gone.", file_name())
                                                            : std::string("Text it could bring back will be gone.");
     ask(std::format("Delete all undo history for {}? {}", file_name(), gone), "Clear", [this] {
         if (auto s = shown().doc->clear_history(); !s) {
@@ -689,7 +689,7 @@ void App::prune_confirm(std::uint64_t days) {
         preview->removed_trees > 0 ? std::format(", plus {} unreachable earlier histories", preview->removed_trees) : std::string();
     const std::uint64_t removed = preview->remove_count;
     const std::int64_t cutoff = preview->cutoff_ms;
-    ask(std::format("Remove {} of {} changes (older than {} days{})? Their text will be gone from {}.mod for good.", removed,
+    ask(std::format("Remove {} of {} changes (older than {} days{})? Their text will be gone from {}.history for good.", removed,
                     removed + preview->keep_count, days, plus, file_name()),
         "Trim", [this, removed, cutoff] {
             if (auto s = shown().doc->prune_history(cutoff); !s) {
@@ -910,7 +910,7 @@ void App::handle_file_dialog_key(const KeyEvent& key) {
     ask(std::format("{} already exists. Replace it?", path.filename().string()), "Replace", finish);
 }
 
-// Persist History: on writes the whole history to <file>.mod, off keeps it in memory only.
+// Persist History: on writes the whole history to <file>.history, off keeps it in memory only.
 void App::toggle_persist_history(bool overwrite) {
     Document& doc = *shown().doc;
     const bool on = !doc.persist_history();
@@ -1148,7 +1148,7 @@ void App::run_command(CommandId id) {
         case CommandId::About:
             prompt_.open_info("About mod",
                               "mod " MOD_VERSION ", a minimalist terminal text editor.\n"
-                              "Unlimited branching undo; Persist History keeps it in <file>.mod next to the file.\n"
+                              "Unlimited branching undo; Persist History keeps it in <file>.history next to the file.\n"
                               "Edit > Undo History… shows every branch.\n"
                               "Menus: Esc (or F10, Alt+X), then a menu's underlined letter.\n"
                               "Options > Key Bindings… lists every command and its keys, and changes them.\n"

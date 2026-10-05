@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source a6ca2e42, stand-in 65e80f46
+stamp: source a6ca2e42, stand-in 9d8e0d0b
 ---
 # module: cli_options
 
@@ -13,7 +13,7 @@ The command line, parsed into what [App](./app.hpp.skel.md#class-app) starts wit
 | `-h`, `--help` | print the usage and exit |
 | `--version` | print `mod <version>` and exit |
 | `-ro`, `--read-only` | open the named files in [read-only mode](../../docs/manual/read-only.md.skel.md) |
-| `--persist-history` | turn Persist History on for the named files, creating their `.mod` sidecars |
+| `--persist-history` | turn Persist History on for the named files, creating their `.history` sidecars |
 | `--<setting>=<value>` | a session value for a scalar [setting](./settings.hpp.skel.md#function-setting_specs), never saved: the key with dashes for underscores (`--tab-width=8`, `--darkness=night`); a choice's value may use dashes for its spaces (`--read-only-copy=visible-text`) |
 | `--<boolean>`, `--no-<boolean>` | a boolean setting on or off; `=on`, `off`, `true`, `false`, `yes`, `no`, `1` and `0` also work |
 | `--color <name>=<spec>`, `--color=<name>=<spec>` | a session color, never saved; repeatable ([color specs](../ui/theme.hpp.skel.md#function-parse_color_spec)) |
