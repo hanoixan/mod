@@ -1,6 +1,7 @@
 # A release candidate: Actions > Release candidate > Run workflow on main, with the version in
-# CMakeLists.txt. It builds, tests and packages, tags v<version>-rc.<n> (the next n) and publishes
-# a prerelease. The files carry the plain version, so promoting the candidate ships them as they are.
+# CMakeLists.txt. It builds, tests and packages for Linux, Windows and macOS, tags
+# v<version>-rc.<n> (the next n) and publishes a prerelease. The files carry the plain version,
+# so promoting the candidate ships them as they are.
 name: Release candidate
 on:
   workflow_dispatch:
@@ -14,16 +15,20 @@ permissions:
 concurrency:
   group: release
 jobs:
-  candidate:
+  prepare:
     runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.number.outputs.tag }}
+      n: ${{ steps.number.outputs.n }}
+      previous: ${{ steps.number.outputs.previous }}
     env:
       VERSION: ${{ inputs.version }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Check the branch and the version; number the candidate
+        id: number
         run: |
           if [[ "$GITHUB_REF" != refs/heads/main ]]; then
             echo "::error::Release candidates are made from main; this run is on $GITHUB_REF"; exit 1
@@ -31,10 +36,16 @@ jobs:
           tools/ci/release.sh check-version "$VERSION"
           n=$(tools/ci/release.sh next-rc "$VERSION")
           {
-            echo "TAG=v$VERSION-rc.$n"
-            echo "N=$n"
-            echo "PREVIOUS=$(git describe --tags --abbrev=0 2>/dev/null || true)"  # the notes start there
-          } >> "$GITHUB_ENV"
+            echo "tag=v$VERSION-rc.$n"
+            echo "n=$n"
+            echo "previous=$(git describe --tags --abbrev=0 2>/dev/null || true)"  # the notes start there
+          } >> "$GITHUB_OUTPUT"
+
+  linux:
+    needs: prepare
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
       - name: Install tools
         run: |
           if ! command -v g++-13 >/dev/null; then
@@ -44,6 +55,106 @@ jobs:
           sudo apt-get install -y g++-13 ninja-build rpm
       - name: Build, test and package
         run: tools/ci/package.sh
+      - name: Smoke test
+        run: python3 tools/ci/smoke.py build/package/mod
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-linux
+          path: dist/
+
+  windows:
+    needs: prepare
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          update: true
+          install: gcc cmake ninja git python zip
+      - name: Build, test and package
+        run: |
+          cmake --preset windows-release
+          cmake --build --preset windows-release
+          ctest --preset windows-release
+          tools/ci/package_windows.sh
+      - name: Smoke test the packaged mod.exe in a Windows pseudo-console
+        shell: pwsh
+        run: |
+          python -m pip install --quiet pywinpty
+          Expand-Archive dist/*.zip -DestinationPath smoke
+          python tools/ci/smoke.py (Get-ChildItem smoke/*/bin/mod.exe).FullName
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-windows
+          path: dist/
+
+  macos:
+    needs: prepare
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install tools
+        run: brew install llvm ninja
+      - name: Build, test and install
+        run: |
+          llvm=$(brew --prefix llvm)
+          cmake --preset macos-release -DCMAKE_CXX_COMPILER="$llvm/bin/clang++" -DMOD_LIBCXX_PREFIX="$llvm"
+          cmake --build --preset macos-release
+          ctest --preset macos-release
+          python3 tools/ci/smoke.py build/macos-release/mod
+          cmake --install build/macos-release --prefix "$PWD/stage-${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: stage-macos-${{ matrix.arch }}
+          path: stage-${{ matrix.arch }}/
+
+  macos-universal:
+    needs: macos
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: stage-macos-*
+      - name: One universal binary
+        run: |
+          tools/ci/package_macos.sh stage-macos-arm64 stage-macos-x86_64
+          tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP"
+          python3 tools/ci/smoke.py "$(ls -d "$RUNNER_TEMP"/mod-*/bin/mod)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-macos
+          path: dist/
+
+  publish:
+    needs: [prepare, linux, windows, macos-universal]
+    runs-on: ubuntu-22.04
+    env:
+      VERSION: ${{ inputs.version }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+      N: ${{ needs.prepare.outputs.n }}
+      PREVIOUS: ${{ needs.prepare.outputs.previous }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
       - name: Tag the candidate
         run: |
           git config user.name "github-actions[bot]"
@@ -59,6 +170,7 @@ jobs:
           sed -e "s/@VERSION@/$VERSION/" -e "s/@SHA256@/$sha/" packaging/arch/PKGBUILD.in > dist/PKGBUILD
       - name: Publish the prerelease
         run: |
+          ls -l dist
           notes=()
           if [[ -n "$PREVIOUS" ]]; then notes=(--notes-start-tag "$PREVIOUS"); fi
           gh release create "$TAG" dist/* --prerelease --title "mod $VERSION release candidate $N" \

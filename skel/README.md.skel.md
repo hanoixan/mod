@@ -13,4 +13,5 @@ The repository's front page. Contents, in order: one line on what mod is; [scree
 - **Depends on:** [screenshot.png](./docs/images/screenshot.png.skel.md)
 - **Depends on:** [undo-history.png](./docs/images/undo-history.png.skel.md)
 - **Referred by:** none known (the repository front page)
+- **Depends on:** [install.ps1](./install.ps1.skel.md)
 - **Unknowns:** none

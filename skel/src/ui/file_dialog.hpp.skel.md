@@ -32,6 +32,7 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 - **Depends on:** [TextField](./text_field.hpp.skel.md#class-textfield)
 - **Depends on:** [Screen](./screen.hpp.skel.md#class-screen)
 - **Depends on:** [attr_for](./theme.hpp.skel.md#function-attr_for)
+- **Depends on:** [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user)
 - **Unknowns:** none. In the filter and new-folder fields Enter applies the field (the filter, or creates the folder) and leaves the mode; Escape leaves the mode without applying it and does not close the dialog; Tab and Shift+Tab leave the mode without applying and move the focus as usual (../modi/'s (after ../modi/) browser inputs let Tab through but leave the mode on, which shows a stale field).
 
 ## symbol: FileDialogMode
@@ -42,7 +43,7 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 
 ## symbol: FileDialogResult
 
-`{ enum class Kind { pending, chosen, canceled } kind; std::filesystem::path path; }`. `chosen` carries the full path the user picked: the current directory joined with the file name (an absolute name is taken as is).
+`{ enum class Kind { pending, chosen, canceled } kind; std::filesystem::path path; }`. `chosen` carries the full path the user picked: the current directory joined with the file name (an absolute name is taken as is; on Windows a typed `C:\…` name is taken through [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user)).
 
 - **Access:** public.
 

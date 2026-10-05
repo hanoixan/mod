@@ -32,6 +32,9 @@ jobs:
       - name: Build, test and package
         run: tools/ci/package.sh
 
+      - name: Smoke test (start, edit, save, quit in a pty)
+        run: python3 tools/ci/smoke.py build/package/mod
+
       - uses: actions/upload-artifact@v7
         with:
           name: linux-packages
@@ -50,20 +53,32 @@ jobs:
         with:
           msystem: MSYS
           update: true
-          install: gcc cmake ninja git python
+          install: gcc cmake ninja git python zip
 
       - name: Build and test
         run: |
           cmake --preset windows-release
           cmake --build --preset windows-release
           ctest --preset windows-release
+          tools/ci/package_windows.sh
+
+      - name: Smoke test the packaged mod.exe in a Windows pseudo-console (start, edit, save, quit)
+        shell: pwsh
+        run: |
+          python -m pip install --quiet pywinpty
+          Expand-Archive dist/*.zip -DestinationPath smoke
+          python tools/ci/smoke.py (Get-ChildItem smoke/*/bin/mod.exe).FullName
 
   macos:
     # Both architectures natively; the release joins them into one universal binary.
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-15, macos-15-intel]
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
@@ -73,10 +88,36 @@ jobs:
       - name: Build and test
         run: |
           llvm=$(brew --prefix llvm)
-          cmake --preset macos-release -DCMAKE_CXX_COMPILER="$llvm/bin/clang++" -DMOD_STATIC_LIBCXX_DIR="$llvm/lib/c++"
+          cmake --preset macos-release -DCMAKE_CXX_COMPILER="$llvm/bin/clang++" -DMOD_LIBCXX_PREFIX="$llvm"
           cmake --build --preset macos-release
           ctest --preset macos-release
           otool -L build/macos-release/mod
+
+      - name: Smoke test (start, edit, save, quit in a pty)
+        run: python3 tools/ci/smoke.py build/macos-release/mod
+
+      - name: Install for the universal binary
+        run: cmake --install build/macos-release --prefix "$PWD/stage-${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: stage-macos-${{ matrix.arch }}
+          path: stage-${{ matrix.arch }}/
+          retention-days: 3
+
+  macos-universal:
+    # The release's universal binary: both builds joined with lipo, then smoke tested.
+    needs: macos
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: stage-macos-*
+      - name: Join and package
+        run: |
+          tools/ci/package_macos.sh stage-macos-arm64 stage-macos-x86_64
+          tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP"
+          python3 tools/ci/smoke.py "$(ls -d "$RUNNER_TEMP"/mod-*/bin/mod)"
 
   fuzz:
     runs-on: ubuntu-22.04

@@ -12,12 +12,13 @@ The directory work behind the file dialog, kept apart from drawing so that it ca
 - **Failure modes:** listed per function.
 - **Depends on:** [Result](../util/error.hpp.skel.md#symbol-result)
 - **Depends on:** [browsed_directory](../../infra/storage.iac.skel.md#resource-browsed_directory)
+- **Depends on:** [display_path](../platform/path_text.hpp.skel.md#function-display_path)
 - **Unknowns:** none
 - **Referred by:** [file_listing (implementation)](./file_listing.cpp.skel.md)
 
 ## symbol: DirEntry
 
-`{ std::string name; bool is_dir; uint64_t size; std::string modified; }`. `size` is 0 for a directory. `modified` is the local modification time as `YYYY-MM-DD HH:MM`.
+`{ std::string name; bool is_dir; uint64_t size; std::string modified; }`. `size` is 0 for a directory. `modified` is the local modification time as `YYYY-MM-DD HH:MM` (the file clock is turned into the system clock by their offset now, since not every standard library has `clock_cast`).
 
 - **Access:** public.
 
@@ -61,7 +62,7 @@ Directories are always listed, whatever the filter. A file is listed when its na
 ## function: path_parts
 
 - **Inputs:** `dir`.
-- **Returns:** `std::vector<std::string>` of the absolute path's parts, starting with `"/"`: `/home/user` gives `{"/", "home", "user"}`.
+- **Returns:** `std::vector<std::string>` of the absolute path's parts, starting with `"/"`: `/home/user` gives `{"/", "home", "user"}`. On Windows the parts of its [display_path](../platform/path_text.hpp.skel.md#function-display_path) split at `\`: `/c/Users/me` gives `{"C:", "Users", "me"}`.
 - **State changes:** none.
 - **Access:** FileDialog, for the breadcrumb.
 - **Referred by:** [file_dialog](../ui/file_dialog.hpp.skel.md)

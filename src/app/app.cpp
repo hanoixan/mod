@@ -1065,6 +1065,10 @@ void App::run_command(CommandId id) {
             kill_chain_ = true;
             break;
         case CommandId::Suspend:
+            if (!terminal_->can_suspend()) {
+                set_status("Suspend needs a shell that can continue mod, such as MSYS2's bash");
+                break;
+            }
             terminal_->suspend();  // returns once the job is continued
             screen_.invalidate();
             break;

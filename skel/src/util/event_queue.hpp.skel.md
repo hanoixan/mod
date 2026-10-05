@@ -6,7 +6,7 @@ stamp: source d256af25, stand-in fa941ec6
 
 The single crossing point between worker threads and the main thread. Workers post closures, and the main loop drains them and runs them on the main thread, so all editor state stays single-threaded.
 
-- **Owns:** a mutex-protected FIFO of `std::move_only_function<void()>` tasks.
+- **Owns:** a mutex-protected FIFO of [UniqueFunction](./unique_function.hpp.skel.md#class-uniquefunction)`<void()>` tasks (a move-only callable; libc++ has no `std::move_only_function`).
 - **Access:** public, header-only. One instance, owned by [App](../app/app.hpp.skel.md#class-app) and passed by reference to workers when they are constructed.
 - **Required:** always.
 - **Failure modes:** a task posted after `App` begins shutdown is dropped. `close()` makes `post` a no-op, so workers must tolerate their posts being silently discarded. A worker that posts faster than the main loop drains, such as a flood of LSP messages, grows memory. Accept this; the LSP client coalesces responses.
@@ -14,11 +14,12 @@ The single crossing point between worker threads and the main thread. Workers po
 
 ## class: EventQueue
 
-- **Inputs:** `wake`: a `std::move_only_function<void()>` called after every successful `post`. It is wired to [Terminal.wake](../platform/terminal.hpp.skel.md#function-wake).
+- **Inputs:** `wake`: a `UniqueFunction<void()>` called after every successful `post`. It is wired to [Terminal.wake](../platform/terminal.hpp.skel.md#function-wake).
 - **State changes:** invariant: tasks run in the order they were posted, on the main thread only, and each runs exactly once unless the queue was closed first.
 - **Owns:** pending tasks.
 - **Access:** `post` and `close` are thread-safe. `drain` is main-thread only.
 - **Depends on:** [Terminal.wake](../platform/terminal.hpp.skel.md#function-wake)
+- **Depends on:** [UniqueFunction](./unique_function.hpp.skel.md#class-uniquefunction)
 - **Referred by:** [app](../app/app.hpp.skel.md)
 - **Referred by:** [event_queue_test](../../tests/event_queue_test.cpp.skel.md)
 

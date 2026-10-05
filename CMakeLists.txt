@@ -25,6 +25,13 @@ option(MOD_WERROR "Treat warnings as errors" OFF)
 option(MOD_BUILD_FUZZERS "Build the libFuzzer targets (clang only)" OFF)
 
 find_package(Threads REQUIRED)
+if(APPLE AND MOD_LIBCXX_PREFIX)
+  # macOS with Homebrew LLVM (MOD_LIBCXX_PREFIX=$(brew --prefix llvm)): its own libc++ headers
+  # (its clang would otherwise use Xcode's, which lack C++23 parts) and its libc++ linked
+  # statically into every executable, so mod needs nothing from Homebrew at run time.
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-nostdinc++> "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-isystem ${MOD_LIBCXX_PREFIX}/include/c++/v1>")
+  add_link_options(-nostdlib++ ${MOD_LIBCXX_PREFIX}/lib/c++/libc++.a ${MOD_LIBCXX_PREFIX}/lib/c++/libc++abi.a)
+endif()
 if(CMAKE_SYSTEM_NAME MATCHES "CYGWIN|MSYS")
   # The MSYS2 runtime hides POSIX and BSD extensions (FNM_CASEFOLD, pipe2, …) under a strict -std.
   add_compile_definitions(_GNU_SOURCE)
@@ -177,10 +184,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT APPLE)
   # Windows (the MSYS2 runtime): needs only msys-2.0.dll beside it, not GCC's own DLLs.
   target_link_options(mod PRIVATE -static-libstdc++ -static-libgcc)
 endif()
-if(APPLE AND MOD_STATIC_LIBCXX_DIR)
-  # macOS with Homebrew LLVM: its libc++ linked in, so the binary needs nothing from Homebrew.
-  target_link_options(mod PRIVATE -nostdlib++ ${MOD_STATIC_LIBCXX_DIR}/libc++.a ${MOD_STATIC_LIBCXX_DIR}/libc++abi.a)
-endif()
+
 install(TARGETS mod)
 
 # The manual and a reference settings.json, under <prefix>/share/mod. The defaults file is

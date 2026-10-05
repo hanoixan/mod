@@ -27,4 +27,4 @@ Ctrl+Z undoes and Ctrl+Y redoes. Nothing is ever lost by undoing and then typing
 
 ## Going to the background
 
-Ctrl+T (File > Suspend) stops mod and returns you to your shell, as Ctrl+Z does for other programs. Type `fg` to come back to it exactly as you left it. Ctrl+Z itself is Undo in mod.
+Ctrl+T (File > Suspend) stops mod and returns you to your shell, as Ctrl+Z does for other programs. Type `fg` to come back to it exactly as you left it. On Windows this works only when mod was started from a shell that can continue it, such as MSYS2's bash; started from PowerShell or Windows Terminal, mod says so and keeps running. Ctrl+Z itself is Undo in mod.

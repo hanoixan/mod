@@ -6,13 +6,19 @@ A small terminal text editor that never loses an edit: its undo history is unlim
 
 ## Install
 
-On Linux x86_64:
+On Linux x86_64 and macOS (Apple silicon and Intel, macOS 13 or later):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/hanoixan/mod/main/install.sh | sh
 ```
 
-The script installs the release's package with apt, dnf or pacman when it can (asking sudo for the password), and otherwise unpacks mod into `~/.local`. Set `MOD_INSTALL_LOCAL=1` to always use `~/.local`, `MOD_PREFIX` for another folder, or `MOD_VERSION` for an older release or a release candidate (`MOD_VERSION=1.2.0-rc.1`). Or download the files from the [releases page](https://github.com/hanoixan/mod/releases).
+On Windows 11, in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/hanoixan/mod/main/install.ps1 | iex
+```
+
+On Linux the script installs the release's package with apt, dnf or pacman when it can (asking sudo for the password), and otherwise unpacks mod into `~/.local`; on macOS it always unpacks into `~/.local`. The Windows script unpacks mod into `%LOCALAPPDATA%\Programs\mod` and adds its `bin` folder to your PATH; open a new terminal afterwards. Set `MOD_INSTALL_LOCAL=1` to always use `~/.local`, `MOD_PREFIX` for another folder, or `MOD_VERSION` for an older release or a release candidate (`MOD_VERSION=1.2.0-rc.1`). Or download the files from the [releases page](https://github.com/hanoixan/mod/releases).
 
 Each release has:
 
@@ -23,6 +29,8 @@ Each release has:
 | `mod-<version>-1-x86_64.pkg.tar.zst` | Arch: `sudo pacman -U mod-*.pkg.tar.zst` |
 | `PKGBUILD` | Arch, building from source with `makepkg -si` |
 | `mod-<version>-linux-x86_64.tar.gz` | any glibc 2.35+ Linux: unpack and run `bin/mod` |
+| `mod-<version>-macos-universal.tar.gz` | macOS 13 or later, Apple silicon and Intel: unpack and run `bin/mod` |
+| `mod-<version>-windows-x86_64.zip` | Windows 11: unpack and run `bin\mod.exe` (it needs the `msys-2.0.dll` beside it) |
 
 From source (GCC 13 or later, CMake 3.25 or later, Ninja; the preset uses `g++-13`, so with another GCC add `-DCMAKE_CXX_COMPILER=g++`):
 
@@ -31,6 +39,8 @@ cmake --preset linux-release
 cmake --build --preset linux-release
 sudo cmake --install build/linux-release
 ```
+
+On macOS, with Homebrew's LLVM (`brew install llvm ninja cmake`): `cmake --preset macos-release -DCMAKE_CXX_COMPILER="$(brew --prefix llvm)/bin/clang++" -DMOD_LIBCXX_PREFIX="$(brew --prefix llvm)"`, then build as above. On Windows, in an [MSYS2](https://www.msys2.org/) MSYS shell with `pacman -S gcc cmake ninja`: the `windows-release` preset; the built `mod.exe` runs with `msys-2.0.dll` (from MSYS2's `/usr/bin`) beside it.
 
 ## Quickstart
 

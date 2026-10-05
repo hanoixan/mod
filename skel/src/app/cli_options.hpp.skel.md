@@ -24,6 +24,7 @@ The command line, parsed into what [App](./app.hpp.skel.md#class-app) starts wit
 - **Failure modes:** an unknown flag, a missing or bad value, or an unknown color name: the result is the message (`unknown option --x`, `--tab-width wants a number from 1 to 16`, `--darkness wants night, normal or paper`, …), which main prints with the usage before exiting with status 2.
 - **Depends on:** [setting_specs](./settings.hpp.skel.md#function-setting_specs)
 - **Depends on:** [ColorTheme](../ui/theme.hpp.skel.md#class-colortheme)
+- **Depends on:** [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user)
 - **Unknowns:** none
 
 ## symbol: CliOptions
@@ -37,7 +38,7 @@ The command line, parsed into what [App](./app.hpp.skel.md#class-app) starts wit
 ## function: parse_cli
 
 - **Inputs:** `args`: the arguments after the program name.
-- **Returns:** `std::expected<CliOptions, std::string>`: the options, or the message for the first bad argument.
+- **Returns:** `std::expected<CliOptions, std::string>`: the options, or the message for the first bad argument. File arguments go through [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user), so on Windows `C:\notes.md` works; `-` stays `-`.
 - **State changes:** none.
 - **Access:** main, tests.
 - **Referred by:** [cli_options (implementation)](./cli_options.cpp.skel.md)
