@@ -61,6 +61,7 @@ set(MOD_TESTS
   folder_tree_test
   folder_tree_view_test
   app_test
+  path_text_test
 )
 
 foreach(name IN LISTS MOD_TESTS)

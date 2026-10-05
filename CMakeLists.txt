@@ -25,6 +25,10 @@ option(MOD_WERROR "Treat warnings as errors" OFF)
 option(MOD_BUILD_FUZZERS "Build the libFuzzer targets (clang only)" OFF)
 
 find_package(Threads REQUIRED)
+if(CMAKE_SYSTEM_NAME MATCHES "CYGWIN|MSYS")
+  # The MSYS2 runtime hides POSIX and BSD extensions (FNM_CASEFOLD, pipe2, …) under a strict -std.
+  add_compile_definitions(_GNU_SOURCE)
+endif()
 include(FetchContent)
 # The fetched dependencies are built into mod, never installed: on CMake 3.28 and later
 # their own install rules are left out with EXCLUDE_FROM_ALL.
@@ -106,6 +110,7 @@ set(MOD_CORE_SOURCES
   src/edit/undo_tree.cpp
   src/platform/file_map_posix.cpp
   src/platform/fs_posix.cpp
+  src/platform/path_text.cpp
   src/platform/process_posix.cpp
   src/platform/terminal_posix.cpp
   src/platform/terminal_output.cpp

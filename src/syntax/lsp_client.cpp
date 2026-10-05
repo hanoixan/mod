@@ -12,6 +12,7 @@
 #include <mutex>
 #include <thread>
 
+#include "platform/path_text.hpp"
 #include "util/log.hpp"
 
 namespace mod {
@@ -110,7 +111,7 @@ bool truthy(const Json* j) { return j != nullptr && (j->is_object() || j->as_boo
 std::string file_uri(const std::filesystem::path& path) {
     static constexpr char kHex[] = "0123456789ABCDEF";
     std::string out = "file://";
-    const std::string s = path.generic_string();
+    const std::string s = uri_path(path);  // C:/… on Windows
     if (!s.starts_with('/')) out.push_back('/');
     for (const char ch : s) {
         const auto c = static_cast<unsigned char>(ch);

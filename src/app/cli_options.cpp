@@ -4,6 +4,7 @@
 #include <format>
 
 #include "app/settings.hpp"
+#include "platform/path_text.hpp"
 #include "ui/theme.hpp"
 
 namespace mod {
@@ -94,7 +95,7 @@ std::expected<CliOptions, std::string> parse_cli(std::span<const std::string_vie
     for (std::size_t i = 0; i < args.size(); ++i) {
         const std::string_view arg = args[i];
         if (options_done || arg == "-" || !arg.starts_with('-')) {
-            o.paths.emplace_back(arg);
+            o.paths.push_back(arg == "-" ? std::filesystem::path("-") : path_from_user(arg));  // C:\… on Windows
             continue;
         }
         if (arg == "--") {

@@ -13,6 +13,7 @@
 #include <system_error>
 #include <utility>
 
+#include "platform/path_text.hpp"
 #include "syntax/markdown.hpp"
 #include "syntax/layered_highlighter.hpp"
 #include "syntax/semantic_highlighter.hpp"
@@ -107,7 +108,7 @@ App::App(const CliOptions& options, std::unique_ptr<Terminal> terminal)
     std::string failure;
     for (const fs::path& path : options.paths) {
         if (auto s = open_new_document(path); !s) {
-            if (failure.empty()) failure = "cannot open " + path.string() + ": " + s.error().message;
+            if (failure.empty()) failure = "cannot open " + display_path(path) + ": " + s.error().message;
         } else if (!first) {
             first = ws_.documents().shown();
         }
@@ -1412,7 +1413,7 @@ void App::enter_help() {
     if (!help_dir_) help_dir_ = find_doc_dir(doc_dir_sources());
     if (!help_dir_) {
         std::string where;
-        for (const fs::path& p : doc_dir_candidates(doc_dir_sources())) where += "\n  " + p.string();
+        for (const fs::path& p : doc_dir_candidates(doc_dir_sources())) where += "\n  " + display_path(p);
         prompt_.open_info("Help", "The manual was not found. mod looked for index.md in:" + where +
                                       "\nSet MOD_DOC_DIR to the folder that holds it.");
         return;
@@ -1470,7 +1471,7 @@ void App::toggle_read_only() {
     const TrailEntry target = here();
     if (const auto back = ro().nav.back(target)) show_entry(*back);
     if (auto s = open_new_document(target.path); !s) {
-        set_status("cannot open " + target.path.string() + ": " + s.error().message);
+        set_status("cannot open " + display_path(target.path) + ": " + s.error().message);
         return;
     }
     if (read_only()) leave_read_only();  // it was already open, in read-only mode
@@ -1556,7 +1557,7 @@ void App::follow_link() {
         case LinkAction::open: {
             std::error_code ec;
             if (!fs::is_regular_file(a.path, ec)) {
-                set_status("not found: " + a.path.string());
+                set_status("not found: " + display_path(a.path));
                 break;
             }
             const TrailEntry from = here();
@@ -1583,7 +1584,7 @@ bool App::show_entry(const TrailEntry& entry, const std::string& anchor) {
         options.history = false;
         auto opened = Document::open(want, queue_, std::move(options));
         if (!opened) {
-            set_status("cannot open " + want.string() + ": " + opened.error().message);
+            set_status("cannot open " + display_path(want) + ": " + opened.error().message);
             return false;
         }
         history_view_.close();
