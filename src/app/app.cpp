@@ -1726,6 +1726,7 @@ void App::render() {
     for (const Layout::Other& o : l.others) {
         DocumentSlot& s = ws_.at(o.index).slot;
         if (!s.view) continue;
+        s.view->set_split_focused(false);
         if (o.text.rows > 0) s.view->render(screen_, o.text, s.searcher->last_match(), false);
         if (l.band > 0) screen_.add_flags(o.text, kDim);
         s.view->render_status(screen_, o.status_row, "", StatusMark::unfocused, l.left);
@@ -1761,6 +1762,7 @@ void App::render() {
     if (preview_) {
         if (l.text.rows > 0 && l.text.cols > 0) preview_->view->render(screen_, l.text, std::nullopt, false);
     } else if (l.text.rows > 0 && l.text.cols > 0) {
+        shown().view->set_split_focused(true);
         shown().view->render(screen_, l.text, shown().searcher->last_match(), text_focus);
     }
     if (prompt_.is_open() && !menu_.is_visible()) prompt_.render(screen_, l.prompt);

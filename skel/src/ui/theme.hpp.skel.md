@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1a669e53, stand-in 41655c84
+stamp: source 1a669e53, stand-in 338b11cd
 ---
 # module: theme
 
@@ -55,13 +55,16 @@ Each style and each modifier has a **name** (camelCase, the LSP's own names wher
 | `selection` | `selection` | `reverse` |
 | `gutter` | `gutter` | `dim` |
 | `gutterCurrent` | `gutter_current` | `bold` |
-| `status` | `status` | `reverse` |
-| `menu` | `menu` | `reverse` |
+| `status` | `status` | `black on-bright-white` |
+| `statusUnfocused` | `status_unfocused` | `white on-bright-black` |
+| `menu` | `menu` | `black on-bright-white` |
 | `menuSelected` | `menu_selected` | `bold black on-bright-blue` |
-| `menuAccel` | `menu_accel` | `reverse underline` |
+| `menuAccel` | `menu_accel` | `underline black on-bright-white` |
 | `error` | `error` | `bold bright-white on-red` |
 | `historyReadOnly` | `history_read_only` | `dim` |
-| `overflowMarker` | `overflow_marker` | `reverse` |
+| `overflowMarker` | `overflow_marker` | `black on-bright-white` |
+| `listSelected` | `list_selected` | `bold black on-bright-blue` |
+| `listSelectedUnfocused` | `list_selected_unfocused` | `reverse` |
 | `page` | `page` | `plain` |
 | `historyInserted` | `history_inserted` | `black on-green` |
 | `historyRemoved` | `history_removed` | `strike red` |
@@ -78,16 +81,14 @@ Modifiers are applied on top of the style's look in this order, each adding its 
 
 **In vt100 mode** there is no color, dim, italic or strike, so the theme answers from a fixed fallback table instead, and color overrides do not apply: keywords, modifiers, macros, Markdown headings and strong text, `gutterCurrent` and the `declaration` modifier are bold; comments, Markdown emphasis, quotes and links are underlined; strike (Markdown, `deprecated` and `historyRemoved`) becomes reverse; `historyInserted` is underlined; the reverse-video looks (`selection`, `status`, `menu`, `overflowMarker`) stay reverse and `menuAccel` reverse underline; `searchMatch` is reverse, `menuSelected` bold (drawn on the reverse bar, so it stands out), `error` bold reverse; everything else, color-only text included, is plain.
 
-**Darkness** (`enum class Darkness { night, normal, paper }`, the `darkness` [setting](../app/settings.hpp.skel.md#function-setting_specs)) changes the defaults of the reverse-video looks and the blues (no default uses dark blue on a dark screen; paper's light page keeps it), and only the defaults: an override still wins, and a spec equal to the level's default is no override.
+**Darkness** (`enum class Darkness { night, normal, paper }`, the `darkness` [setting](../app/settings.hpp.skel.md#function-setting_specs)) changes the defaults of the page and the blues (the bars are the same in every look) (no default uses dark blue on a dark screen; paper's light page keeps it), and only the defaults: an override still wins, and a spec equal to the level's default is no override.
 
 | Name | normal | night | paper |
 |---|---|---|---|
-| `status`, `menu`, `overflowMarker` | `reverse` | `bold bright-white on-bright-black` | `plain` |
-| `menuAccel` | `reverse underline` | `bold bright-white underline on-bright-black` | `underline` |
 | `page` | `plain` | `plain` | `black on-bright-white` |
 | `event`, `function`, `method`, `markdownLinkUrl` | `bright-blue` | `bright-blue` | `blue` |
 | `markdownLinkText` | `underline bright-blue` | `underline bright-blue` | `underline blue` |
-| `menuSelected` | `bold black on-bright-blue` | `bold black on-bright-blue` | `bold bright-white on-blue` |
+| `menuSelected`, `listSelected` | `bold black on-bright-blue` | `bold black on-bright-blue` | `bold bright-white on-blue` |
 
 `page` is the background the text area is drawn on: EditorView and the help viewer lay each of their looks over it with `on_page` (its colors fill in a look's default colors, and its reverse inverts the look, so a selection still shows). The overflow marker is not laid over it, so in paper it stands out as the terminal's own colors. In vt100 mode night draws those looks bold instead of reverse, and paper draws them plain and the page in reverse.
 
@@ -169,7 +170,7 @@ Modifiers are applied on top of the style's look in this order, each adding its 
 - **State changes:** none. Looks are cached per style and recomputed only after a change.
 - **Access:** `attr_for`.
 
-**The unfocused status line.** `unfocused_status()` is the look of a split's status line while another split has the focus: readable text on a band darker than the focused one's, fixed for each darkness and not a Colors entry: normal `white on-bright-black`, night `white on-black`, paper `black on-white` (a faint band where the focused one has none). In vt100 mode it is the focused status look.
+**The unfocused status line.** `unfocused_status()` is the look of a split's status line while another split has the focus, and of that split's overflow markers: the `statusUnfocused` entry (white on dark grey by default, in every darkness), set like any other color.
 
 ## function: attr_for
 

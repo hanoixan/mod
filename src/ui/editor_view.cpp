@@ -452,7 +452,7 @@ void EditorView::render(Screen& screen, Rect area, const std::optional<Match>& s
         if (sel && lf != npos && lf >= sel->first && lf < sel->second && drawn.col >= hscroll_ && drawn.col < limit_col)
             screen.put(row, text_col + static_cast<int>(drawn.col - hscroll_), " ", 1, on_page(attr_for(Style::selection)));
         // The line runs past the right edge: mark it in the last column.
-        if (drawn.overflow && right > text_col) screen.put(row, right - 1, ">", 1, attr_for(Style::overflow_marker));
+        if (drawn.overflow && right > text_col) screen.put(row, right - 1, ">", 1, overflow_attr());
 
         if (lf == npos) {
             past_end = true;
@@ -548,7 +548,7 @@ void EditorView::render_reading(Screen& screen, Rect area, const std::optional<M
             col = screen.print(row, col, end, std::string_view(line.text).substr(b, len), on_page(a));
             b += len;
         }
-        if (overflow && right > text_col) screen.put(row, right - 1, ">", 1, attr_for(Style::overflow_marker));
+        if (overflow && right > text_col) screen.put(row, right - 1, ">", 1, overflow_attr());
     }
     if (!focused) return;
     const int cursor_col = text_col + at.col - rhscroll_;
@@ -658,6 +658,9 @@ void draw_status_line(Screen& screen, int row, std::string_view left, std::strin
         screen.print(row, lo, cols, message, bar);
     }
 }
+
+// The '>' ending a cut line looks like its split's status line: focused, or not.
+Attr EditorView::overflow_attr() const { return split_focused_ ? attr_for(Style::overflow_marker) : active_theme().unfocused_status(); }
 
 void EditorView::render_status(Screen& screen, int row, std::string_view message, StatusMark mark, int col, int width) {
     const std::uint64_t cursor = std::min(editor_.cursor(), doc_.text().size());

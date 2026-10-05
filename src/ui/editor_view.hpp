@@ -38,6 +38,9 @@ public:
     EditorView& operator=(const EditorView&) = delete;
 
     void render(Screen& screen, Rect area, const std::optional<Match>& search_highlight, bool focused);
+    // Whether this view's split has the focus (true unless App says otherwise): a cut line's
+    // '>' then takes the focused or the unfocused status look.
+    void set_split_focused(bool on) noexcept { split_focused_ = on; }
     void render_status(Screen& screen, int row, std::string_view message, StatusMark mark = StatusMark::none, int col = 0, int width = -1);
     void scroll_to_cursor(int area_rows, int area_cols);
     // Scrolls the least that puts `pos` on screen, at least `row_margin` rows above the bottom
@@ -81,6 +84,8 @@ public:
     void reloaded() override;
 
 private:
+    Attr overflow_attr() const;
+    bool split_focused_ = true;
     std::uint64_t line_start_of(std::uint64_t pos) const;
     // The start of the line after the one starting at `line_start`, or npos at the last line.
     std::uint64_t next_line(std::uint64_t line_start) const;

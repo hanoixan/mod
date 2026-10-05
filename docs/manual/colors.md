@@ -108,31 +108,32 @@ The editor shows a modifier's sample as a variable with the modifier on.
 | `selection` | The selection, over the text's own look | `reverse` |
 | `gutter` | Line numbers | `dim` |
 | `gutterCurrent` | The current line's number, and headings in panels | `bold` |
-| `status` | The status line | `reverse` |
-| `menu` | The menu bar and open menus | `reverse` |
+| `status` | The status line of the view you are in | `black on-bright-white` |
+| `statusUnfocused` | The status lines of the other split views | `white on-bright-black` |
+| `menu` | The menu bar and open menus | `black on-bright-white` |
 | `menuSelected` | The selected menu item and panel row | `bold black on-bright-blue` |
-| `menuAccel` | A menu item's underlined letter | `reverse underline` |
+| `menuAccel` | A menu item's underlined letter | `underline black on-bright-white` |
 | `error` | Error messages | `bold bright-white on-red` |
 | `historyReadOnly` | The read-only text in the Undo History pane | `dim` |
-| `overflowMarker` | The marks at the edge of a line that runs off the screen | `reverse` |
+| `overflowMarker` | The marks at the edge of a line that runs off the screen, in the view you are in (another split view's take `statusUnfocused`) | `black on-bright-white` |
+| `listSelected` | The selected row of the folder tree and the Undo History pane, while it has the keys | `bold black on-bright-blue` |
+| `listSelectedUnfocused` | ...and while it has not | `reverse` |
 | `page` | The background the text is drawn on, in the editor and the help | `plain` |
 | `historyInserted` | In the Undo History preview, the text the selected step inserted | `black on-green` |
 | `historyRemoved` | In the Undo History preview, the text the selected step removed | `strike red` |
 
 ## Darkness
 
-The `darkness` [setting](settings.md) changes the defaults of the bars and markers that use reverse video, and of the blue used for links, functions, methods and events: dark blue is hard to read on a dark screen, so normal and night use bright blue for them, and paper's light page uses plain blue. Colors you set yourself still apply over it.
+The `darkness` [setting](settings.md) changes the defaults of the page, and of the blue used for links, functions, methods and events: dark blue is hard to read on a dark screen, so normal and night use bright blue for them, and paper's light page uses plain blue. Colors you set yourself still apply over it.
 
 | Name | normal (the default) | night | paper |
 |---|---|---|---|
-| `status`, `menu`, `overflowMarker` | `reverse` | `bold bright-white on-bright-black` | `plain` |
-| `menuAccel` | `reverse underline` | `bold bright-white underline on-bright-black` | `underline` |
 | `page` | `plain` | `plain` | `black on-bright-white` |
 | `event`, `function`, `method`, `markdownLinkUrl` | `bright-blue` | `bright-blue` | `blue` |
 | `markdownLinkText` | `underline bright-blue` | `underline bright-blue` | `underline blue` |
-| `menuSelected` | `bold black on-bright-blue` | `bold black on-bright-blue` | `bold bright-white on-blue` |
+| `menuSelected`, `listSelected` | `bold black on-bright-blue` | `bold black on-bright-blue` | `bold bright-white on-blue` |
 
-Night keeps the screen dark: the bars are bright bold text on a dark grey band instead of light blocks, so they stand out from the text around them. Paper turns the text area into a light page and leaves the bars as plain text. In a terminal in vt100 mode, where there are no colors, paper draws the text area in reverse video.
+The bars are the same in every look: the status line of the view you are in, the menu bar and the overflow markers are black on bright white, and the other split views' status lines are white on dark grey. Paper turns the text area into a light page. In a terminal in vt100 mode, where there are no colors, paper draws the text area in reverse video.
 
 ## In settings.json
 

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source bc65d1bc, stand-in 13c2d85a
+stamp: source 505c1fd5, stand-in e2d636b6
 ---
 # module: editor_view
 
@@ -61,6 +61,13 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 - **Returns:** nothing.
 - **State changes:** in preview mode the view draws the document's (previewed) text read-only: no highlighter spans, no selection and no cursor, the inserted marks in `historyInserted` and the removed ones in `historyRemoved`.
 - **Access:** App, for the Undo History pane.
+
+### function: set_split_focused
+
+- **Inputs:** `on`: whether this view's split has the focus (true by default).
+- **Returns:** nothing.
+- **State changes:** the look of the `>` marking a cut line: the `overflowMarker` color while the split has the focus, the theme's `unfocused_status()` otherwise, so a split's markers match its status line. App sets it before drawing each split.
+- **Access:** App.
 
 ### function: render_status
 

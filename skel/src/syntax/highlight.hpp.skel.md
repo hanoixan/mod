@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source d8613c5a, stand-in 94a4513c
+stamp: source 1993759a, stand-in 01910bf8
 ---
 # module: highlight
 
@@ -27,7 +27,7 @@ The common vocabulary for anything that colors text. Highlighters produce **styl
 - `constant`: a literal constant named by a word (`True`, `None`, `nullptr`, `false`), from the syntax layer.
 - `page`: the text area's background, set by the theme's darkness.
 - `history_inserted`, `history_removed`: the Undo History pane's preview of a step's change.
-- UI: `search_match`, `selection`, `gutter`, `gutter_current`, `status`, `menu`, `menu_selected`, `menu_accel`, `error`, `history_read_only` (dimmed read-only rows in the undo-history panel), `overflow_marker` (the `>` on a row whose line runs past the right edge).
+- UI: `search_match`, `selection`, `gutter`, `gutter_current`, `status`, `menu`, `menu_selected`, `menu_accel`, `error`, `history_read_only` (dimmed read-only rows in the undo-history panel), `status_unfocused` (another split's status line), `list_selected` and `list_selected_unfocused` (a list's selected row, the folder tree's or the Undo History pane's, with and without the keys), `overflow_marker` (the `>` on a row whose line runs past the right edge; kept last, since the theme's tables are sized by it).
 
 - **Access:** public.
 - **Referred by:** [theme](../ui/theme.hpp.skel.md)

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 8838230d, stand-in 93b02b3e
+stamp: source b0a41747, stand-in 93b02b3e
 ---
 # resource: colors.md
 

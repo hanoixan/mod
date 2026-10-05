@@ -61,13 +61,16 @@ constexpr ColorEntry kEntries[] = {
     {"selection", selection, 0, "reverse", "Interface"},
     {"gutter", gutter, 0, "dim", "Interface"},
     {"gutterCurrent", gutter_current, 0, "bold", "Interface"},
-    {"status", status, 0, "reverse", "Interface"},
-    {"menu", menu, 0, "reverse", "Interface"},
+    {"status", status, 0, "black on-bright-white", "Interface"},
+    {"statusUnfocused", status_unfocused, 0, "white on-bright-black", "Interface"},
+    {"menu", menu, 0, "black on-bright-white", "Interface"},
     {"menuSelected", menu_selected, 0, "bold black on-bright-blue", "Interface"},
-    {"menuAccel", menu_accel, 0, "reverse underline", "Interface"},
+    {"menuAccel", menu_accel, 0, "underline black on-bright-white", "Interface"},
     {"error", error, 0, "bold bright-white on-red", "Interface"},
     {"historyReadOnly", history_read_only, 0, "dim", "Interface"},
-    {"overflowMarker", overflow_marker, 0, "reverse", "Interface"},
+    {"overflowMarker", overflow_marker, 0, "black on-bright-white", "Interface"},
+    {"listSelected", list_selected, 0, "bold black on-bright-blue", "Interface"},
+    {"listSelectedUnfocused", list_selected_unfocused, 0, "reverse", "Interface"},
     {"page", page, 0, "plain", "Interface"},
     {"historyInserted", history_inserted, 0, "black on-green", "Interface"},
     {"historyRemoved", history_removed, 0, "strike red", "Interface"},
@@ -106,18 +109,12 @@ const ColorEntry* find_entry(std::string_view name) {
 // (and paper's page), and paper's light page keeps the plain blues that the table's
 // bright ones replace on a dark screen; everything else keeps its table default.
 std::string_view default_spec(const ColorEntry& e, Darkness d) {
-    if (d == Darkness::night) {
-        // A dark grey band: brighter than the text around it, without reverse video.
-        if (e.name == "status" || e.name == "menu" || e.name == "overflowMarker") return "bold bright-white on-bright-black";
-        if (e.name == "menuAccel") return "bold bright-white underline on-bright-black";
-    } else if (d == Darkness::paper) {
-        if (e.name == "status" || e.name == "menu" || e.name == "overflowMarker") return "plain";
-        if (e.name == "menuAccel") return "underline";
+    if (d == Darkness::paper) {
         if (e.name == "page") return "black on-bright-white";
         if (e.name == "event" || e.name == "function" || e.name == "method") return "blue";
         if (e.name == "markdownLinkText") return "underline blue";
         if (e.name == "markdownLinkUrl") return "blue";
-        if (e.name == "menuSelected") return "bold bright-white on-blue";
+        if (e.name == "menuSelected" || e.name == "listSelected") return "bold bright-white on-blue";
     }
     return e.default_spec;
 }
@@ -332,12 +329,7 @@ ColorTheme& active_theme() {
     return theme;
 }
 
-Attr ColorTheme::unfocused_status() const {
-    if (vt100_) return attr(Style::status);
-    const std::string_view spec = darkness_ == Darkness::night ? "white on-black" : darkness_ == Darkness::paper ? "black on-white" : "white on-bright-black";
-    const auto c = parse_color_spec(spec, false);
-    return c ? Attr{c->fg.value_or(kDefaultColor), c->bg.value_or(kDefaultColor), c->flags} : attr(Style::status);
-}
+Attr ColorTheme::unfocused_status() const { return attr(Style::status_unfocused); }
 
 Attr attr_for(Style style, std::uint8_t modifiers) { return active_theme().attr(style, modifiers); }
 
