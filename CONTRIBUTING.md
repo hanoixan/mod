@@ -9,7 +9,7 @@
 3. Wait for CI to pass. It builds the release configuration, runs the tests, builds the `.deb`, `.rpm` and Arch packages and the tarball, and installs and runs each one on its own distribution (the tarball on Debian 12). The packages are attached to the run for seven days. Alongside, it fuzzes every parser for 60 seconds each from the corpus in `fuzz/corpus/`, runs `clang-tidy` with the checks in `.clang-tidy` (any finding fails), runs every test under valgrind memcheck, and runs 1 GB and 4 GB text files and a 1 GB binary file through the editor (the `stress` tests).
 4. Merge the pull request, then delete the branch.
 
-`main` is protected: a change reaches it only through a pull request whose CI jobs (linux, fuzz, clang-tidy, valgrind and stress) have passed, and `main` cannot be force-pushed or deleted. No approving review is required, since GitHub does not let you approve your own pull request.
+`main` is protected: a change reaches it only through a pull request whose CI jobs (linux, windows, the two macos builds, macos-universal, fuzz, clang-tidy, valgrind and stress) have passed, and `main` cannot be force-pushed or deleted. No approving review is required, since GitHub does not let you approve your own pull request.
 
 ## Releasing
 
