@@ -23,7 +23,8 @@ lipo -create "$arm/bin/mod" "$intel/bin/mod" -output "$stage/bin/mod"
 chmod 755 "$stage/bin/mod"  # build artifacts lose the executable bit
 lipo "$stage/bin/mod" -verify_arch arm64 x86_64
 # Nothing but the system's libraries (libc++ included): nothing from Homebrew.
-if otool -L "$stage/bin/mod" | tail -n +2 | grep -v -E '^\s*/usr/lib/|^\s*/System/'; then
+# (Library lines are the indented ones; a universal binary has a header per architecture.)
+if otool -L "$stage/bin/mod" | grep -E '^[[:space:]]' | grep -v -E '^[[:space:]]*(/usr/lib/|/System/)'; then
   echo "package_macos.sh: mod links a library outside the system" >&2
   exit 1
 fi

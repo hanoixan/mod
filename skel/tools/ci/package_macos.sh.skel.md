@@ -1,7 +1,7 @@
 ---
 role: product
 untested: a build script; CI runs it on every push and smoke tests the tarball it makes
-stamp: source 5bedf055, stand-in 78fbd67f
+stamp: source 547f2625, stand-in 78fbd67f
 ---
 # module: package_macos.sh
 
