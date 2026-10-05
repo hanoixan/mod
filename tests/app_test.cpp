@@ -327,6 +327,45 @@ TEST_CASE("three Escapes quit only when each comes within 250 ms of the one befo
     CHECK_FALSE(quick.steps[5].done);  // and the third quit before the pause after it ended
 }
 
+TEST_CASE("the menu keys quit like Esc: F10, Alt+X, or any mix, three times quickly") {
+    auto quick = [](const char* name, const char* bytes) {
+        ScriptStep step{name, bytes, nullptr};
+        step.esc_settle = std::chrono::milliseconds(100);
+        return step;
+    };
+    const char* const f10 = "\x1b[21~";
+    const char* const alt_x = "\x1bx";
+    const std::vector<std::vector<ScriptStep>> runs = {
+        {quick("F10", f10), pause("wait", 50), quick("F10", f10), pause("wait", 50), quick("F10", f10)},
+        {quick("Alt+X", alt_x), pause("wait", 50), quick("Alt+X", alt_x), pause("wait", 50), quick("Alt+X", alt_x)},
+        {quick("Esc", "\x1b"), pause("wait", 50), quick("F10", f10), pause("wait", 50), quick("Alt+X", alt_x)},
+    };
+    int n = 0;
+    for (std::vector<ScriptStep> steps : runs) {
+        CAPTURE(n);
+        steps.push_back(pause("wait", 300));
+        steps.push_back({"never reached: it quit", "", [](const VtScreen&) { return true; }});
+        const auto r = run_app("menu-keys-quit-" + std::to_string(n++), "one\n", steps);
+        REQUIRE(r.steps.size() == 7);
+        CHECK(r.steps[2].done);        // the second press was read
+        CHECK_FALSE(r.steps[5].done);  // and the third quit before the pause after it ended
+    }
+}
+
+TEST_CASE("another key between the menu keys starts the count again") {
+    auto quick = [](const char* name, const char* bytes) {
+        ScriptStep step{name, bytes, nullptr};
+        step.esc_settle = std::chrono::milliseconds(100);
+        return step;
+    };
+    // Alt+X opens the menu, Down moves in it, Esc closes it, Alt+X again: two in a row at most.
+    const auto r = run_app("menu-keys-in-a-row", "one\n",
+                           {quick("Alt+X", "\x1bx"), {"Down", "\x1b[B", nullptr}, quick("Esc", "\x1b"), quick("Alt+X", "\x1bx"),
+                            pause("wait", 300),
+                            {"still running", "", [](const VtScreen& s) { return s.contains("one"); }}});
+    check_steps(r);
+}
+
 namespace {
 
 bool row_has(const VtScreen& s, int r, std::string_view text) { return s.row(r).find(text) != std::string::npos; }

@@ -6,7 +6,7 @@ Esc opens the menu only when nothing else is open: in a prompt, a panel, a dialo
 
 With the bar shown, Left and Right also move across the menus and Enter, Up or Down opens one; Shift+Up and Shift+Down move between [split views](documents.md#split-views), and Shift+Left goes to the [folder tree](folder-tree.md); other keys are ignored. Inside a menu, Left and Right move between menus, Up and Down between items, and Enter runs the selected item at once. The bar hides again when an item runs, on Esc, or on F10 or Alt+X again.
 
-Press Esc three times quickly, each within a quarter of a second of the one before, to quit mod. If a document has unsaved changes, mod asks about it first, as File > Exit does. The keys shown beside an item are the ones it is bound to now, including any you changed in [Key bindings](key-bindings.md).
+Press Esc three times quickly, each within a quarter of a second of the one before, to quit mod; F10 and Alt+X (or any key you bind to Show Menu) count the same, in any mix; any other key in between starts the count again. If a document has unsaved changes, mod asks about it first, as File > Exit does. The keys shown beside an item are the ones it is bound to now, including any you changed in [Key bindings](key-bindings.md).
 
 On macOS Terminal and iTerm2, turn on "Use Option as Meta key" for Alt to reach mod.
 

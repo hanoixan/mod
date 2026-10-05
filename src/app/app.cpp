@@ -1235,8 +1235,9 @@ void App::dispatch(const InputEvent& event) {
 }
 
 void App::dispatch_key(const KeyEvent& key) {
-    // Esc three times in quick succession quits, whatever has the focus (asking about unsaved work).
-    if (key.key == Key::Escape && key.mods == 0) {
+    // A menu key (Esc, or any key bound to Show Menu: F10, Alt+X) three times in quick
+    // succession, in any mix, quits, whatever has the focus (asking about unsaved work).
+    if ((key.key == Key::Escape && key.mods == 0) || keymap_.lookup(key) == CommandId::ShowMenu) {
         const auto now = Clock::now();
         // A press too long after the one before starts the count again.
         if (!escapes_.empty() && now - escapes_.back() > kQuitGap) escapes_.clear();
@@ -1246,6 +1247,8 @@ void App::dispatch_key(const KeyEvent& key) {
             quit_on_escapes();
             return;
         }
+    } else {
+        escapes_.clear();  // in a row: any other key starts the count again
     }
     // A question takes every key until it is answered.
     if (confirm_.is_open()) {

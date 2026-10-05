@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 452ea11b, stand-in 58ad566b
+stamp: source 779fa148, stand-in 58ad566b
 ---
 # resource: menus.md
 
