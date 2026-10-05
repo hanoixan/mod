@@ -9,7 +9,7 @@
 3. Wait for CI to pass. It builds the release configuration, runs the tests, builds the `.deb`, `.rpm` and Arch packages and the tarball, and installs and runs each one on its own distribution (the tarball on Debian 12). The packages are attached to the run for seven days. Alongside, it fuzzes every parser for 60 seconds each from the corpus in `fuzz/corpus/`, runs `clang-tidy` with the checks in `.clang-tidy` (any finding fails), runs every test under valgrind memcheck, and runs 1 GB and 4 GB text files and a 1 GB binary file through the editor (the `stress` tests).
 4. Merge the pull request, then delete the branch.
 
-Branch protection is not enforced: GitHub only offers it on public repositories or on paid plans. The rule above is by agreement until it can be turned on under Settings > Branches (require a pull request and the CI check before merging).
+`main` is protected: a change reaches it only through a pull request whose CI jobs (linux, fuzz, clang-tidy, valgrind and stress) have passed, and `main` cannot be force-pushed or deleted. No approving review is required, since GitHub does not let you approve your own pull request.
 
 ## Releasing
 
@@ -18,7 +18,7 @@ A release starts as a release candidate, made from `main`, which is promoted onc
 1. In a pull request, set the new version in `CMakeLists.txt` (`project(mod VERSION 1.2.0 …)`), and merge it.
 2. In GitHub, open Actions > Release candidate > Run workflow, keep the branch on `main`, and enter the same version. The workflow checks that it runs on `main`, that the version matches `CMakeLists.txt` and is not released yet, builds and tests, packages, tags `v1.2.0-rc.1` (`rc.2` for the next candidate of that version, and so on) and publishes it as a GitHub prerelease, "mod 1.2.0 release candidate 1".
 3. Try it. `MOD_VERSION=1.2.0-rc.1` points the install one-liner at a candidate; without it the one-liner installs the latest release and never a candidate. To fix something, merge the fix and run step 2 again for the next candidate.
-4. Open Actions > Promote release > Run workflow, enter the candidate's tag (`v1.2.0-rc.2`) and type its version (`1.2.0`) to confirm. The workflow tags `v1.2.0` on the candidate's commit and publishes the candidate's files as the release "mod 1.2.0", with notes on every change since the previous release. It runs in the `release` environment; GitHub offers a required reviewer there only on a public repository or an Enterprise plan, so until then starting it is the approval.
+4. Open Actions > Promote release > Run workflow, enter the candidate's tag (`v1.2.0-rc.2`) and type its version (`1.2.0`) to confirm. The workflow tags `v1.2.0` on the candidate's commit and publishes the candidate's files as the release "mod 1.2.0", with notes on every change since the previous release. It runs in the `release` environment, which has a required reviewer: the run waits until the reviewer approves it in GitHub (the run's page shows Review deployments).
 
 A candidate and its release carry:
 
