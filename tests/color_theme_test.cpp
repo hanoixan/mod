@@ -307,8 +307,9 @@ TEST_CASE("vt100: the bars, menus and lists stand out from text, the same in eve
         CAPTURE(static_cast<int>(d));
         t.set_darkness(d);
         CHECK(t.attr(Style::status) == Attr{kDefaultColor, kDefaultColor, kReverse});
-        CHECK(t.attr(Style::status_unfocused) == Attr{kDefaultColor, kDefaultColor, kBold});
-        CHECK(t.unfocused_status() == Attr{kDefaultColor, kDefaultColor, kBold});
+        // Reverse like the focused one: only the focused line's '>' tells them apart.
+        CHECK(t.attr(Style::status_unfocused) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.unfocused_status() == t.attr(Style::status));
         CHECK(t.attr(Style::menu) == Attr{kDefaultColor, kDefaultColor, kReverse});
         CHECK(t.attr(Style::menu_accel) == Attr{kDefaultColor, kDefaultColor, kReverse | kUnderline});
         CHECK(t.attr(Style::menu_selected) == Attr{});  // cut out of the reverse menu

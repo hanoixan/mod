@@ -141,8 +141,7 @@ In `vt100` [terminal mode](settings.md) there are no colors, so your colors and 
 
 | What | Looks |
 |---|---|
-| The status line of the view you are in, the menu bar and open menus, the overflow markers | reverse |
-| The other split views' status lines | bold |
+| Every status line, the menu bar and open menus, the overflow markers | reverse; the `>` at the start of the status line marks the view you are in |
 | A menu's underlined letter | reverse underline |
 | The selected menu item | plain, cut out of the reverse menu |
 | The selected row of the folder tree, the Undo History pane and other panels | reverse; underlined while they do not have the keys |

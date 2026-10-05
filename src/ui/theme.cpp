@@ -126,8 +126,8 @@ std::uint8_t vt100_flags(Style s) {
         case status:
         case menu:
         case overflow_marker:
-        case list_selected: return kReverse;
-        case status_unfocused: return kBold;
+        case list_selected:
+        case status_unfocused: return kReverse;  // the focused status line's '>' tells them apart
         case menu_accel: return kReverse | kUnderline;
         case list_selected_unfocused: return kUnderline;
         case menu_selected: return 0;  // plain: cut out of the reverse menu
