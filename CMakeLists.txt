@@ -167,9 +167,14 @@ endif()
 add_executable(mod src/main.cpp)
 target_link_libraries(mod PRIVATE mod_core)
 mod_target_options(mod)
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  # Runs on a stock Ubuntu 22.04, whose system libstdc++ is older than GCC 13's.
-  target_link_options(mod PRIVATE -static-libstdc++)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT APPLE)
+  # Linux: runs on a stock Ubuntu 22.04, whose system libstdc++ is older than GCC 13's.
+  # Windows (the MSYS2 runtime): needs only msys-2.0.dll beside it, not GCC's own DLLs.
+  target_link_options(mod PRIVATE -static-libstdc++ -static-libgcc)
+endif()
+if(APPLE AND MOD_STATIC_LIBCXX_DIR)
+  # macOS with Homebrew LLVM: its libc++ linked in, so the binary needs nothing from Homebrew.
+  target_link_options(mod PRIVATE -nostdlib++ ${MOD_STATIC_LIBCXX_DIR}/libc++.a ${MOD_STATIC_LIBCXX_DIR}/libc++abi.a)
 endif()
 install(TARGETS mod)
 

@@ -38,6 +38,46 @@ jobs:
           path: dist/
           retention-days: 7
 
+  windows:
+    # The MSYS2 runtime: the POSIX code as it is, mod.exe beside msys-2.0.dll.
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          update: true
+          install: gcc cmake ninja git python
+
+      - name: Build and test
+        run: |
+          cmake --preset windows-release
+          cmake --build --preset windows-release
+          ctest --preset windows-release
+
+  macos:
+    # Both architectures natively; the release joins them into one universal binary.
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install tools
+        run: brew install llvm ninja
+
+      - name: Build and test
+        run: |
+          llvm=$(brew --prefix llvm)
+          cmake --preset macos-release -DCMAKE_CXX_COMPILER="$llvm/bin/clang++" -DMOD_STATIC_LIBCXX_DIR="$llvm/lib/c++"
+          cmake --build --preset macos-release
+          ctest --preset macos-release
+          otool -L build/macos-release/mod
+
   fuzz:
     runs-on: ubuntu-22.04
     steps:

@@ -38,6 +38,22 @@
         "lhs": "${hostSystemName}",
         "rhs": "Darwin"
       }
+    },
+    {
+      "name": "windows-release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "g++"
+      },
+      "condition": {
+        "type": "inList",
+        "string": "${hostSystemName}",
+        "list": [
+          "MSYS",
+          "CYGWIN"
+        ]
+      }
     }
   ],
   "buildPresets": [
@@ -52,6 +68,10 @@
     {
       "name": "macos-release",
       "configurePreset": "macos-release"
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release"
     }
   ],
   "testPresets": [
@@ -82,6 +102,18 @@
     {
       "name": "macos-release",
       "configurePreset": "macos-release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "filter": {
+        "exclude": {
+          "label": "stress"
+        }
+      }
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release",
       "output": {
         "outputOnFailure": true
       },
