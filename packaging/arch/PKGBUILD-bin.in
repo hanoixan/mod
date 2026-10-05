@@ -1,0 +1,14 @@
+# Packages the portable build that tools/ci/package.sh stages in ./stage; not for the AUR.
+pkgname=mod
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc='A terminal text editor'
+arch=(x86_64)
+url='https://github.com/hanoixan/mod'
+license=(MIT)
+depends=(glibc gcc-libs)
+options=(!strip !debug)
+
+package() {
+    cp -a "$startdir/stage/usr" "$pkgdir/"
+}

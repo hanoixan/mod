@@ -1,0 +1,118 @@
+# On every push and pull request: build, test and package; fuzz every parser; clang-tidy;
+# the test suite under valgrind; and gigabyte files through the real editor.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: The release workflows' script
+        run: tools/ci/release_test.sh
+
+      - name: Install tools
+        run: |
+          if ! command -v g++-13 >/dev/null; then
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          fi
+          sudo apt-get update
+          sudo apt-get install -y g++-13 ninja-build rpm
+
+      - name: Build, test and package
+        run: tools/ci/package.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux-packages
+          path: dist/
+          retention-days: 7
+
+  fuzz:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/clang
+      - name: Build the fuzzers
+        run: |
+          cmake -S . -B build/fuzz -G Ninja -DCMAKE_CXX_COMPILER=clang++-19 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DMOD_BUILD_FUZZERS=ON -DMOD_BUILD_TESTS=OFF
+          cmake --build build/fuzz
+      - name: Fuzz each target for 60 s
+        run: |
+          mkdir -p crashes
+          status=0
+          for t in json config color_spec cli input utf8 lsp_frames regex markdown editor sidecar; do
+            cp -r fuzz/corpus/$t work-$t
+            maxlen=4096; [ $t = sidecar ] && maxlen=65536
+            if ! build/fuzz/fuzz/fuzz_$t work-$t -max_total_time=60 -max_len=$maxlen -rss_limit_mb=2048 -timeout=10 \
+                 -artifact_prefix=crashes/$t- -print_final_stats=1 > fuzz-$t.log 2>&1; then
+              echo "::error::fuzz_$t found a crash"; tail -40 fuzz-$t.log; status=1
+            fi
+          done
+          exit $status
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: fuzz-crashes
+          path: crashes/
+
+  clang-tidy:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/clang
+      - name: Configure
+        run: |
+          cmake -S . -B build/tidy -G Ninja -DCMAKE_CXX_COMPILER=clang++-19 -DMOD_BUILD_TESTS=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build/tidy --target default_settings
+      - name: clang-tidy (.clang-tidy; any finding fails)
+        run: find src -name '*.cpp' -print0 | xargs -0 -P 4 -n 4 clang-tidy-19 -p build/tidy --quiet
+
+  valgrind:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install tools
+        run: |
+          if ! command -v g++-13 >/dev/null; then
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          fi
+          sudo apt-get update
+          sudo apt-get install -y g++-13 ninja-build valgrind
+      - name: Build (optimized, with debug information)
+        run: |
+          cmake -S . -B build/valgrind -G Ninja -DCMAKE_CXX_COMPILER=g++-13 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPCRE2_SUPPORT_VALGRIND=ON
+          cmake --build build/valgrind
+      - name: Every test under memcheck
+        run: tools/ci/valgrind.sh build/valgrind
+
+  stress:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install tools
+        run: |
+          if ! command -v g++-13 >/dev/null; then
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          fi
+          sudo apt-get update
+          sudo apt-get install -y g++-13 ninja-build
+      - name: Build
+        run: |
+          cmake --preset linux-release
+          cmake --build --preset linux-release --target stress_test
+      - name: 1 GB and 4 GB text and a 1 GB binary file through the editor (about 10 GB of disk)
+        run: |
+          df -h .
+          ctest --preset linux-release-stress

@@ -1,0 +1,13 @@
+{
+  "tab_width": 4,
+  "line_numbers": true,
+  "syntax_coloring": true,
+  "word_wrap": true,
+  "pin_folder_tree": false,
+  "terminal_mode": "auto",
+  "darkness": "normal",
+  "cursor_style": "bar",
+  "read_only_copy": "markdown",
+  "tab_inserts": "spaces",
+  "keymap": {}
+}

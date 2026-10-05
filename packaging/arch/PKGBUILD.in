@@ -1,0 +1,23 @@
+# Builds mod from the release's source archive. The release workflow fills in the version
+# and checksum; the build fetches PCRE2, so it needs the network.
+pkgname=mod
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc='A terminal text editor'
+arch=(x86_64)
+url='https://github.com/hanoixan/mod'
+license=(MIT)
+depends=(glibc gcc-libs)
+makedepends=(cmake ninja git gcc)
+source=("$url/releases/download/v$pkgver/mod-$pkgver.tar.gz")
+sha256sums=('@SHA256@')
+
+build() {
+    cmake -S "mod-$pkgver" -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DMOD_BUILD_TESTS=OFF
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}

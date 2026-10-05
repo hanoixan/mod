@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "languages": [
+    {
+      "id": "cpp",
+      "extensions": [".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".hh"],
+      "command": ["clangd", "--background-index=false"],
+      "initializationOptions": {},
+      "maxFileBytes": 8388608,
+      "syntax": {
+        "keywords": ["alignas", "alignof", "and", "asm", "auto", "bool", "break", "case", "catch", "char", "char8_t", "char16_t", "char32_t", "class", "co_await", "co_return", "co_yield", "concept", "const", "consteval", "constexpr", "constinit", "const_cast", "continue", "decltype", "default", "delete", "do", "double", "dynamic_cast", "else", "enum", "explicit", "export", "extern", "final", "float", "for", "friend", "goto", "if", "inline", "int", "long", "mutable", "namespace", "new", "noexcept", "not", "operator", "or", "override", "private", "protected", "public", "register", "reinterpret_cast", "requires", "restrict", "return", "short", "signed", "sizeof", "static", "static_assert", "static_cast", "struct", "switch", "template", "this", "thread_local", "throw", "try", "typedef", "typeid", "typename", "union", "unsigned", "using", "virtual", "void", "volatile", "wchar_t", "while", "xor", "_Bool", "_Generic", "_Static_assert"],
+        "constants": ["true", "false", "nullptr", "NULL"],
+        "lineComments": ["//"],
+        "blockComments": [["/*", "*/"]],
+        "strings": [
+          {"open": "\"", "escape": "\\"},
+          {"open": "'", "escape": "\\", "charLiteral": true}
+        ],
+        "stringPrefixes": ["L", "u", "U", "u8", "R", "LR", "uR", "UR", "u8R"]
+      }
+    },
+    {
+      "id": "rust",
+      "extensions": [".rs"],
+      "command": ["rust-analyzer"],
+      "syntax": {
+        "keywords": ["as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum", "extern", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return", "self", "Self", "static", "struct", "super", "trait", "type", "union", "unsafe", "use", "where", "while", "yield", "macro_rules"],
+        "constants": ["true", "false"],
+        "lineComments": ["//"],
+        "blockComments": [["/*", "*/"]],
+        "strings": [
+          {"open": "\"", "escape": "\\", "multiline": true},
+          {"open": "'", "escape": "\\", "charLiteral": true}
+        ],
+        "stringPrefixes": ["b", "r", "br", "c", "cr"]
+      }
+    },
+    {
+      "id": "python",
+      "extensions": [".py", ".pyi"],
+      "command": ["pyright-langserver", "--stdio"],
+      "syntax": {
+        "keywords": ["and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"],
+        "constants": ["True", "False", "None", "NotImplemented", "Ellipsis", "__debug__"],
+        "lineComments": ["#"],
+        "strings": [
+          {"open": "\"\"\"", "escape": "\\", "multiline": true},
+          {"open": "'''", "escape": "\\", "multiline": true},
+          {"open": "\"", "escape": "\\"},
+          {"open": "'", "escape": "\\"}
+        ],
+        "stringPrefixes": ["r", "R", "b", "B", "f", "F", "u", "U", "rb", "rB", "Rb", "RB", "br", "bR", "Br", "BR", "rf", "rF", "Rf", "RF", "fr", "fR", "Fr", "FR"]
+      }
+    },
+    {
+      "id": "typescript",
+      "extensions": [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"],
+      "command": ["typescript-language-server", "--stdio"],
+      "syntax": {
+        "keywords": ["abstract", "as", "async", "await", "break", "case", "catch", "class", "const", "continue", "debugger", "declare", "default", "delete", "do", "else", "enum", "export", "extends", "finally", "for", "from", "function", "get", "if", "implements", "import", "in", "infer", "instanceof", "interface", "is", "keyof", "let", "namespace", "new", "of", "package", "private", "protected", "public", "readonly", "return", "satisfies", "set", "static", "super", "switch", "this", "throw", "try", "type", "typeof", "var", "void", "while", "with", "yield"],
+        "constants": ["true", "false", "null", "undefined", "NaN", "Infinity"],
+        "lineComments": ["//"],
+        "blockComments": [["/*", "*/"]],
+        "strings": [
+          {"open": "\"", "escape": "\\"},
+          {"open": "'", "escape": "\\"},
+          {"open": "`", "escape": "\\", "multiline": true}
+        ]
+      }
+    },
+    {
+      "id": "go",
+      "extensions": [".go"],
+      "command": ["gopls"],
+      "syntax": {
+        "keywords": ["break", "case", "chan", "const", "continue", "default", "defer", "else", "fallthrough", "for", "func", "go", "goto", "if", "import", "interface", "map", "package", "range", "return", "select", "struct", "switch", "type", "var"],
+        "constants": ["true", "false", "nil", "iota"],
+        "lineComments": ["//"],
+        "blockComments": [["/*", "*/"]],
+        "strings": [
+          {"open": "\"", "escape": "\\"},
+          {"open": "`", "multiline": true},
+          {"open": "'", "escape": "\\", "charLiteral": true}
+        ]
+      }
+    },
+    {
+      "id": "json",
+      "extensions": [".json", ".jsonc"],
+      "syntax": {
+        "constants": ["true", "false", "null"],
+        "lineComments": ["//"],
+        "blockComments": [["/*", "*/"]],
+        "strings": [
+          {"open": "\"", "escape": "\\"}
+        ]
+      }
+    },
+    {
+      "id": "toml",
+      "extensions": [".toml"],
+      "syntax": {
+        "constants": ["true", "false", "inf", "nan"],
+        "lineComments": ["#"],
+        "strings": [
+          {"open": "\"\"\"", "escape": "\\", "multiline": true},
+          {"open": "'''", "multiline": true},
+          {"open": "\"", "escape": "\\"},
+          {"open": "'"}
+        ]
+      }
+    },
+    {
+      "id": "yaml",
+      "extensions": [".yaml", ".yml"],
+      "syntax": {
+        "constants": ["true", "false", "null"],
+        "caseSensitive": false,
+        "lineComments": ["#"],
+        "commentNeedsSpace": true,
+        "strings": [
+          {"open": "\"", "escape": "\\"},
+          {"open": "'"}
+        ]
+      }
+    },
+    {
+      "id": "shell",
+      "extensions": [".sh", ".bash", ".zsh"],
+      "syntax": {
+        "keywords": ["if", "then", "else", "elif", "fi", "case", "esac", "for", "while", "until", "do", "done", "in", "function", "select", "time", "return", "break", "continue", "local", "export", "readonly", "declare", "unset", "shift", "exit"],
+        "lineComments": ["#"],
+        "commentNeedsSpace": true,
+        "strings": [
+          {"open": "\"", "escape": "\\", "multiline": true},
+          {"open": "'", "multiline": true}
+        ]
+      }
+    },
+    {
+      "id": "cmake",
+      "extensions": [".cmake"],
+      "fileNames": ["CMakeLists.txt"],
+      "syntax": {
+        "keywords": ["if", "elseif", "else", "endif", "foreach", "endforeach", "while", "endwhile", "function", "endfunction", "macro", "endmacro", "block", "endblock", "return", "break", "continue", "set", "unset", "option", "include", "project"],
+        "constants": ["ON", "OFF", "TRUE", "FALSE", "YES", "NO"],
+        "caseSensitive": false,
+        "lineComments": ["#"],
+        "blockComments": [["#[[", "]]"]],
+        "strings": [
+          {"open": "\"", "escape": "\\", "multiline": true}
+        ]
+      }
+    }
+  ]
+}

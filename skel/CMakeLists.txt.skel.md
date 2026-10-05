@@ -1,0 +1,119 @@
+---
+role: manifest
+stamp: source 7adc03bc, stand-in 0adefcdd
+---
+# resource: CMakeLists.txt
+
+The top-level CMake build. It defines the `mod` executable, selects the platform backends, embeds the default language configuration, and adds tests. It is also the **source manifest**: every `.cpp` stand-in is listed below as a dependency, so every translation unit has a referrer.
+
+Contract for the implementer:
+
+- `cmake_minimum_required(VERSION 3.25)`, `project(mod VERSION 1.0.0 LANGUAGES CXX)`. The version is written only there: `mod_core` carries the public compile definition `MOD_VERSION="${PROJECT_VERSION}"`, which `--version`, the About box and the language-server handshake use.
+- Set `CMAKE_CXX_STANDARD 23`, `CMAKE_CXX_STANDARD_REQUIRED ON` and `CMAKE_CXX_EXTENSIONS OFF`. Restrict code to the GCC 13 subset in [SYSTEM.md](./SYSTEM.md).
+- Warnings: `-Wall -Wextra -Wpedantic -Wconversion -Wshadow` on GCC and Clang. MSVC is not a target. Add an option `MOD_WERROR` (OFF by default). Apply the warning flags to `mod` and `mod_core` only, never to the fetched dependencies.
+- Sources: the common list plus the `*_posix.cpp` backends, on every platform. There are no other backends: Windows builds use the MSYS2 MSYS environment, where the POSIX backends build unchanged. No Windows build is made in this phase, so there is no Windows-specific logic.
+- Third-party dependencies, both with `include(FetchContent)` and `FetchContent_Declare` pinned to a release tag **and** that tag's commit hash (`GIT_TAG <full sha>  # <tag>`), never a branch:
+  - [PCRE2](https://github.com/PCRE2Project/pcre2): the 8-bit library only (`PCRE2_BUILD_PCRE2_8 ON`, `PCRE2_BUILD_PCRE2_16/32 OFF`), static (`BUILD_SHARED_LIBS OFF` within the dependency scope), JIT enabled (`PCRE2_SUPPORT_JIT ON`), and its tests, programs and docs off (`PCRE2_BUILD_TESTS OFF`, `PCRE2_BUILD_PCRE2GREP OFF`). It must be version 10.34 or later, because [regex](./src/search/regex.cpp.skel.md) relies on `PCRE2_MATCH_INVALID_UTF`. Link it `PRIVATE` to `mod_core`.
+  - [doctest](https://github.com/doctest/doctest): fetched only when `MOD_BUILD_TESTS` is ON, and consumed by [tests/CMakeLists.txt](./tests/CMakeLists.txt.skel.md).
+  - Both dependencies are built into mod and **never installed**: on CMake 3.28 and later their `FetchContent_Declare` carries `EXCLUDE_FROM_ALL`, which leaves their own install rules out of `cmake --install`, and doctest also gets `DOCTEST_NO_INSTALL ON`. With CMake 3.25 to 3.27 PCRE2's headers, libraries and documentation are installed too; the minimum version is unchanged.
+  - Call `FetchContent_MakeAvailable` once per dependency. The pins are chosen when this file is written (the current release of each project at that time) and are bumped deliberately, never implicitly.
+- Link `Threads::Threads`.
+- The sources of `mod_core` are one list, `MOD_CORE_SOURCES`; `mod` is `src/main.cpp` linked against `mod_core`. `mod_core` exposes `src/` as its public include directory. Warning and sanitizer flags are applied by one helper function used for `mod`, `mod_core` and the test executables. With `MOD_SANITIZE`, `mod_core` also carries `-fsanitize=address,undefined` as an interface link option, so everything that links it gets the runtimes.
+- When the build is split into batches, the file lists only sources that exist; the PCRE2 dependency, the `languages.json` embedding, the `mod` executable and its `-static-libstdc++` link arrive with the batches that add `regex.cpp`, `languages.json` and `main.cpp`.
+- On Linux with GCC, link `mod` with `-static-libstdc++` (for example `target_link_options(mod PRIVATE -static-libstdc++)` under `if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")`), so that the binary built with GCC 13 runs on a stock Ubuntu 22.04, whose system libstdc++ is older. Nothing else is linked statically: glibc, libgcc_s and libm stay dynamic. macOS links the system libc++ dynamically as usual. Test executables need not link statically.
+- Embed defaults: `file(READ config/languages.json …)`, then `file(CONFIGURE OUTPUT ${CMAKE_BINARY_DIR}/generated/default_languages.inc CONTENT … @ONLY)` (no template file in the source tree) as a raw string literal with the delimiter `mod_json`. Configure fails with `FATAL_ERROR` if the JSON contains `)mod_json"`. `config/languages.json` is added to the directory's `CMAKE_CONFIGURE_DEPENDS`, so editing it re-runs configure, and the generated directory is a `PRIVATE` include directory of `mod_core`. See [language_config (implementation)](./src/syntax/language_config.cpp.skel.md).
+- Options: `MOD_BUILD_TESTS` (ON when top-level), `MOD_SANITIZE` (address and undefined behavior, for Debug; undefined behavior aborts, `-fno-sanitize-recover=undefined`, so a test that meets it fails) and `MOD_BUILD_FUZZERS` (clang only: the core is compiled with `-fsanitize=fuzzer-no-link,address,undefined` and `-fno-sanitize-recover=undefined`, and the [fuzz targets](./fuzz/CMakeLists.txt.skel.md) are built). `fuzz/` is added when tests or fuzzers are built.
+- `install(TARGETS mod)`, and with `include(GNUInstallDirs)`: `docs/manual/` to `${CMAKE_INSTALL_DATADIR}/mod/doc`, `docs/sidecar-format.md` and the generated `settings.json` to `${CMAKE_INSTALL_DATADIR}/mod`. The `settings.json` comes from an executable `gen_default_settings` ([tools/gen_default_settings.cpp](./tools/gen_default_settings.cpp.skel.md), linking `mod_core`, with the shared warning options) run by an `add_custom_command` writing `${CMAKE_BINARY_DIR}/generated/settings.json`, made part of `ALL` by a `default_settings` target. `mod_core` gets two private compile definitions for the help screen: `MOD_INSTALL_DOC_DIR` (`${CMAKE_INSTALL_FULL_DATADIR}/mod/doc`) and `MOD_SOURCE_DOC_DIR` (the source tree's `docs/manual`). The `LICENSE` (MIT, `Copyright (c) 2026 hanoixan`) is installed to `${CMAKE_INSTALL_DATADIR}/licenses/mod`.
+- **Packaging** with CPack, for Linux: generators DEB and RPM (set by [package.sh](./tools/ci/package.sh.skel.md)); package name `mod`, version from `project()`, release `1`; vendor and maintainer `hanoixan <https://github.com/hanoixan/mod>` (no email); summary "A terminal text editor"; homepage the repository; license `MIT`; DEB architecture `amd64` with `CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON` and section `editors`; RPM architecture `x86_64`, group `Applications/Editors`, autoreq on; file names `mod_<version>_amd64.deb` and `mod-<version>-1.x86_64.rpm`; install prefix `/usr`. The Arch package and PKGBUILD live in [packaging/arch](./packaging/arch/PKGBUILD.in.skel.md). No macOS or Windows package in this phase.
+- `add_subdirectory(tests)` when tests are enabled.
+
+- **Required:** always.
+- **Failure modes:** `FetchContent` needs network access at the first configure. Offline builds set `FETCHCONTENT_SOURCE_DIR_PCRE2` and `FETCHCONTENT_SOURCE_DIR_DOCTEST` to local checkouts of the pinned versions, or `FETCHCONTENT_FULLY_DISCONNECTED=ON` once `_deps` is populated. A pinned tag that is moved upstream is caught because the commit hash is pinned too. On the build machine, `/usr/bin/g++` is 11.4 and lacks `<expected>`, so configure fails unless the compiler is `g++-13`. The presets set `CMAKE_CXX_COMPILER`, and the top-level file emits a `FATAL_ERROR` if the compiler is GCC < 13 or the `std::expected` feature check (`check_cxx_source_compiles`) fails. Ninja 1.10 cannot scan C++20 modules, which is fine because modules are not used. `-static-libstdc++` does not cover glibc: a binary built against a newer glibc than 22.04's (2.35) fails to start there with a `GLIBC_2.xx not found` error, so release binaries must be built on Ubuntu 22.04 (as the build machine is) or an older glibc. Static libstdc++ also means the binary does not pick up libstdc++ security fixes from system updates; it must be rebuilt.
+- **Depends on:** [tests/CMakeLists.txt](./tests/CMakeLists.txt.skel.md)
+- **Depends on:** [config/languages.json](./config/languages.json.skel.md)
+- **Depends on:** [src/app/app.cpp](./src/app/app.cpp.skel.md)
+- **Depends on:** [src/app/commands.cpp](./src/app/commands.cpp.skel.md)
+- **Depends on:** [src/app/keymap.cpp](./src/app/keymap.cpp.skel.md)
+- **Depends on:** [src/app/read_only.cpp](./src/app/read_only.cpp.skel.md)
+- **Depends on:** [src/app/document_slot.cpp](./src/app/document_slot.cpp.skel.md)
+- **Depends on:** [src/app/document_list.cpp](./src/app/document_list.cpp.skel.md)
+- **Depends on:** [src/app/doc_search.cpp](./src/app/doc_search.cpp.skel.md)
+- **Depends on:** [src/ui/doc_search_view.cpp](./src/ui/doc_search_view.cpp.skel.md)
+- **Depends on:** [src/ui/theme.cpp](./src/ui/theme.cpp.skel.md)
+- **Depends on:** [src/platform/terminal_output.cpp](./src/platform/terminal_output.cpp.skel.md)
+- **Depends on:** [src/syntax/markdown_render.cpp](./src/syntax/markdown_render.cpp.skel.md)
+- **Depends on:** [src/ui/help_viewer.cpp](./src/ui/help_viewer.cpp.skel.md)
+- **Depends on:** [src/ui/confirm_bar.cpp](./src/ui/confirm_bar.cpp.skel.md)
+- **Depends on:** [src/app/file_listing.cpp](./src/app/file_listing.cpp.skel.md)
+- **Depends on:** [src/ui/text_field.cpp](./src/ui/text_field.cpp.skel.md)
+- **Depends on:** [src/ui/file_dialog.cpp](./src/ui/file_dialog.cpp.skel.md)
+- **Depends on:** [src/app/split_layout.cpp](./src/app/split_layout.cpp.skel.md)
+- **Depends on:** [src/app/startup.cpp](./src/app/startup.cpp.skel.md)
+- **Depends on:** [src/ui/reading_layout.cpp](./src/ui/reading_layout.cpp.skel.md)
+- **Depends on:** [src/app/cli_options.cpp](./src/app/cli_options.cpp.skel.md)
+- **Depends on:** [src/app/workspace.cpp](./src/app/workspace.cpp.skel.md)
+- **Depends on:** [src/app/history_preview.cpp](./src/app/history_preview.cpp.skel.md)
+- **Depends on:** [src/app/folder_tree.cpp](./src/app/folder_tree.cpp.skel.md)
+- **Depends on:** [src/ui/colors_view.cpp](./src/ui/colors_view.cpp.skel.md)
+- **Depends on:** [src/syntax/syntax_highlighter.cpp](./src/syntax/syntax_highlighter.cpp.skel.md)
+- **Depends on:** [src/syntax/layered_highlighter.cpp](./src/syntax/layered_highlighter.cpp.skel.md)
+- **Depends on:** [docs/manual/colors.md](./docs/manual/colors.md.skel.md)
+- **Depends on:** [docs/manual/file-dialog.md](./docs/manual/file-dialog.md.skel.md)
+- **Depends on:** [docs/manual/command-line.md](./docs/manual/command-line.md.skel.md)
+- **Depends on:** [src/syntax/lsp_pool.cpp](./src/syntax/lsp_pool.cpp.skel.md)
+- **Depends on:** [src/app/settings.cpp](./src/app/settings.cpp.skel.md)
+- **Depends on:** [src/edit/clipboard.cpp](./src/edit/clipboard.cpp.skel.md)
+- **Depends on:** [src/edit/document.cpp](./src/edit/document.cpp.skel.md)
+- **Depends on:** [src/edit/editor.cpp](./src/edit/editor.cpp.skel.md)
+- **Depends on:** [src/edit/sidecar.cpp](./src/edit/sidecar.cpp.skel.md)
+- **Depends on:** [src/edit/undo_tree.cpp](./src/edit/undo_tree.cpp.skel.md)
+- **Depends on:** [src/main.cpp](./src/main.cpp.skel.md)
+- **Depends on:** [tools/gen_default_settings.cpp](./tools/gen_default_settings.cpp.skel.md)
+- **Depends on:** [config/settings.json](./config/settings.json.skel.md)
+- **Depends on:** [installed_data](./infra/storage.iac.skel.md#resource-installed_data)
+- **Depends on:** [docs/manual/index.md](./docs/manual/index.md.skel.md)
+- **Depends on:** [docs/manual/getting-started.md](./docs/manual/getting-started.md.skel.md)
+- **Depends on:** [docs/manual/editing.md](./docs/manual/editing.md.skel.md)
+- **Depends on:** [docs/manual/menus.md](./docs/manual/menus.md.skel.md)
+- **Depends on:** [docs/manual/key-bindings.md](./docs/manual/key-bindings.md.skel.md)
+- **Depends on:** [docs/manual/undo-history.md](./docs/manual/undo-history.md.skel.md)
+- **Depends on:** [docs/manual/search.md](./docs/manual/search.md.skel.md)
+- **Depends on:** [docs/manual/settings.md](./docs/manual/settings.md.skel.md)
+- **Depends on:** [docs/manual/read-only.md](./docs/manual/read-only.md.skel.md)
+- **Depends on:** [docs/manual/folder-tree.md](./docs/manual/folder-tree.md.skel.md)
+- **Depends on:** [docs/manual/documents.md](./docs/manual/documents.md.skel.md)
+- **Depends on:** [docs/manual/language-servers.md](./docs/manual/language-servers.md.skel.md)
+- **Depends on:** [docs/manual/help.md](./docs/manual/help.md.skel.md)
+- **Depends on:** [src/platform/file_map_posix.cpp](./src/platform/file_map_posix.cpp.skel.md)
+- **Depends on:** [src/platform/fs_posix.cpp](./src/platform/fs_posix.cpp.skel.md)
+- **Depends on:** [src/platform/process_posix.cpp](./src/platform/process_posix.cpp.skel.md)
+- **Depends on:** [src/platform/terminal_posix.cpp](./src/platform/terminal_posix.cpp.skel.md)
+- **Depends on:** [src/search/regex.cpp](./src/search/regex.cpp.skel.md)
+- **Depends on:** [src/search/search.cpp](./src/search/search.cpp.skel.md)
+- **Depends on:** [src/syntax/json.cpp](./src/syntax/json.cpp.skel.md)
+- **Depends on:** [src/syntax/language_config.cpp](./src/syntax/language_config.cpp.skel.md)
+- **Depends on:** [src/syntax/lsp_client.cpp](./src/syntax/lsp_client.cpp.skel.md)
+- **Depends on:** [src/syntax/markdown.cpp](./src/syntax/markdown.cpp.skel.md)
+- **Depends on:** [src/syntax/semantic_highlighter.cpp](./src/syntax/semantic_highlighter.cpp.skel.md)
+- **Depends on:** [src/text/line_scanner.cpp](./src/text/line_scanner.cpp.skel.md)
+- **Depends on:** [src/text/piece_tree.cpp](./src/text/piece_tree.cpp.skel.md)
+- **Depends on:** [src/text/utf8.cpp](./src/text/utf8.cpp.skel.md)
+- **Depends on:** [src/text/wrap.cpp](./src/text/wrap.cpp.skel.md)
+- **Depends on:** [src/ui/editor_view.cpp](./src/ui/editor_view.cpp.skel.md)
+- **Depends on:** [src/ui/input.cpp](./src/ui/input.cpp.skel.md)
+- **Depends on:** [src/ui/history_view.cpp](./src/ui/history_view.cpp.skel.md)
+- **Depends on:** [src/ui/menu.cpp](./src/ui/menu.cpp.skel.md)
+- **Depends on:** [src/ui/prompt.cpp](./src/ui/prompt.cpp.skel.md)
+- **Depends on:** [src/ui/screen.cpp](./src/ui/screen.cpp.skel.md)
+- **Depends on:** [src/ui/keymap_view.cpp](./src/ui/keymap_view.cpp.skel.md)
+- **Depends on:** [src/ui/folder_tree_view.cpp](./src/ui/folder_tree_view.cpp.skel.md)
+- **Depends on:** [src/ui/list_cursor.cpp](./src/ui/list_cursor.cpp.skel.md)
+- **Depends on:** [src/ui/settings_view.cpp](./src/ui/settings_view.cpp.skel.md)
+- **Depends on:** [src/util/hash.cpp](./src/util/hash.cpp.skel.md)
+- **Depends on:** [src/util/log.cpp](./src/util/log.cpp.skel.md)
+- **Depends on:** [fuzz/CMakeLists.txt](./fuzz/CMakeLists.txt.skel.md)
+- **Referred by:** [CMakePresets](./CMakePresets.json.skel.md)
+
+- **Unknowns:** none
+- **Referred by:** [package.sh](./tools/ci/package.sh.skel.md)
+- **Referred by:** [release.sh](./tools/ci/release.sh.skel.md)

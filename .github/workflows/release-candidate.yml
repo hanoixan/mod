@@ -1,0 +1,65 @@
+# A release candidate: Actions > Release candidate > Run workflow on main, with the version in
+# CMakeLists.txt. It builds, tests and packages, tags v<version>-rc.<n> (the next n) and publishes
+# a prerelease. The files carry the plain version, so promoting the candidate ships them as they are.
+name: Release candidate
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version, such as 1.2.0; must match project(mod VERSION …) in CMakeLists.txt and not be released yet
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: release
+jobs:
+  candidate:
+    runs-on: ubuntu-22.04
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check the branch and the version; number the candidate
+        run: |
+          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+            echo "::error::Release candidates are made from main; this run is on $GITHUB_REF"; exit 1
+          fi
+          tools/ci/release.sh check-version "$VERSION"
+          n=$(tools/ci/release.sh next-rc "$VERSION")
+          {
+            echo "TAG=v$VERSION-rc.$n"
+            echo "N=$n"
+            echo "PREVIOUS=$(git describe --tags --abbrev=0 2>/dev/null || true)"  # the notes start there
+          } >> "$GITHUB_ENV"
+      - name: Install tools
+        run: |
+          if ! command -v g++-13 >/dev/null; then
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          fi
+          sudo apt-get update
+          sudo apt-get install -y g++-13 ninja-build rpm
+      - name: Build, test and package
+        run: tools/ci/package.sh
+      - name: Tag the candidate
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "mod $VERSION release candidate $N"
+          git push origin "$TAG"
+      - name: Source archive and PKGBUILD
+        # The archive's folder and the PKGBUILD name the release, not the candidate, so they
+        # stay the same when it is promoted; the PKGBUILD's source is found once it is.
+        run: |
+          git archive --format=tar.gz --prefix="mod-$VERSION/" -o "dist/mod-$VERSION.tar.gz" "$TAG"
+          sha=$(sha256sum "dist/mod-$VERSION.tar.gz" | cut -d' ' -f1)
+          sed -e "s/@VERSION@/$VERSION/" -e "s/@SHA256@/$sha/" packaging/arch/PKGBUILD.in > dist/PKGBUILD
+      - name: Publish the prerelease
+        run: |
+          notes=()
+          if [[ -n "$PREVIOUS" ]]; then notes=(--notes-start-tag "$PREVIOUS"); fi
+          gh release create "$TAG" dist/* --prerelease --title "mod $VERSION release candidate $N" \
+            --generate-notes "${notes[@]}" --verify-tag

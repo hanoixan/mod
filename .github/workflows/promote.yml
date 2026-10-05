@@ -1,0 +1,60 @@
+# Promote a release candidate: Actions > Promote release > Run workflow, with the candidate's tag
+# and its version typed again to confirm. Nothing is built: the candidate's files are published
+# as the release, tagged v<version> on the candidate's commit.
+name: Promote release
+on:
+  workflow_dispatch:
+    inputs:
+      candidate:
+        description: The release candidate's tag, such as v1.2.0-rc.2
+        required: true
+        type: string
+      confirm:
+        description: Type the version to release (such as 1.2.0) to confirm
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: release
+jobs:
+  promote:
+    runs-on: ubuntu-22.04
+    environment: release
+    env:
+      CANDIDATE: ${{ inputs.candidate }}
+      CONFIRM: ${{ inputs.confirm }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check the candidate and the confirmation
+        run: |
+          version=$(tools/ci/release.sh rc-of "$CANDIDATE")
+          if [[ "$CONFIRM" != "$version" ]]; then
+            echo "::error::Type the version, $version, to confirm (got '$CONFIRM')"; exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "::error::v$version is already released"; exit 1
+          fi
+          if [[ "$(gh release view "$CANDIDATE" --json isPrerelease -q .isPrerelease)" != true ]]; then
+            echo "::error::$CANDIDATE is not a published release candidate"; exit 1
+          fi
+          {
+            echo "VERSION=$version"
+            echo "PREVIOUS=$(tools/ci/release.sh previous-release)"  # the notes span every candidate since
+          } >> "$GITHUB_ENV"
+      - name: Tag the release on the candidate's commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "mod $VERSION" "$CANDIDATE^{commit}"
+          git push origin "v$VERSION"
+      - name: The candidate's files, unchanged
+        run: gh release download "$CANDIDATE" --dir dist
+      - name: Publish the release
+        run: |
+          notes=()
+          if [[ -n "$PREVIOUS" ]]; then notes=(--notes-start-tag "$PREVIOUS"); fi
+          gh release create "v$VERSION" dist/* --title "mod $VERSION" --generate-notes "${notes[@]}" --verify-tag --latest

@@ -1,0 +1,35 @@
+# The checks CI holds the code to: bug-prone patterns, CERT rules that apply to C++, and
+# a few performance and readability rules. Noisy or style-only checks are left out.
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-branch-clone,
+  -bugprone-switch-missing-default-case,
+  cert-err33-c,
+  cert-err34-c,
+  cert-err58-cpp,
+  cert-flp30-c,
+  cert-msc50-cpp,
+  cert-oop58-cpp,
+  performance-*,
+  -performance-enum-size,
+  readability-container-size-empty,
+  readability-delete-null-pointer,
+  readability-duplicate-include,
+  readability-misleading-indentation,
+  readability-redundant-control-flow,
+  readability-redundant-smartptr-get,
+  readability-redundant-string-cstr,
+  readability-string-compare,
+  misc-redundant-expression,
+  misc-unused-using-decls,
+  misc-misplaced-const
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*/src/.*'
+CheckOptions:
+  # `(void)call();  // reason` is how this code says a result is deliberately ignored.
+  bugprone-unused-return-value.AllowCastToVoid: true
+  # Constants like `64 * 1024` are evaluated by the compiler; only runtime products can overflow.
+  bugprone-implicit-widening-of-multiplication-result.IgnoreConstantIntExpr: true
