@@ -11,5 +11,6 @@ One empty view to start; opening parks and showing takes back; a file shown only
 - **Required:** conditional — when `MOD_BUILD_TESTS` is ON.
 - **Failure modes:** none.
 - **Depends on:** [Workspace](../src/app/workspace.hpp.skel.md#class-workspace)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

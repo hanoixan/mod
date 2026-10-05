@@ -11,7 +11,7 @@ Round trip: write history, reopen, and check the tree and current node are ident
 - **Payloads.** `SidecarRef` payloads are copied into new PAYLOAD records, and the returned `Rebind`s resolve in the new file. Inline and `Pieces` payloads keep their form rules. Pieces read from the old mapping before the rewrite still read correctly afterwards.
 - **Permissions and lock.** The new file has the document's permission bits and holds the lock, and a second instance opening it gets `read_only`.
 - **Refusals and failures.** A hard-linked sidecar gives `not_atomic` with the old file byte-identical. A write that fails through the seams while `rewrite` drains the writer queue disables the sidecar, and `rewrite` then refuses without renaming anything, so the old file is intact (same inode, same bytes). The temp-file write inside `write_atomically` has no seam; the hard-link case covers its failure path. `rewrite` is refused in `read_only`.
-- **Appends.** Appends after a rewrite go to the new file.
+- **Appends.** Appends after a rewrite go to the new file. Where the damaged tail cannot be cut (a `truncate` seam that fails, as Windows does on a mapped file), the good part is written anew and the next append follows it. Permission checks run only where the file system keeps permissions ([fs_probe](./fs_probe.hpp.skel.md)).
 
 - **Owns:** test fixtures only.
 - **Access:** run by CTest.
@@ -20,5 +20,6 @@ Round trip: write history, reopen, and check the tree and current node are ident
 - **Depends on:** [Sidecar](../src/edit/sidecar.hpp.skel.md#class-sidecar)
 - **Depends on:** [Sidecar.rewrite](../src/edit/sidecar.hpp.skel.md#function-rewrite)
 - **Depends on:** [sidecar format](../docs/sidecar-format.md.skel.md)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none. Tests use doctest; see [tests/CMakeLists.txt](./CMakeLists.txt.skel.md).
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

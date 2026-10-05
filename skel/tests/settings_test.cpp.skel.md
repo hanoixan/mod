@@ -13,5 +13,6 @@ The schema table (unique keys, defaults within range, a label and help text for 
 - **Depends on:** [Settings](../src/app/settings.hpp.skel.md#class-settings)
 - **Depends on:** [write_atomically](../src/platform/fs.hpp.skel.md#function-write_atomically)
 - **Depends on:** [Json.parse](../src/syntax/json.hpp.skel.md#function-parse)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none. Tests use doctest; see [tests/CMakeLists.txt](./CMakeLists.txt.skel.md).
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

@@ -11,5 +11,6 @@ Rows drawn with ▾/▸ and indents, the short hints on the panel's own line in 
 - **Required:** conditional — when `MOD_BUILD_TESTS` is ON.
 - **Failure modes:** none.
 - **Depends on:** [FolderTreeView](../src/ui/folder_tree_view.hpp.skel.md#class-foldertreeview)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

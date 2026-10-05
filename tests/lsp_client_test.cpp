@@ -921,7 +921,10 @@ TEST_CASE("reload and save") {
     SUBCASE("reloaded clears the cache and sends one full-text change") {
         HighlightFixture fx("reload", "alpha\n", {});
         REQUIRE(fx.wait_spans());
-        write_file(fx.file, "Beta gamma\n");
+        // Replaced as most editors save, by a rename: Windows refuses to shorten a file in place
+        // while mod has it mapped.
+        write_file(fx.file.string() + ".new", "Beta gamma\n");
+        fs::rename(fx.file.string() + ".new", fx.file);
         REQUIRE(fx.doc->reload());
         CHECK(fx.all_spans().empty());
         REQUIRE(wait_log(fx.log, [](const std::vector<Json>& l) { return !with_method(l, "textDocument/didChange").empty(); }));

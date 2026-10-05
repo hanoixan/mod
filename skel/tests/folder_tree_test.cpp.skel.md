@@ -11,5 +11,6 @@ On a real scratch folder: the root, open, then every entry, folders first and by
 - **Required:** conditional — when `MOD_BUILD_TESTS` is ON.
 - **Failure modes:** none.
 - **Depends on:** [FolderTree](../src/app/folder_tree.hpp.skel.md#class-foldertree)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)
