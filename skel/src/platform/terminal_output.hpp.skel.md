@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source e4c306fc, stand-in 79762fa5
+stamp: source 17ba6b03, stand-in 75e09b20
 ---
 # module: terminal_output
 
@@ -79,6 +79,13 @@ The sequences for one behavior. Implementations are immutable singletons, so the
 - **Inputs:** a `CursorStyle` (`enum class CursorStyle { bar, bar_blink, block, block_blink, underline, underline_blink }`, in the order of the `cursor_style` setting's names).
 - **Returns:** xterm: the DECSCUSR code `ESC[n q` (6 steady bar, 5 blinking bar, 2 steady block, 1 blinking block, 4 steady underline, 3 blinking underline); vt100: empty. xterm's `leave()` ends with `ESC[0 q`, giving the terminal its own shape back.
 - **State changes:** none.
+- **Access:** Screen.
+
+### function: append_cell
+
+- **Inputs:** `out`: the frame being built; `utf8`: one cell's character; `line_drawing`: whether the VT100's line-drawing set is selected, updated.
+- **Returns:** nothing.
+- **State changes:** xterm: appends the character as it is. vt100, which has no UTF-8: the box-drawing characters `─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼` (and `═` as `─`), `≥` and `•` go out as the line-drawing set's `q x l k m j t u w v n`, `z` and `~`, selecting the set with `ESC ( 0` first when it is not, and any other character deselects it with `ESC ( B` first; the UI's other symbols get ASCII stand-ins of the same width: `○ o`, `● *`, `◉ *`, `✓ *`, `▸ >`, `▾ v`, `▲ ^`, `▼ v`, `→ >`, `↑ ^`, `× x`, `−` and `– -`, `⌂ ~`, `⌕ /`, `… .` (a single-cell one, from document text; labels draw it as three dots, see [set_vt100_text](../text/utf8.hpp.skel.md#function-set_vt100_text)), `📁` as `/ ` and `📄` as two spaces; anything else is sent as it is. The vt100 `end_frame` and `leave` begin with `ESC ( B`, so a frame never leaves the set selected.
 - **Access:** Screen.
 
 ### function: append_title

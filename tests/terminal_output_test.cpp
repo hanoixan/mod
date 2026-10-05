@@ -62,7 +62,7 @@ TEST_CASE("vt100: no color, no dim, italic or strike, and no private modes beyon
     const TerminalOutput& v = output_for(TerminalMode::vt100);
     CHECK(v.mode() == TerminalMode::vt100);
     CHECK(v.enter().empty());
-    CHECK(v.leave() == "\x1b[0m\x1b[2J\x1b[H");
+    CHECK(v.leave() == "\x1b(B\x1b[0m\x1b[2J\x1b[H");
     CHECK(v.show_cursor().empty());
     CHECK(v.end_sync().empty());
     for (std::string_view s : {v.begin_frame(), v.end_frame()}) {
@@ -253,4 +253,68 @@ TEST_CASE("add_flags dims an area already drawn, leaving its text and colors") {
     CHECK(screen.cell(1, 3).utf8[0] == 'd');
     screen.add_flags(Rect{3, 8, 5, 9}, kDim);  // clipped at the screen's edges
     CHECK(screen.cell(3, 9).attr.flags == kDim);
+}
+
+TEST_CASE("vt100: box lines go through the line-drawing set, UI symbols get ASCII stand-ins") {
+    const TerminalOutput& v = output_for(TerminalMode::vt100);
+    std::string out;
+    bool graphics = false;
+    v.append_cell(out, "─", graphics);
+    CHECK(out == "\x1b(0q");
+    CHECK(graphics);
+    v.append_cell(out, "│", graphics);
+    v.append_cell(out, "├", graphics);
+    CHECK(out == "\x1b(0qxt");  // still in the set: no switch between them
+    v.append_cell(out, "a", graphics);
+    CHECK(out == "\x1b(0qxt\x1b(Ba");
+    CHECK_FALSE(graphics);
+    auto one = [&](std::string_view cell) {
+        std::string o;
+        bool g = false;
+        v.append_cell(o, cell, g);
+        if (g) o += "\x1b(B";
+        return o;
+    };
+    const std::map<std::string, std::string> line_drawing = {
+        {"─", "q"}, {"│", "x"}, {"┌", "l"}, {"┐", "k"}, {"└", "m"}, {"┘", "j"}, {"├", "t"},
+        {"┤", "u"}, {"┬", "w"}, {"┴", "v"}, {"┼", "n"}, {"═", "q"}, {"≥", "z"}, {"•", "~"}};
+    for (const auto& [cell, dec] : line_drawing) {
+        CAPTURE(cell);
+        CHECK(one(cell) == "\x1b(0" + dec + "\x1b(B");
+    }
+    const std::map<std::string, std::string> ascii = {
+        {"○", "o"}, {"●", "*"}, {"◉", "*"}, {"✓", "*"}, {"▸", ">"}, {"▾", "v"}, {"▲", "^"}, {"▼", "v"},
+        {"→", ">"}, {"↑", "^"}, {"×", "x"}, {"−", "-"}, {"–", "-"}, {"⌂", "~"}, {"⌕", "/"}, {"…", "."},
+        {"📁", "/ "}, {"📄", "  "}, {"é", "é"}, {"x", "x"}};
+    for (const auto& [cell, text] : ascii) {
+        CAPTURE(cell);
+        CHECK(one(cell) == text);
+    }
+    CHECK(v.end_frame().starts_with("\x1b(B"));  // a frame never leaves the set selected
+    CHECK(v.leave().starts_with("\x1b(B"));
+}
+
+TEST_CASE("xterm: every character is sent as it is") {
+    const TerminalOutput& x = output_for(TerminalMode::xterm);
+    std::string out;
+    bool graphics = false;
+    for (std::string_view cell : {"─", "○", "…", "📁"}) x.append_cell(out, cell, graphics);
+    CHECK(out == "─○…📁");
+    CHECK_FALSE(graphics);
+}
+
+TEST_CASE("vt100: a Screen sends box lines in the line-drawing set and draws '…' as three dots") {
+    RecordingTerminal t;
+    Screen screen(t);
+    screen.set_output(output_for(TerminalMode::vt100));
+    set_vt100_text(true);
+    screen.resize({3, 20});
+    CHECK(text_columns("Open…") == 7);
+    CHECK(screen.print(0, 0, 20, "Open…", Attr{}) == 7);
+    screen.print(1, 0, 20, "a─b", Attr{});
+    REQUIRE(screen.flush());
+    CHECK(t.written.find("Open...") != std::string::npos);
+    CHECK(t.written.find("a\x1b(0q\x1b(Bb") != std::string::npos);
+    set_vt100_text(false);
+    CHECK(text_columns("Open…") == 5);
 }

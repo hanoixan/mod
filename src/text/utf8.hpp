@@ -51,4 +51,10 @@ std::uint64_t utf16_length(std::span<const std::byte> bytes);
 // character two, a combining mark none, an invalid byte one (as the screen draws it).
 int text_columns(std::string_view text);
 
+// In vt100 terminal mode a label's '…' is drawn as "..." (a VT100 has no such character):
+// text_columns then counts it as three columns, and Screen.print draws three dots. Off
+// until App sets it; main thread.
+void set_vt100_text(bool on) noexcept;
+bool vt100_text() noexcept;
+
 }  // namespace mod

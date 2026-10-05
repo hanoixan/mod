@@ -67,9 +67,9 @@ class Vt100Output final : public TerminalOutput {
 public:
     TerminalMode mode() const noexcept override { return TerminalMode::vt100; }
     std::string_view enter() const noexcept override { return {}; }
-    std::string_view leave() const noexcept override { return "\x1b[0m\x1b[2J\x1b[H"; }
+    std::string_view leave() const noexcept override { return "\x1b(B\x1b[0m\x1b[2J\x1b[H"; }
     std::string_view begin_frame() const noexcept override { return "\x1b[?7l"; }
-    std::string_view end_frame() const noexcept override { return "\x1b[0m\x1b[?7h"; }
+    std::string_view end_frame() const noexcept override { return "\x1b(B\x1b[0m\x1b[?7h"; }
     std::string_view end_sync() const noexcept override { return {}; }
     std::string_view show_cursor() const noexcept override { return {}; }
     std::string_view cursor_shape(CursorStyle) const noexcept override { return {}; }  // a VT100 has one cursor
@@ -81,6 +81,33 @@ public:
         if (a.flags & kReverse) out += ";7";
         out += 'm';
     }
+    void append_cell(std::string& out, std::string_view utf8, bool& line_drawing) const override {
+        // The line-drawing set's letters for the box characters (and ≥, •) the UI draws.
+        static constexpr std::pair<std::string_view, char> kLineDrawing[] = {
+            {"─", 'q'}, {"│", 'x'}, {"┌", 'l'}, {"┐", 'k'}, {"└", 'm'}, {"┘", 'j'}, {"├", 't'},
+            {"┤", 'u'}, {"┬", 'w'}, {"┴", 'v'}, {"┼", 'n'}, {"═", 'q'}, {"≥", 'z'}, {"•", '~'}};
+        // ASCII stand-ins, as wide as the character they replace.
+        static constexpr std::pair<std::string_view, std::string_view> kAscii[] = {
+            {"○", "o"}, {"●", "*"}, {"◉", "*"}, {"✓", "*"}, {"▸", ">"}, {"▾", "v"}, {"▲", "^"}, {"▼", "v"},
+            {"→", ">"}, {"↑", "^"}, {"×", "x"}, {"−", "-"}, {"–", "-"}, {"⌂", "~"}, {"⌕", "/"}, {"…", "."},
+            {"📁", "/ "}, {"📄", "  "}};
+        for (const auto& [glyph, dec] : kLineDrawing) {
+            if (utf8 != glyph) continue;
+            if (!line_drawing) out += "\x1b(0";
+            line_drawing = true;
+            out += dec;
+            return;
+        }
+        if (line_drawing) out += "\x1b(B";
+        line_drawing = false;
+        for (const auto& [glyph, ascii] : kAscii) {
+            if (utf8 == glyph) {
+                out += ascii;
+                return;
+            }
+        }
+        out += utf8;
+    }
 };
 
 bool starts_with_any(std::string_view s, std::initializer_list<std::string_view> prefixes) {
@@ -90,6 +117,8 @@ bool starts_with_any(std::string_view s, std::initializer_list<std::string_view>
 }
 
 }  // namespace
+
+void TerminalOutput::append_cell(std::string& out, std::string_view utf8, bool& /*line_drawing*/) const { out += utf8; }
 
 void TerminalOutput::append_move(std::string& out, int row, int col) const { out += std::format("\x1b[{};{}H", row + 1, col + 1); }
 

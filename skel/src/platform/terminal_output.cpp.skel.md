@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./terminal_output.hpp.skel.md
-stamp: source 82bb3f7c, stand-in 97fd9ded
+stamp: source f6d34e40, stand-in 97fd9ded
 ---
 # module: terminal_output (implementation)
 

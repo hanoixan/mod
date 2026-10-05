@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source c61924f6, stand-in 7f935b6b
+stamp: source fa04a71a, stand-in 3f7936f8
 ---
 # module: utf8
 
@@ -135,10 +135,17 @@ The mirror of `next_grapheme_boundary`: finds the start of the cluster that ends
 - **Referred by:** [semantic_highlighter (implementation)](../syntax/semantic_highlighter.cpp.skel.md)
 
 
+## function: set_vt100_text
+
+- **Inputs:** `on`: whether the terminal is in vt100 mode. `vt100_text()` reads it back.
+- **Returns:** nothing.
+- **State changes:** a process-wide flag, off until App sets it: while on, a label's `…`, which a VT100 cannot show, is three columns, counted so by [text_columns](#function-text_columns) and drawn as three dots by [Screen.print](../ui/screen.hpp.skel.md#function-print), so every layout that measures its labels stays aligned. Document text, which EditorView lays out itself, is not affected. Main thread.
+- **Access:** App sets it; text_columns and Screen.print read it.
+
 ## function: text_columns
 
 - **Inputs:** `text`: a short UTF-8 text, such as a label, a file name or a message.
-- **Returns:** its display columns as the screen draws it: [display_width](#function-display_width) of each code point (a wide character two, a combining mark none), and one for each invalid byte. The one measure every view uses for labels, menus, prompts and the status line, so wide file names line up.
+- **Returns:** its display columns as the screen draws it: [display_width](#function-display_width) of each code point (a wide character two, a combining mark none), and one for each invalid byte; in vt100 text mode a `…` counts three, since it is drawn as `...`. The one measure every view uses for labels, menus, prompts and the status line, so wide file names line up.
 - **State changes:** none.
 - **Access:** the views, the Markdown renderer.
 - **Referred by:** [folder_tree_view](../ui/folder_tree_view.hpp.skel.md)

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./screen.hpp.skel.md
-stamp: source a2e34043, stand-in 8deefea7
+stamp: source ebf6a93f, stand-in 8deefea7
 ---
 # module: screen (implementation)
 

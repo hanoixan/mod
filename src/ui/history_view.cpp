@@ -59,20 +59,31 @@ std::int64_t HistoryView::now() const {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
+namespace {
+
+// The newest child continues a change's line; none for a leaf.
+std::optional<NodeId> newest_child(const NodeInfo& info) {
+    if (info.children.empty()) return std::nullopt;
+    return *std::max_element(info.children.begin(), info.children.end());
+}
+
+}  // namespace
+
 void HistoryView::open(const UndoTree& tree) {
     tree_ = &tree;
     rows_.clear();
+    open_.clear();
+    open_trees_.clear();
+    redo_path_.clear();
     selected_ = 0;
     scroll_ = 0;
 
-    // Trees in display order: the current tree, then the others by their newest id.
+    // The trees top to bottom: the others, oldest (by newest id) first, then the current one.
     const std::optional<NodeId> current = tree.current();
-    const bool has_current = current.has_value();
-    const NodeId current_root = has_current ? tree.root_of(*current) : NodeId{};
+    current_root_ = current ? std::optional<NodeId>(tree.root_of(*current)) : std::nullopt;
     struct Entry {
         NodeId root;
         NodeId newest;
-        bool read_only;
     };
     std::vector<Entry> others;
     auto newest_of = [&](NodeId root) {
@@ -88,116 +99,121 @@ void HistoryView::open(const UndoTree& tree) {
         return best;
     };
     for (const NodeId r : tree.roots()) {
-        if (has_current && r == current_root) continue;
-        others.push_back({r, newest_of(r), true});
+        if (r != current_root_) others.push_back({r, newest_of(r)});
     }
-    for (const NodeId r : tree.retired_roots()) others.push_back({r, newest_of(r), true});
-    std::sort(others.begin(), others.end(), [](const Entry& a, const Entry& b) { return a.newest > b.newest; });
+    for (const NodeId r : tree.retired_roots()) others.push_back({r, newest_of(r)});
+    std::sort(others.begin(), others.end(), [](const Entry& a, const Entry& b) { return a.newest < b.newest; });
+    roots_.clear();
+    for (const Entry& e : others) roots_.push_back(e.root);
+    if (current_root_) roots_.push_back(*current_root_);
 
-    if (has_current) build_tree(current_root, tree.is_retired(current_root));
-    for (const Entry& e : others) build_tree(e.root, e.read_only);
-
-    // Select the current node's row.
-    for (std::size_t i = 0; i < rows_.size(); ++i) {
-        if (rows_[i].is_current) {
-            selected_ = i;
-            break;
+    if (current && !tree.is_retired(*current_root_)) {
+        for (std::optional<NodeId> n = tree.node_info(*current).preferred_child; n; n = tree.node_info(*n).preferred_child) {
+            redo_path_.insert(*n);
         }
     }
-    if (!rows_.empty() && !rows_[selected_].node) select(selected_, 1);
+    // Open only the branches the current state lies in: every change it branched off from.
+    for (NodeId n = current.value_or(0); current;) {
+        const NodeId parent = tree.meta(n).parent;
+        if (parent == kNoParent || !tree.contains(parent)) break;
+        if (newest_child(tree.node_info(parent)) != n) open_.insert(parent);
+        n = parent;
+    }
+    rebuild();
+    if (current) {
+        select_node(*current);
+    } else if (!rows_.empty()) {
+        selected_ = rows_.size() - 1;
+    }
     keep_visible();
 }
 
-void HistoryView::build_tree(NodeId root, bool read_only) {
+void HistoryView::rebuild() {
+    const bool had = selected_ < rows_.size();
+    const NodeId keep = had ? rows_[selected_].node : 0;
+    rows_.clear();
+    for (const NodeId root : roots_) emit_tree(root, root != current_root_ || tree_->is_retired(root));
+    if (rows_.empty()) {
+        selected_ = 0;
+        return;
+    }
+    selected_ = std::min(selected_, rows_.size() - 1);
+    if (had) select_node(keep);
+}
+
+void HistoryView::emit_tree(NodeId root, bool read_only) {
     const UndoTree& tree = *tree_;
-    std::vector<NodeId> ids;
-    std::vector<NodeId> stack{root};
-    while (!stack.empty()) {
-        const NodeId n = stack.back();
-        stack.pop_back();
-        ids.push_back(n);
-        const NodeInfo info = tree.node_info(n);
-        stack.insert(stack.end(), info.children.begin(), info.children.end());
-    }
-    std::sort(ids.begin(), ids.end(), std::greater<>());
-
     const std::optional<NodeId> current = tree.current();
-    std::unordered_set<NodeId> redo_path;
-    if (current && !read_only && tree.root_of(*current) == root) {
-        std::optional<NodeId> n = tree.node_info(*current).preferred_child;
-        while (n) {
-            redo_path.insert(*n);
-            n = tree.node_info(*n).preferred_child;
-        }
-    }
-
-    std::vector<std::optional<NodeId>> lanes;  // the parent each open lane waits for
-    auto trim = [&] {
-        while (!lanes.empty() && !lanes.back()) lanes.pop_back();
-    };
-    for (const NodeId n : ids) {
-        std::vector<std::size_t> waiting;
-        for (std::size_t k = 0; k < lanes.size(); ++k) {
-            if (lanes[k] == n) waiting.push_back(k);
-        }
-        std::size_t lane = 0;
-        if (waiting.empty()) {
-            while (lane < lanes.size() && lanes[lane]) ++lane;  // the leftmost free lane
-            if (lane == lanes.size()) lanes.emplace_back();
-        } else {
-            lane = waiting[0];
-            if (waiting.size() > 1) {
-                // One connector row closes the other lanes into this one.
-                std::string g(2 * lanes.size(), ' ');
-                for (std::size_t k = 0; k < lanes.size(); ++k) {
-                    if (lanes[k]) g[2 * k] = '|';
-                }
-                for (std::size_t w = 1; w < waiting.size(); ++w) {
-                    g[2 * waiting[w]] = ' ';
-                    g[2 * waiting[w] - 1] = '/';
-                    lanes[waiting[w]].reset();
-                }
-                while (!g.empty() && g.back() == ' ') g.pop_back();
-                HistoryRow c;
-                c.graph = std::move(g);
-                c.read_only = read_only;
-                rows_.push_back(std::move(c));
-                trim();
-            }
-        }
-        const NodeInfo info = tree.node_info(n);
+    auto make_row = [&](NodeId n, const NodeInfo& info) {
         HistoryRow row;
         row.node = n;
-        row.is_current = !read_only && current && *current == n;
+        row.is_current = !read_only && current == n;
         row.is_save_point = info.is_save_point;
-        row.on_redo_path = redo_path.contains(n);
+        row.on_redo_path = !read_only && redo_path_.contains(n);
         row.read_only = read_only;
-        std::size_t width = lane + 1;
-        for (std::size_t k = 0; k < lanes.size(); ++k) {
-            if (lanes[k]) width = std::max(width, k + 1);
-        }
-        row.graph.assign(2 * width, ' ');
-        for (std::size_t k = 0; k < width && k < lanes.size(); ++k) {
-            if (lanes[k]) row.graph[2 * k] = '|';
-        }
-        row.graph[2 * lane] = row.is_current ? '*' : 'o';
+        return row;
+    };
+    if (root != current_root_ && !open_trees_.contains(root)) {
+        // Closed: one row, the tree's latest change on its newest line.
+        NodeId tip = root;
+        for (std::optional<NodeId> c = newest_child(tree.node_info(tip)); c; c = newest_child(tree.node_info(*c))) tip = *c;
+        HistoryRow row = make_row(tip, tree.node_info(tip));
+        row.expandable = true;
+        row.graph = "○> ";
         rows_.push_back(std::move(row));
-        const NodeId parent = info.meta.parent;
-        if (parent != kNoParent && tree.contains(parent)) {
-            lanes[lane] = parent;
-        } else {
-            lanes[lane].reset();
+        return;
+    }
+    // A line runs down the newest children; an open change's side branches (its older
+    // children, oldest first) come right under it, one level deeper, before its line goes on.
+    struct Line {
+        NodeId start;
+        int depth;
+        bool first;  // `start` begins a branch: drawn with ├─
+        std::optional<NodeId> from;
+    };
+    std::vector<Line> stack{{root, 0, false, std::nullopt}};
+    while (!stack.empty()) {
+        const Line line = stack.back();
+        stack.pop_back();
+        bool first = line.first;
+        for (NodeId n = line.start;;) {
+            const NodeInfo info = tree.node_info(n);
+            const std::optional<NodeId> next = newest_child(info);
+            std::vector<NodeId> sides;
+            for (const NodeId c : info.children) {
+                if (c != next) sides.push_back(c);
+            }
+            std::sort(sides.begin(), sides.end());
+            HistoryRow row = make_row(n, info);
+            row.depth = line.depth;
+            row.branch_from = line.from;
+            row.expandable = !sides.empty();
+            row.expanded = row.expandable && open_.contains(n);
+            for (int k = 1; k < line.depth; ++k) row.graph += "│ ";
+            if (line.depth > 0) row.graph += first ? "├─" : "│ ";
+            row.graph += row.is_current ? "●" : "○";
+            if (row.expandable && !row.expanded) row.graph += '>';
+            row.graph += ' ';
+            const bool expanded = row.expanded;
+            rows_.push_back(std::move(row));
+            first = false;
+            if (expanded) {
+                if (next) stack.push_back({*next, line.depth, false, line.from});
+                for (auto it = sides.rbegin(); it != sides.rend(); ++it) stack.push_back({*it, line.depth + 1, true, n});
+                break;
+            }
+            if (!next) break;
+            n = *next;
         }
-        trim();
     }
 }
 
 std::string HistoryView::row_text(std::size_t index) const {
     const HistoryRow& r = rows_.at(index);
     std::string out = r.graph;
-    if (!r.node || tree_ == nullptr) return out;
-    const NodeMeta& meta = tree_->meta(*r.node);
-    out += std::format("{} {}", *r.node, kind_label(meta.kind));
+    if (tree_ == nullptr) return out;
+    const NodeMeta& meta = tree_->meta(r.node);
+    out += std::format("{} {}", r.node, kind_label(meta.kind));
     if (r.is_save_point) out += " saved";
     out += "  ";
     out += relative_time(now(), meta.time_unix_ms);
@@ -212,20 +228,11 @@ void HistoryView::close() {
     scroll_ = 0;
 }
 
-// Moves to `index`, or the nearest node row from it in `direction` (then the other way).
-void HistoryView::select(std::size_t index, int direction) {
-    if (rows_.empty()) return;
-    index = std::min(index, rows_.size() - 1);
-    for (int pass = 0; pass < 2; ++pass) {
-        const int dir = pass == 0 ? direction : -direction;
-        std::size_t i = index;
-        for (;;) {
-            if (rows_[i].node) {
-                selected_ = i;
-                return;
-            }
-            if (dir > 0 ? i + 1 >= rows_.size() : i == 0) break;
-            i = dir > 0 ? i + 1 : i - 1;
+void HistoryView::select_node(NodeId node) {
+    for (std::size_t i = 0; i < rows_.size(); ++i) {
+        if (rows_[i].node == node) {
+            selected_ = i;
+            return;
         }
     }
 }
@@ -242,16 +249,50 @@ HistoryKeyResult HistoryView::handle_key(const KeyEvent& key) {
     // An empty history has no row to move to or jump to; Escape and the letters still apply.
     if (rows_.empty() && key.key != Key::Escape && key.key != Key::Char) return result;
     const auto page = static_cast<std::size_t>(std::max(1, view_rows_ - 1));
+    const std::size_t last = rows_.empty() ? 0 : rows_.size() - 1;
     switch (key.key) {
         case Key::Up:
-            if (selected_ > 0) select(selected_ - 1, -1);
-            if (!rows_[selected_].node) select(selected_, 1);
+            if (selected_ > 0) --selected_;
             break;
-        case Key::Down: select(selected_ + 1, 1); break;
-        case Key::PageUp: select(selected_ > page ? selected_ - page : 0, -1); break;
-        case Key::PageDown: select(selected_ + page, 1); break;
-        case Key::Home: select(0, 1); break;
-        case Key::End: select(rows_.size() - 1, -1); break;
+        case Key::Down: selected_ = std::min(selected_ + 1, last); break;
+        case Key::PageUp: selected_ = selected_ > page ? selected_ - page : 0; break;
+        case Key::PageDown: selected_ = std::min(selected_ + page, last); break;
+        case Key::Home: selected_ = 0; break;
+        case Key::End: selected_ = last; break;
+        case Key::Right: {
+            // Like a folder: opens its branches, or, already open, steps into the first one.
+            const HistoryRow& r = rows_[selected_];
+            if (r.expandable && !r.expanded) {
+                const NodeId root = tree_->root_of(r.node);
+                if (root != current_root_ && !open_trees_.contains(root)) {
+                    open_trees_.insert(root);
+                } else {
+                    open_.insert(r.node);
+                }
+                rebuild();
+            } else if (r.expanded && selected_ < last) {
+                ++selected_;
+            }
+            break;
+        }
+        case Key::Left: {
+            // Closes its branches; else goes to the change its branch split from; else, in an
+            // older tree, closes the tree onto its row.
+            const HistoryRow& r = rows_[selected_];
+            const NodeId node = r.node;
+            if (r.expandable && r.expanded) {
+                open_.erase(node);
+                rebuild();
+            } else if (r.branch_from) {
+                select_node(*r.branch_from);
+            } else if (const NodeId root = tree_->root_of(node); open_trees_.erase(root) > 0) {
+                rebuild();
+                for (std::size_t i = 0; i < rows_.size(); ++i) {
+                    if (tree_->root_of(rows_[i].node) == root) selected_ = i;
+                }
+            }
+            break;
+        }
         case Key::Enter:
             if (rows_[selected_].read_only) {
                 result.message = std::string(kReadOnlyMessage);
@@ -319,12 +360,12 @@ void HistoryView::render(Screen& screen, Rect area, bool focused) {
         screen.fill(row, area.col, right, a);
         screen.print(row, area.col, right, row_text(i), a);
         if (hr.is_current) {
-            const auto star = static_cast<int>(hr.graph.find('*'));
+            const int star = 2 * hr.depth;  // the ●, after two columns a level
             Attr marker = attr_for(Style::gutter_current);
             marker.fg = a.fg;
             marker.bg = a.bg;
             marker.flags |= a.flags;
-            if (area.col + star < right) screen.put(row, area.col + star, "*", 1, marker);
+            if (area.col + star < right) screen.put(row, area.col + star, "●", 1, marker);
         }
     }
 }

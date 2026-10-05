@@ -156,27 +156,23 @@ TEST_CASE("a single root") {
     HistoryView v(fixed_clock());
     v.open(t);
     REQUIRE(v.rows().size() == 1);
-    CHECK(v.rows()[0].graph == "* ");
+    CHECK(v.rows()[0].graph == "● ");
     CHECK(v.rows()[0].is_current);
-    CHECK(v.row_text(0) == "* 1 other  just now");
+    CHECK(v.row_text(0) == "● 1 other  just now");
     CHECK(v.selected() == 0);
 }
 
-TEST_CASE("the layout sketch") {
+TEST_CASE("the layout sketch: oldest at the top, the newest line down to the current state") {
     Sketch s;
     HistoryView v(fixed_clock());
     v.open(s.t);
-    const auto rows = texts(v);
-    REQUIRE(rows.size() == 6);
-    CHECK(rows[0].starts_with("* 14 typed"));
-    CHECK(rows[1].starts_with("| o 13 paste"));
-    CHECK(rows[2] == "|/");
-    CHECK(rows[3].starts_with("o 12 typed"));
-    CHECK(rows[4].starts_with("o 11 delete"));
-    CHECK(rows[5].starts_with("o 10 other"));
-    CHECK_FALSE(v.rows()[2].node.has_value());
-    CHECK(v.rows()[0].is_current);
-    CHECK(v.selected() == 0);
+    // 13 is an older child of 12, so a side branch: closed, and 12 shows '>'.
+    CHECK(texts(v) == std::vector<std::string>{"○ 10 other  just now", "○ 11 delete  just now", "○> 12 typed  just now",
+                                               "● 14 typed  just now"});
+    CHECK(v.rows()[3].is_current);
+    CHECK(v.rows()[2].expandable);
+    CHECK_FALSE(v.rows()[2].expanded);
+    CHECK(v.selected() == 3);
 }
 
 TEST_CASE("relative times come from the injected clock") {
@@ -187,13 +183,16 @@ TEST_CASE("relative times come from the injected clock") {
     t.commit({ins(0, "c")}, meta(EditKind::replace_all, kNow - 5'000));
     HistoryView v(fixed_clock());
     v.open(t);
-    CHECK(v.row_text(0) == "* 4 replace_all  just now");
-    CHECK(v.row_text(1) == "o 3 cut  3 min ago");
-    CHECK(v.row_text(2) == "o 2 typed  2 h ago");
-    CHECK(v.row_text(3) == "o 1 other  3 days ago");
+    CHECK(v.row_text(0) == "○ 1 other  3 days ago");
+    CHECK(v.row_text(1) == "○ 2 typed  2 h ago");
+    CHECK(v.row_text(2) == "○ 3 cut  3 min ago");
+    CHECK(v.row_text(3) == "● 4 replace_all  just now");
 }
 
-TEST_CASE("nested and parallel branches open and close lanes") {
+namespace {
+
+// 1 -> 2 -> 3 -> 4; 2 -> 5; 1 -> 6. Each newer child continues its parent's line.
+UndoTree nested_tree() {
     UndoTree t;
     t.add_root(meta(EditKind::other), 0, {});  // 1
     t.commit({ins(0, "a")}, meta(EditKind::typing));  // 2
@@ -205,36 +204,66 @@ TEST_CASE("nested and parallel branches open and close lanes") {
     t.undo_step();
     t.undo_step();
     t.commit({ins(0, "e")}, meta(EditKind::typing));  // 6, child of 1
-    HistoryView v(fixed_clock());
-    v.open(t);
-    std::vector<std::string> graphs;
-    std::vector<std::optional<NodeId>> nodes;
-    for (const HistoryRow& r : v.rows()) {
-        graphs.push_back(r.graph);
-        nodes.push_back(r.node);
-    }
-    const std::vector<std::string> expected = {"* ", "| o ", "| | o ", "| | o ", "| |/", "| o ", "|/", "o "};
-    CHECK(graphs == expected);
-    const std::vector<std::optional<NodeId>> expected_nodes = {6, 5, 4, 3, std::nullopt, 2, std::nullopt, 1};
-    CHECK(nodes == expected_nodes);
-
-    SUBCASE("parallel leaves reuse the leftmost free lane") {
-        // Two separate branches off 1 after the first one closed: the lane is reused.
-        UndoTree u;
-        u.add_root(meta(EditKind::other), 0, {});           // 1
-        u.commit({ins(0, "a")}, meta(EditKind::typing));    // 2
-        u.undo_step();
-        u.commit({ins(0, "b")}, meta(EditKind::typing));    // 3
-        u.commit({ins(0, "c")}, meta(EditKind::typing));    // 4
-        HistoryView w(fixed_clock());
-        w.open(u);
-        std::vector<std::string> g;
-        for (const HistoryRow& r : w.rows()) g.push_back(r.graph);
-        CHECK(g == std::vector<std::string>{"* ", "o ", "| o ", "|/", "o "});
-    }
+    return t;
 }
 
-TEST_CASE("a linear chain of a million nodes is one lane") {
+std::vector<std::string> graphs(const HistoryView& v) {
+    std::vector<std::string> out;
+    for (const HistoryRow& r : v.rows()) out.push_back(r.graph);
+    return out;
+}
+
+std::vector<std::optional<NodeId>> nodes(const HistoryView& v) {
+    std::vector<std::optional<NodeId>> out;
+    for (const HistoryRow& r : v.rows()) out.push_back(r.node);
+    return out;
+}
+
+}  // namespace
+
+TEST_CASE("branches open and close like folders: Right opens, Left closes or goes to where it split") {
+    UndoTree t = nested_tree();
+    HistoryView v(fixed_clock());
+    v.open(t);
+    CHECK(graphs(v) == std::vector<std::string>{"○> ", "● "});
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{1, 6});
+    select_node(v, 1);
+    v.handle_key(key(Key::Right));  // 2 hangs under 1, its line continuing with 5; 3 is closed
+    CHECK(graphs(v) == std::vector<std::string>{"○ ", "├─○> ", "│ ○ ", "● "});
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{1, 2, 5, 6});
+    CHECK(v.selected_node() == NodeId{1});  // the selection stays
+    v.handle_key(key(Key::Right));  // on an open change: into its first branch
+    CHECK(v.selected_node() == NodeId{2});
+    v.handle_key(key(Key::Right));
+    CHECK(graphs(v) == std::vector<std::string>{"○ ", "├─○ ", "│ ├─○ ", "│ │ ○ ", "│ ○ ", "● "});
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{1, 2, 3, 4, 5, 6});
+    CHECK(v.rows()[3].depth == 2);
+    select_node(v, 4);
+    v.handle_key(key(Key::Left));  // not open: to the change its branch split from
+    CHECK(v.selected_node() == NodeId{2});
+    v.handle_key(key(Key::Left));  // open: closes
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{1, 2, 5, 6});
+    CHECK(v.selected_node() == NodeId{2});
+    v.handle_key(key(Key::Left));
+    CHECK(v.selected_node() == NodeId{1});
+    v.handle_key(key(Key::Left));
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{1, 6});
+    v.handle_key(key(Key::Left));  // nothing more to close
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{1, 6});
+}
+
+TEST_CASE("on open, only the branches that lead to the current state are opened") {
+    UndoTree t = nested_tree();
+    t.set_position(4, {});  // make 4, deep in the branches, current
+    REQUIRE(t.current() == NodeId{4});
+    HistoryView v(fixed_clock());
+    v.open(t);
+    CHECK(graphs(v) == std::vector<std::string>{"○ ", "├─○ ", "│ ├─○ ", "│ │ ● ", "│ ○ ", "○ "});
+    CHECK(v.selected_node() == NodeId{4});
+    CHECK(v.rows()[v.selected()].is_current);
+}
+
+TEST_CASE("a linear chain of a million nodes is one line") {
     UndoTree t;
     t.add_root(meta(EditKind::other), 0, {});
     constexpr int kNodes = 1'000'000;
@@ -242,14 +271,15 @@ TEST_CASE("a linear chain of a million nodes is one lane") {
     HistoryView v(fixed_clock());
     v.open(t);
     REQUIRE(v.rows().size() == static_cast<std::size_t>(kNodes));
-    CHECK(v.rows().front().graph == "* ");
-    bool one_lane = true;
-    for (std::size_t i = 1; i < v.rows().size(); ++i) one_lane = one_lane && v.rows()[i].graph == "o ";
-    CHECK(one_lane);
-    CHECK(v.rows().front().node == NodeId{kNodes});
-    CHECK(v.rows().back().node == NodeId{1});
-    v.handle_key(key(Key::End));
-    CHECK(v.selected() == v.rows().size() - 1);
+    CHECK(v.rows().back().graph == "● ");
+    bool one_line = true;
+    for (std::size_t i = 0; i + 1 < v.rows().size(); ++i) one_line = one_line && v.rows()[i].graph == "○ ";
+    CHECK(one_line);
+    CHECK(v.rows().front().node == NodeId{1});
+    CHECK(v.rows().back().node == NodeId{kNodes});
+    CHECK(v.selected() == v.rows().size() - 1);  // the current state, at the bottom
+    v.handle_key(key(Key::Home));
+    CHECK(v.selected() == 0);
     v.close();
     CHECK(v.rows().empty());
 }
@@ -263,19 +293,20 @@ TEST_CASE("current, save-point and redo-path markers") {
     const auto& rows = v.rows();
     CHECK(rows[*row_of(v, 12)].is_current);
     CHECK(rows[*row_of(v, 12)].is_save_point);
-    CHECK(v.row_text(*row_of(v, 12)).starts_with("* 12 typed saved"));
+    CHECK(v.row_text(*row_of(v, 12)).starts_with("●> 12 typed saved"));
     CHECK(rows[*row_of(v, 14)].on_redo_path);
-    CHECK_FALSE(rows[*row_of(v, 13)].on_redo_path);
     CHECK_FALSE(rows[*row_of(v, 11)].on_redo_path);
-    CHECK(rows[*row_of(v, 14)].graph == "o ");
+    CHECK(rows[*row_of(v, 14)].graph == "○ ");
     CHECK(v.selected() == *row_of(v, 12));
+    v.handle_key(key(Key::Right));
+    CHECK_FALSE(v.rows()[*row_of(v, 13)].on_redo_path);
 }
 
-TEST_CASE("a forest: the current tree first, other and retired trees read-only") {
+TEST_CASE("a forest: older trees above, one closed read-only row each, the current tree at the bottom") {
     UndoTree t;
-    const NodeId r1 = t.add_root(meta(EditKind::other), 0, {});  // the history before a reload
+    t.add_root(meta(EditKind::other), 0, {});  // the history before a reload
     const NodeId a = t.commit({ins(0, "a")}, meta(EditKind::typing));
-    const NodeId r2 = t.add_root(meta(EditKind::other), 0, {});  // after the reload
+    t.add_root(meta(EditKind::other), 0, {});  // after the reload
     const NodeId b = t.commit({ins(0, "b")}, meta(EditKind::typing));
     t.reset();  // Clear History retires everything so far
     const NodeId r3 = t.add_root(meta(EditKind::other), 0, {});
@@ -285,15 +316,11 @@ TEST_CASE("a forest: the current tree first, other and retired trees read-only")
 
     HistoryView v(fixed_clock());
     v.open(t);
-    std::vector<std::optional<NodeId>> nodes;
     std::vector<bool> read_only;
-    for (const HistoryRow& r : v.rows()) {
-        nodes.push_back(r.node);
-        read_only.push_back(r.read_only);
-    }
-    const std::vector<std::optional<NodeId>> expected = {d, r4, c, r3, b, r2, a, r1};
-    CHECK(nodes == expected);
-    CHECK(read_only == std::vector<bool>{false, false, true, true, true, true, true, true});
+    for (const HistoryRow& r : v.rows()) read_only.push_back(r.read_only);
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{a, b, c, r4, d});
+    CHECK(read_only == std::vector<bool>{true, true, true, false, false});
+    CHECK(v.rows()[2].graph == "○> ");  // an older tree, closed on its latest change
 
     select_node(v, c);
     const HistoryKeyResult refused = v.handle_key(key(Key::Enter));
@@ -302,46 +329,53 @@ TEST_CASE("a forest: the current tree first, other and retired trees read-only")
     CHECK(refused.message == "read-only: history from before a reload or Clear History");
     CHECK(v.is_open());
 
+    v.handle_key(key(Key::Right));  // opens that tree
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{a, b, r3, c, r4, d});
+    CHECK(v.selected_node() == std::nullopt);  // still read-only
+    CHECK(v.rows()[v.selected()].node == c);
+    select_node(v, r3);
+    v.handle_key(key(Key::Left));  // closes it again, onto its row
+    CHECK(nodes(v) == std::vector<std::optional<NodeId>>{a, b, c, r4, d});
+    CHECK(v.rows()[v.selected()].node == c);
+
     select_node(v, r4);
     const HistoryKeyResult ok = v.handle_key(key(Key::Enter));
     CHECK(ok.jump == r4);
     CHECK(ok.message.empty());
 }
 
-TEST_CASE("selection skips connector rows and clamps at both ends") {
+TEST_CASE("the selection moves row by row and clamps at both ends") {
     Sketch s;
     HistoryView v(fixed_clock());
     v.open(s.t);
-    CHECK(v.selected() == 0);
+    CHECK(v.selected() == 3);
+    v.handle_key(key(Key::Down));
+    CHECK(v.selected() == 3);
     v.handle_key(key(Key::Up));
-    CHECK(v.selected() == 0);
-    v.handle_key(key(Key::Down));
-    CHECK(v.selected() == 1);
-    v.handle_key(key(Key::Down));
-    CHECK(v.selected() == 3);  // row 2 is the connector
-    v.handle_key(key(Key::Up));
-    CHECK(v.selected() == 1);
-    v.handle_key(key(Key::End));
-    CHECK(v.selected() == 5);
-    v.handle_key(key(Key::Down));
-    CHECK(v.selected() == 5);
+    CHECK(v.selected() == 2);
     v.handle_key(key(Key::Home));
     CHECK(v.selected() == 0);
-    v.handle_key(key(Key::PageDown));
-    CHECK(v.rows()[v.selected()].node.has_value());
+    v.handle_key(key(Key::Up));
+    CHECK(v.selected() == 0);
+    v.handle_key(key(Key::End));
+    CHECK(v.selected() == 3);
     v.handle_key(key(Key::PageUp));
     CHECK(v.selected() == 0);
+    v.handle_key(key(Key::PageDown));
+    CHECK(v.selected() == 3);
     // Typing is consumed and changes nothing.
     const HistoryKeyResult typed = v.handle_key(KeyEvent{Key::Char, U'x', 0});
     CHECK_FALSE(typed.jump.has_value());
     CHECK_FALSE(typed.closed);
-    CHECK(v.selected() == 0);
+    CHECK(v.selected() == 3);
 }
 
 TEST_CASE("Enter returns the node; Esc closes and returns nothing") {
     Sketch s;
     HistoryView v(fixed_clock());
     v.open(s.t);
+    v.handle_key(key(Key::Up));     // 12
+    v.handle_key(key(Key::Right));  // opens 13's branch under it
     v.handle_key(key(Key::Down));
     const HistoryKeyResult r = v.handle_key(key(Key::Enter));
     CHECK(r.jump == NodeId{13});
@@ -358,15 +392,18 @@ TEST_CASE("render truncates a long row to the area") {
     Sketch s;
     HistoryView v(fixed_clock());
     v.open(s.t);
+    v.handle_key(key(Key::Up));
+    v.handle_key(key(Key::Right));
     NullTerminal term;
     Screen screen(term);
     screen.resize({10, 40});
     v.render(screen, Rect{1, 1, 5, 8});  // too short for the footer
-    CHECK(screen_row(screen, 1, 1, 9) == "* 14 typ");
-    CHECK(screen_row(screen, 2, 1, 9) == "| o 13 p");
-    CHECK(screen_row(screen, 3, 1, 9) == "|/      ");
+    CHECK(screen_row(screen, 1, 1, 9) == "○ 10 oth");
+    CHECK(screen_row(screen, 3, 1, 9) == "○ 12 typ");
+    CHECK(screen_row(screen, 4, 1, 9) == "├─○ 13 p");
+    CHECK(screen_row(screen, 5, 1, 9) == "● 14 typ");
     CHECK(screen_row(screen, 1, 9, 12) == "   ");  // nothing past the area
-    CHECK(screen.cell(1, 1).attr == attr_for(Style::list_selected));
+    CHECK(screen.cell(3, 1).attr == attr_for(Style::list_selected));
 }
 
 TEST_CASE("the footer: Clear History…, Trim History… and Persist History under a rule, with C, T and P underlined") {
@@ -390,7 +427,8 @@ TEST_CASE("the footer: Clear History…, Trim History… and Persist History und
     CHECK((screen.cell(8, 1).attr.flags & kUnderline) == 0);
     CHECK((screen.cell(6, 2).attr.flags & kUnderline) == 0);
     CHECK(screen.cell(6, 1).attr.bg == attr_for(Style::menu).bg);
-    CHECK(screen_row(screen, 1, 1, 9) == "* 14 typ");  // the list keeps the top rows
+    CHECK(screen_row(screen, 1, 1, 9) == "○ 10 oth");  // the list keeps the top rows (the four fit)
+    CHECK(screen_row(screen, 4, 1, 9) == "● 14 typ");
     CHECK(screen_row(screen, 9, 1, 31) == std::string(30, ' '));  // nothing past the area
 }
 
@@ -415,18 +453,30 @@ TEST_CASE("the list has the folder tree's look: plain rows, the list highlight, 
     Sketch s;
     HistoryView v(fixed_clock());
     v.open(s.t);
+    v.handle_key(key(Key::Home));
     NullTerminal term;
     Screen screen(term);
     screen.resize({12, 40});
     const Rect area{0, 0, 7, 30};
     v.render(screen, area);
-    const auto sel = static_cast<int>(v.selected());  // the list starts at the top here
-    // The last column: clear of the current step's bold '*'.
-    CHECK(screen.cell(sel, 29).attr == attr_for(Style::list_selected));
-    const int other = sel == 0 ? 1 : 0;
-    CHECK(screen.cell(other, 29).attr == attr_for(Style::Default));  // plain, not the menu's band
+    CHECK(screen.cell(0, 29).attr == attr_for(Style::list_selected));
+    CHECK(screen.cell(1, 29).attr == attr_for(Style::Default));  // plain, not the menu's band
     v.render(screen, area, false);  // Tab gave the keys to the previewed text
-    CHECK(screen.cell(sel, 29).attr == attr_for(Style::list_selected_unfocused));
+    CHECK(screen.cell(0, 29).attr == attr_for(Style::list_selected_unfocused));
+}
+
+TEST_CASE("the current state's ● is bold") {
+    Sketch s;
+    HistoryView v(fixed_clock());
+    v.open(s.t);
+    v.handle_key(key(Key::Home));
+    NullTerminal term;
+    Screen screen(term);
+    screen.resize({12, 40});
+    v.render(screen, Rect{0, 0, 4, 30});
+    CHECK(screen_row(screen, 3, 0, 1) == "●");
+    CHECK((screen.cell(3, 0).attr.flags & kBold) != 0);
+    CHECK((screen.cell(3, 2).attr.flags & kBold) == 0);
 }
 
 TEST_CASE("a pane under six rows has no footer") {
@@ -438,7 +488,7 @@ TEST_CASE("a pane under six rows has no footer") {
     screen.resize({8, 40});
     v.render(screen, Rect{0, 0, 5, 30});
     for (int r = 0; r < 5; ++r) CHECK(screen_row(screen, r, 0, 30).find("History") == std::string::npos);
-    CHECK(screen_row(screen, 0, 0, 8) == "* 14 typ");
+    CHECK(screen_row(screen, 3, 0, 8) == "● 14 typ");
 }
 
 TEST_CASE("C, T and P ask for Clear History, Trim History and Persist History; the panel stays open") {
@@ -490,6 +540,8 @@ TEST_CASE("with Document.jump_to") {
 
     HistoryView v(fixed_clock());
     v.open(d.history());
+    select_node(v, nx);
+    v.handle_key(key(Key::Right));  // y is an older branch of x: open it
     select_node(v, ny);
     const HistoryKeyResult r = v.handle_key(key(Key::Enter));
     REQUIRE(r.jump == ny);
@@ -516,8 +568,8 @@ TEST_CASE("with Document.jump_to") {
     CHECK(d.history().meta(child).parent == nx);
     CHECK(d.history().node_info(nx).children.size() == 3);
     v.open(d.history());
-    CHECK(v.rows()[0].node == child);
-    CHECK(v.rows()[0].is_current);
+    CHECK(v.rows().back().node == child);
+    CHECK(v.rows().back().is_current);
 }
 
 TEST_CASE("a jump to a node that predates verification is refused while verifying") {
@@ -592,20 +644,22 @@ TEST_CASE("after a prune: one tree rooted at the anchor, nothing dimmed for what
     for (const HistoryRow& r : v.rows()) {
         if (!r.read_only) live.push_back(r.node);
     }
-    // One live tree: d and c, joined under the anchor b.
-    CHECK(live == std::vector<std::optional<NodeId>>{dd, c, std::nullopt, b});
+    // One live tree under the anchor b: its newest line b, d, with c's branch closed.
+    CHECK(live == std::vector<std::optional<NodeId>>{b, dd});
     CHECK(d.history().roots() == std::vector<NodeId>{b});
     // The cleared history's rows are still there, dimmed.
     bool saw_retired = false;
     for (const HistoryRow& r : v.rows()) {
-        if (r.node && d.history().is_retired(*r.node)) {
+        if (d.history().is_retired(r.node)) {
             saw_retired = true;
             CHECK(r.read_only);
         }
     }
     CHECK(saw_retired);
 
-    // Enter on the top of the other kept branch jumps there through the new root.
+    // Enter on the other kept branch jumps there through the new root.
+    select_node(v, b);
+    v.handle_key(key(Key::Right));
     select_node(v, c);
     const HistoryKeyResult r = v.handle_key(key(Key::Enter));
     REQUIRE(r.jump == c);
@@ -628,14 +682,20 @@ TEST_CASE("the Persist History checkbox shows the state it is given") {
     CHECK(screen_row(screen, 7, 0, 19) == "[ ] Persist History");
 }
 
-TEST_CASE("selected_node follows the selection; connector rows have none") {
+TEST_CASE("selected_node follows the selection") {
     Sketch s;
     HistoryView v(fixed_clock());
     v.open(s.t);
     CHECK(v.selected_node() == NodeId{14});
-    v.handle_key(key(Key::Down));
-    REQUIRE(v.rows()[v.selected()].node.has_value());
-    CHECK(v.selected_node() == *v.rows()[v.selected()].node);
+    v.handle_key(key(Key::Up));
+    CHECK(v.selected_node() == NodeId{12});
+}
+
+TEST_CASE("Left and Right on an empty history read nothing") {
+    UndoTree tree;
+    HistoryView view;
+    view.open(tree);
+    for (Key k : {Key::Left, Key::Right}) CHECK_FALSE(view.handle_key(KeyEvent{k}).jump.has_value());
 }
 
 TEST_CASE("an empty history takes every key without reading past its rows") {

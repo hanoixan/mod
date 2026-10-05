@@ -34,6 +34,11 @@ public:
     virtual std::string_view cursor_shape(CursorStyle style) const noexcept = 0;
     // Appends the SGR that sets exactly this look from a reset.
     virtual void append_attr(std::string& out, const Attr& attr) const = 0;
+    // Appends one cell's character. A VT100 has no UTF-8: box-drawing characters (and ≥ and
+    // •) go through its line-drawing set, switched with ESC ( 0 and ESC ( B as needed and
+    // tracked in `line_drawing`, and the UI's other symbols get ASCII stand-ins of the same
+    // width; anything else is sent as it is. Other terminals take every character as it is.
+    virtual void append_cell(std::string& out, std::string_view utf8, bool& line_drawing) const;
     // Sets the terminal's (and its tab's) title to `title`, in which every control and
     // byte that is not UTF-8 becomes '?'. Nothing on a VT100.
     virtual void append_title(std::string& out, std::string_view title) const = 0;

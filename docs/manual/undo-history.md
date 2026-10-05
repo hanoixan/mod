@@ -8,8 +8,19 @@ That history file holds everything you ever deleted. Anyone who can read it can 
 
 ## The Undo History pane
 
-Edit > Undo History… opens a pane on the left showing the whole history as a tree, newest first: `*` is where you are, `o` the other steps, with the kind of change, `saved` on saved states and how long ago. History from before a reload or a Clear History is shown dimmed and cannot be returned to.
+Edit > Undo History… opens a pane on the left showing the whole history as a tree, oldest at the top and your latest changes at the bottom: `●` is where you are, `○` the other steps, with the kind of change, `saved` on saved states and how long ago. Each line follows your most recent changes; steps you undid and then replaced are **branches**, which hang under the step they split from, like the contents of a folder:
 
+```text
+○ 11 delete
+○ 12 typed
+├─○ 13 paste
+│ ○ 16 typed
+● 14 typed
+```
+
+A step with a closed branch shows `>` after its `○`. The pane opens with every branch closed except the ones that lead to where you are, so if you never go back to old branches you simply see your recent changes in order. History from before a reload or a Clear History is at the top, closed to one dimmed row each; it can be opened to browse but cannot be returned to.
+
+- Right opens a step's branches (on an open step, moves into them) and Left closes them, or, inside a branch, goes to the step it split from, as in the [folder tree](folder-tree.md).
 - Up, Down, PageUp, PageDown, Home and End move through it. The text beside the pane shows the document as it was at the selected step, read-only, scrolled the least that brings that step's change into view, two lines clear of the top and bottom (a step without a change shows the lines you were looking at): the text that step inserted is highlighted, and the text it removed is shown struck through where it was. Nothing changes until you press Enter.
 - Tab and Shift+Tab move between the pane and the text; with the text selected, Up, Down, PageUp, PageDown, Home and End scroll it.
 - Enter returns the document to the selected step; your next edit branches from there.

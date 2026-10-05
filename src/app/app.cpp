@@ -17,6 +17,7 @@
 #include "syntax/layered_highlighter.hpp"
 #include "syntax/semantic_highlighter.hpp"
 #include "syntax/syntax_highlighter.hpp"
+#include "text/utf8.hpp"
 #include "ui/theme.hpp"
 #include "util/log.hpp"
 
@@ -2091,6 +2092,7 @@ int App::run() {
     terminal_->start_screen(output);
     screen_.set_output(output);
     active_theme().set_vt100(terminal_mode_ == TerminalMode::vt100);
+    set_vt100_text(terminal_mode_ == TerminalMode::vt100);
     screen_.resize(terminal_->size());
     after_command();
     for (const InputEvent& e : decoder_.feed(std::as_bytes(std::span(typed.data(), typed.size())))) dispatch(e);

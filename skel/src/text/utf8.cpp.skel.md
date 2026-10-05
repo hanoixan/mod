@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./utf8.hpp.skel.md
-stamp: source 312fdaf7, stand-in c34e166e
+stamp: source 8c50a006, stand-in c34e166e
 ---
 # module: utf8 (implementation)
 

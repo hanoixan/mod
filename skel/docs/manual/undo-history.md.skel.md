@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 573157bc, stand-in cbf84ad2
+stamp: source b8adf975, stand-in cbf84ad2
 ---
 # resource: undo-history.md
 
