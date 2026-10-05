@@ -35,6 +35,13 @@ if(APPLE AND MOD_LIBCXX_PREFIX)
                       "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-isystem ${CMAKE_SOURCE_DIR}/cmake/libcxx>"
                       "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-isystem ${MOD_LIBCXX_PREFIX}/include/c++/v1>")
   add_link_options(-nostdlib++ ${MOD_LIBCXX_PREFIX}/lib/c++/libc++.a ${MOD_LIBCXX_PREFIX}/lib/c++/libc++abi.a)
+  # Typed operator new (on by default in newer Apple clang) aborts at startup when libc++abi is
+  # linked statically and a static initializer allocates: libc++ itself says to turn it off.
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag(-fno-typed-cxx-new-delete MOD_HAS_NO_TYPED_NEW)
+  if(MOD_HAS_NO_TYPED_NEW)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-typed-cxx-new-delete>)
+  endif()
 endif()
 if(CMAKE_SYSTEM_NAME MATCHES "CYGWIN|MSYS")
   # The MSYS2 runtime hides POSIX and BSD extensions (FNM_CASEFOLD, pipe2, …) under a strict -std.
@@ -64,11 +71,16 @@ function(mod_target_options target)
   endif()
 endfunction()
 
-# PCRE2 for regex search: the 8-bit library only, static, with JIT.
+# PCRE2 for regex search: the 8-bit library only, static, with JIT, except under the MSYS2
+# runtime, where JIT-compiled code faults: there the interpreter runs every search.
 set(PCRE2_BUILD_PCRE2_8 ON CACHE BOOL "" FORCE)
 set(PCRE2_BUILD_PCRE2_16 OFF CACHE BOOL "" FORCE)
 set(PCRE2_BUILD_PCRE2_32 OFF CACHE BOOL "" FORCE)
-set(PCRE2_SUPPORT_JIT ON CACHE BOOL "" FORCE)
+if(CMAKE_SYSTEM_NAME MATCHES "CYGWIN|MSYS")
+  set(PCRE2_SUPPORT_JIT OFF CACHE BOOL "" FORCE)
+else()
+  set(PCRE2_SUPPORT_JIT ON CACHE BOOL "" FORCE)
+endif()
 set(PCRE2_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(PCRE2_BUILD_PCRE2GREP OFF CACHE BOOL "" FORCE)
 set(PCRE2_STATIC_PIC ON CACHE BOOL "" FORCE)
