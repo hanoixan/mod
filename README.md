@@ -1,8 +1,26 @@
 # mod
 
-A small terminal text editor that never loses an edit: its undo history is unlimited, branched, and can be kept on disk next to your file.
+A minimalist terminal text editor that can track every change you make with unlimited and branched undo.
 
 ![mod editing its own source in two split views](docs/images/screenshot.png)
+
+## Why
+
+Honestly, it all started because I needed a fun project to test my new Claude plugin. And before I knew it, I was using `mod` to edit this README.md file.
+
+There are dozens of text editors you could use, but `mod` has some things going for it:
+* It's simple, with keystrokes documented in the UI.
+* It runs on old and modern terminals.
+* It's not big. 5MiB statically linked in Linux.
+* You can optionally turn on .history sidecar files, which store branched undo history of your changes. I've always wanted this in every application I use, so why not start here.
+* It's written in modern C++23, with a thorough set of tests, including fuzzing.
+* It probably runs on your platform. See [releases](https://github.com/hanoixan/mod/releases)!
+
+## Is this Vibe Coded?
+
+Absolutely. 100%. This was generated using my ![skel Claude Plugin](https://github.com/hanoixan/claude-plugins), and then hammered with tests until I felt it was good enough for a 1.0.0. 
+
+And if don't use vibe coded software, I support you. Check out [Fresh](https://itsfoss.com/fresh-terminal-text-editor/). I think he put way more work into his than I did into mine, and it shows.
 
 ## Install
 

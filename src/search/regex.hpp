@@ -20,6 +20,7 @@ struct RegexOptions {
     bool case_insensitive = false;
     bool literal = false;  // plain text, no regex syntax
     bool whole_word = false;
+    bool allow_jit = true;  // false only in tests, to run PCRE2's interpreter as without JIT
 };
 
 // Absolute document offsets. `groups[i]` is capture group i + 1; a group that did not
@@ -42,6 +43,10 @@ struct LineCursor {
     std::size_t searched_to = 0;  // window index of the last `from`
     std::size_t line = 0;         // the start of its line
     std::size_t line_feed = 0;    // that line's LF, or the window size when it has none
+    // Without JIT: whether that line, up to `utf_end`, is valid UTF-8 (checked once per line).
+    bool utf_known = false;
+    bool utf_valid = false;
+    std::size_t utf_end = 0;
 };
 
 struct WindowResult {

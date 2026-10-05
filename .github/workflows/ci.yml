@@ -55,7 +55,7 @@ jobs:
         with:
           msystem: MSYS
           update: true
-          install: gcc cmake ninja git python zip gdb
+          install: gcc cmake ninja git python zip
 
       - name: Build and package
         id: build
@@ -66,12 +66,6 @@ jobs:
 
       - name: Test
         run: ctest --preset windows-release
-
-      - name: TEMPORARY - app_test under gdb, for a backtrace
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: |
-          cd build/windows-release/tests
-          gdb -batch -ex "set startup-with-shell off" -ex run -ex "thread apply all bt" --args ./app_test.exe 2>&1 | tail -120
 
       - name: Smoke test the packaged mod.exe in a Windows pseudo-console (start, edit, save, quit)
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
