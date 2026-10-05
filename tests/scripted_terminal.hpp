@@ -173,9 +173,10 @@ struct ScriptStep {
     std::function<bool(const VtScreen&)> until;  // null: done once the keys are read
     std::chrono::milliseconds limit{std::chrono::seconds(60)};
     // A step whose keys end in Esc waits this long first: a lone Esc is only Esc once the
-    // decoder's wait for more has passed. Longer than App's gap between quitting Escapes, so
-    // steps that each end in Esc never add up to a quit unless a test shortens it.
-    std::chrono::milliseconds esc_settle{300};
+    // decoder's wait for more has passed. Well over App's 250 ms gap between quitting menu
+    // keys, with room for a late timer (macOS's runners), so steps that each end in Esc never
+    // add up to a quit unless a test shortens it.
+    std::chrono::milliseconds esc_settle{400};
     // Filled in as the script runs.
     std::chrono::duration<double> took{};
     bool done = false;

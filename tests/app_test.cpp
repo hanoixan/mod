@@ -298,9 +298,24 @@ ScriptStep pause(std::string name, int ms) {
 
 }  // namespace
 
+namespace {
+
+bool menu_shown(const VtScreen& s) { return s.row(0).find("File") != std::string::npos && s.row(0).find("Edit") != std::string::npos; }
+
+// A key pressed as quickly as the editor takes it: a lone Esc waits only until its effect is
+// on the screen (the decoder needs a moment to tell it from Alt), never a fixed time, so the
+// presses come well within App's 250 ms however slow the machine's timers are.
+ScriptStep quick_key(const char* name, const char* bytes, std::function<bool(const VtScreen&)> until = nullptr) {
+    ScriptStep step{name, bytes, std::move(until)};
+    step.esc_settle = std::chrono::milliseconds(0);
+    return step;
+}
+
+}  // namespace
+
 TEST_CASE("three Escapes quit only when each comes within 250 ms of the one before") {
-    // About 300 ms apart (the harness's Esc settle): three within a second, but each too long
-    // after the last, so the editor is still there afterwards.
+    // About 400 ms apart (the harness's Esc settle): three within two seconds, but each too
+    // long after the last, so the editor is still there afterwards.
     const auto slow = run_app("escapes-slow", "one\n",
                               {{"Esc", "\x1b", nullptr},
                                {"Esc", "\x1b", nullptr},
@@ -308,47 +323,37 @@ TEST_CASE("three Escapes quit only when each comes within 250 ms of the one befo
                                pause("wait", 400),
                                {"still running", "", [](const VtScreen& s) { return s.contains("one"); }}});
     check_steps(slow);
-    // Quick: each one about 150 ms after the last (a 100 ms Esc settle, then 50 ms).
-    auto quick_esc = [] {
-        ScriptStep step{"Esc", "\x1b", nullptr};
-        step.esc_settle = std::chrono::milliseconds(100);
-        return step;
-    };
+    // Quick: the menu opens, closes, and the third Esc quits.
     const auto quick = run_app("escapes-quick", "one\n",
-                               {quick_esc(),
-                                pause("wait", 50),
-                                quick_esc(),
-                                pause("wait", 50),
-                                quick_esc(),
+                               {quick_key("Esc", "\x1b", menu_shown),
+                                quick_key("Esc", "\x1b", [](const VtScreen& s) { return !menu_shown(s); }),
+                                quick_key("Esc", "\x1b"),
                                 pause("wait", 300),
                                 {"never reached: it quit", "", [](const VtScreen&) { return true; }}});
-    REQUIRE(quick.steps.size() == 7);
-    CHECK(quick.steps[2].done);        // the second Esc was read
-    CHECK_FALSE(quick.steps[5].done);  // and the third quit before the pause after it ended
+    REQUIRE(quick.steps.size() == 5);
+    CHECK(quick.steps[1].done);        // the second Esc closed the menu
+    CHECK_FALSE(quick.steps[3].done);  // and the third quit before the pause after it ended
 }
 
 TEST_CASE("the menu keys quit like Esc: F10, Alt+X, or any mix, three times quickly") {
-    auto quick = [](const char* name, const char* bytes) {
-        ScriptStep step{name, bytes, nullptr};
-        step.esc_settle = std::chrono::milliseconds(100);
-        return step;
-    };
+    // F10 and Alt+X are whole sequences, so they need no settle; a lone Esc waits for the menu.
     const char* const f10 = "\x1b[21~";
     const char* const alt_x = "\x1bx";
     const std::vector<std::vector<ScriptStep>> runs = {
-        {quick("F10", f10), pause("wait", 50), quick("F10", f10), pause("wait", 50), quick("F10", f10)},
-        {quick("Alt+X", alt_x), pause("wait", 50), quick("Alt+X", alt_x), pause("wait", 50), quick("Alt+X", alt_x)},
-        {quick("Esc", "\x1b"), pause("wait", 50), quick("F10", f10), pause("wait", 50), quick("Alt+X", alt_x)},
+        {quick_key("F10", f10), quick_key("F10", f10), quick_key("F10", f10)},
+        {quick_key("Alt+X", alt_x), quick_key("Alt+X", alt_x), quick_key("Alt+X", alt_x)},
+        {quick_key("Esc", "\x1b", menu_shown), quick_key("F10", f10), quick_key("Alt+X", alt_x)},
     };
     int n = 0;
     for (std::vector<ScriptStep> steps : runs) {
         CAPTURE(n);
         steps.push_back(pause("wait", 300));
         steps.push_back({"never reached: it quit", "", [](const VtScreen&) { return true; }});
-        const auto r = run_app("menu-keys-quit-" + std::to_string(n++), "one\n", steps);
-        REQUIRE(r.steps.size() == 7);
-        CHECK(r.steps[2].done);        // the second press was read
-        CHECK_FALSE(r.steps[5].done);  // and the third quit before the pause after it ended
+        const auto r = run_app("menu-keys-quit-" + std::to_string(n), "one\n", steps);
+        ++n;
+        REQUIRE(r.steps.size() == 5);
+        CHECK(r.steps[1].done);        // the second press was read
+        CHECK_FALSE(r.steps[3].done);  // and the third quit before the pause after it ended
     }
 }
 
