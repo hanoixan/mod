@@ -12,7 +12,7 @@ On Linux x86_64:
 curl -fsSL https://raw.githubusercontent.com/hanoixan/mod/main/install.sh | sh
 ```
 
-The script installs the release's package with apt, dnf or pacman when it can (asking sudo for the password), and otherwise unpacks mod into `~/.local`. Set `MOD_INSTALL_LOCAL=1` to always use `~/.local`, `MOD_PREFIX` for another folder, or `MOD_VERSION` for an older release or a release candidate (`MOD_VERSION=1.2.0-rc.1`). The one-liner needs the repository to be public; until it is, download the files from the [releases page](https://github.com/hanoixan/mod/releases) instead.
+The script installs the release's package with apt, dnf or pacman when it can (asking sudo for the password), and otherwise unpacks mod into `~/.local`. Set `MOD_INSTALL_LOCAL=1` to always use `~/.local`, `MOD_PREFIX` for another folder, or `MOD_VERSION` for an older release or a release candidate (`MOD_VERSION=1.2.0-rc.1`). Or download the files from the [releases page](https://github.com/hanoixan/mod/releases).
 
 Each release has:
 

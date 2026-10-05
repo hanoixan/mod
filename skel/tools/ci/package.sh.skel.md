@@ -1,7 +1,7 @@
 ---
 role: product
 untested: a build script; CI runs it on every push, and it installs and runs each package it makes
-stamp: source bbe42d15, stand-in d245edc2
+stamp: source bbe42d15, stand-in f6c5c316
 ---
 # module: package.sh
 
@@ -35,7 +35,7 @@ The GitHub Actions workflows that run this script live in `.github/workflows/`. 
 4. Makes the source archive `mod-<version>.tar.gz` with `git archive --prefix=mod-<version>/` from the tag, and the `PKGBUILD` from [PKGBUILD.in](../../packaging/arch/PKGBUILD.in.skel.md) with the version and that archive's sha256: both name the release, not the candidate, so they are the release's files too.
 5. Publishes the prerelease `v<version>-rc.<n>`, titled "mod <version> release candidate <n>", with the `.deb`, the `.rpm`, the `.pkg.tar.zst`, the tarball, the `PKGBUILD` and the source archive, and notes generated since the previous tag (candidate or release).
 
-**`promote.yml`, promoting a candidate.** `workflow_dispatch` with two inputs: `candidate` (its tag, such as `v1.2.0-rc.2`) and `confirm` (its version typed again). Permissions: `contents: write`; `concurrency: release`; the job runs in the `release` environment (which takes a required reviewer once GitHub offers it: a public repository or an Enterprise plan; until then starting the workflow is the approval). It builds nothing ([release_test.sh](./release_test.sh.skel.md), which CI's linux job runs first, tests the checks both workflows share):
+**`promote.yml`, promoting a candidate.** `workflow_dispatch` with two inputs: `candidate` (its tag, such as `v1.2.0-rc.2`) and `confirm` (its version typed again). Permissions: `contents: write`; `concurrency: release`; the job runs in the `release` environment (which has a required reviewer: the run waits for the reviewer's approval before it starts). It builds nothing ([release_test.sh](./release_test.sh.skel.md), which CI's linux job runs first, tests the checks both workflows share):
 
 1. Refuses to run unless `candidate` is a candidate's tag (`release.sh rc-of`), `confirm` equals its version, `v<version>` does not exist, and the candidate is a published prerelease.
 2. Creates and pushes the annotated tag `v<version>` on the candidate's commit.
