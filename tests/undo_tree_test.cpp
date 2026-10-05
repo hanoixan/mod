@@ -898,6 +898,9 @@ TEST_CASE("Document.prune_history") {
         const fs::path link = fx.p.parent_path() / "prune-link.mod";
         fs::remove(link);
         fs::create_hard_link(side, link);
+        // A refusal first drains the history writer (records still queued are written), so
+        // the file is read once nothing is pending: the second refusal must not touch it.
+        REQUIRE_FALSE(d.prune_history(*fx.clock.now - 5 * kDayMs));
         const std::string file_before = read_back(side);
         const auto roots = d.history().roots();
         auto st = d.prune_history(*fx.clock.now - 5 * kDayMs);
