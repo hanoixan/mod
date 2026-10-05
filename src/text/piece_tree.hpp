@@ -74,6 +74,9 @@ public:
     PieceRun store(std::span<const std::byte> bytes);
 
     BufferIndex add_buffer(std::shared_ptr<const MappedFile> file);
+    // Lets go of a file buffer no piece uses any more, so its mapping can close (Windows
+    // cannot shorten a file while it is mapped). Its index is never reused.
+    void release_buffer(BufferIndex buffer);
 
     std::uint64_t size() const noexcept;
 

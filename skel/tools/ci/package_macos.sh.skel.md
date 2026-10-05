@@ -13,3 +13,4 @@ Joins an arm64 and an x86_64 macOS build into one universal binary: `tools/ci/pa
 - **Referred by:** [install.sh](../../install.sh.skel.md)
 - **Depends on:** [CMakeLists.txt](../../CMakeLists.txt.skel.md)
 - **Unknowns:** none
+- **Referred by:** [package.sh](./package.sh.skel.md)

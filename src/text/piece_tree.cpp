@@ -55,6 +55,13 @@ BufferIndex PieceTree::add_buffer(std::shared_ptr<const MappedFile> file) {
     return static_cast<BufferIndex>(files_.size() - 1);
 }
 
+void PieceTree::release_buffer(BufferIndex buffer) {
+    if (buffer == 0 || buffer >= files_.size()) return;
+    files_[buffer].reset();
+    seeded_[buffer] = {};
+    chunk_cache_[buffer] = {};
+}
+
 std::vector<Chunk> PieceTree::make_chunks(const MappedFile& file) const {
     // Hard boundaries: seeding reads no file bytes, so a line may straddle two chunks.
     std::vector<Chunk> out;

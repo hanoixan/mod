@@ -17,9 +17,10 @@ extern char** environ;
 namespace mod {
 namespace {
 
-// glibc 2.29 and later can change the child's directory as a spawn file action; elsewhere
-// (macOS, where addchdir_np is deprecated, among others) the child changes it through /bin/sh.
-#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 29))
+// glibc 2.29 and later and the MSYS2 runtime (Windows, which has no /bin/sh beside an
+// installed mod) can change the child's directory as a spawn file action; elsewhere (macOS,
+// where addchdir_np is deprecated, among others) the child changes it through /bin/sh.
+#if (defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 29))) || defined(__CYGWIN__)
 #define MOD_HAS_ADDCHDIR 1
 #endif
 

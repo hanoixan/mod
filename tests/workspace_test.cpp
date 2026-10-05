@@ -7,6 +7,7 @@
 
 #include "app/workspace.hpp"
 #include "util/event_queue.hpp"
+#include "fs_probe.hpp"
 
 using namespace mod;
 namespace fs = std::filesystem;
@@ -148,6 +149,10 @@ TEST_CASE("find knows a document by any name of its file: relative, through a sy
     const auto a = f.open("named.txt");
     fs::remove(f.dir / "named-link.txt");
     fs::remove(f.dir / "named-hard.txt");
+    if (!probe::symlinks_work(f.dir)) {
+        MESSAGE("skipped: no symbolic links here");
+        return;
+    }
     fs::create_symlink("named.txt", f.dir / "named-link.txt");
     fs::create_hard_link(f.dir / "named.txt", f.dir / "named-hard.txt");
     CHECK(f.ws.find(f.dir / "named.txt") == a);
@@ -160,6 +165,10 @@ TEST_CASE("find knows a new file opened through a dangling symlink by the link's
     Fixture f;
     fs::remove(f.dir / "future.txt");
     fs::remove(f.dir / "future-link.txt");
+    if (!probe::symlinks_work(f.dir)) {
+        MESSAGE("skipped: no symbolic links here");
+        return;
+    }
     fs::create_symlink("future.txt", f.dir / "future-link.txt");
     f.ws.release_focused();
     const DocumentList::Id id = f.ws.documents().add();

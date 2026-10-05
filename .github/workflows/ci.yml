@@ -47,22 +47,34 @@ jobs:
     defaults:
       run:
         shell: msys2 {0}
+    env:
+      MSYS: winsymlinks:sys  # real symbolic links (dangling ones too) for the tests that make them
     steps:
       - uses: actions/checkout@v7
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MSYS
           update: true
-          install: gcc cmake ninja git python zip
+          install: gcc cmake ninja git python zip gdb
 
-      - name: Build and test
+      - name: Build and package
+        id: build
         run: |
           cmake --preset windows-release
           cmake --build --preset windows-release
-          ctest --preset windows-release
           tools/ci/package_windows.sh
 
+      - name: Test
+        run: ctest --preset windows-release
+
+      - name: TEMPORARY - app_test under gdb, for a backtrace
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          cd build/windows-release/tests
+          gdb -batch -ex run -ex bt -ex "info registers" --args ./app_test.exe -tc="Find opens with the last search*" 2>&1 | tail -60
+
       - name: Smoke test the packaged mod.exe in a Windows pseudo-console (start, edit, save, quit)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: pwsh
         run: |
           python -m pip install --quiet pywinpty

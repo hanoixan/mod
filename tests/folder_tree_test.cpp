@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "app/folder_tree.hpp"
+#include "fs_probe.hpp"
 
 using namespace mod;
 namespace fs = std::filesystem;
@@ -86,7 +87,10 @@ TEST_CASE("a folder that cannot be read says so and stays closed") {
     t.select(2);  // A/
     t.expand();
     fs::permissions(root / "A", fs::perms::owner_all);
-    if (::geteuid() == 0) return;  // root reads it anyway
+    if (!probe::permissions_enforced(root)) {  // root reads it anyway, as does Windows
+        MESSAGE("skipped: permissions are not enforced here");
+        return;
+    }
     CHECK_FALSE(t.rows()[2].expanded);
     CHECK(t.message().find("A") != std::string::npos);
 }

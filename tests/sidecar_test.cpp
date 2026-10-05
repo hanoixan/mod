@@ -23,6 +23,7 @@
 #include "text/piece_tree.hpp"
 #include "util/event_queue.hpp"
 #include "util/hash.hpp"
+#include "fs_probe.hpp"
 
 using namespace mod;
 namespace fs = std::filesystem;
@@ -315,6 +316,27 @@ TEST_CASE("damaged sidecars") {
         CHECK(records(after).size() == 5);
         CHECK(records(after).back().start == good.size());
     }
+    SUBCASE("where the tail cannot be cut (Windows, while mapped), the good part is written anew") {
+        write_file(side, good + good.substr(recs[1].start, 20));
+        SidecarSeams seams;
+        seams.truncate = [](int, std::int64_t) {
+            errno = EACCES;
+            return -1;
+        };
+        Sidecar s(doc, q, 0644, seams);
+        UndoTree t;
+        REQUIRE(s.open(t, 1));
+        t.set_position(4, {});
+        s.release_deferred(t);
+        const NodeId n = t.commit({insert_op(0, "z")}, {});
+        s.append_node(t.meta(n), inline_ops({insert_op(0, "z")}));
+        REQUIRE(s.flush(10000).has_value());
+        CHECK(s.state() == SidecarState::attached);
+        const std::string after = read_file(side);
+        CHECK(after.substr(0, good.size()) == good);
+        CHECK(records(after).size() == 5);
+        CHECK(records(after).back().start == good.size());
+    }
     SUBCASE("a CRC mismatch ends the valid part") {
         std::string bad = good;
         bad[recs[2].body + 2] ^= 0x01;  // inside the second NODE
@@ -543,7 +565,9 @@ TEST_CASE("copy_to") {
         auto side = s.copy_to(copy, 0600, t, text);
         REQUIRE(side);
         CHECK((*side)->state() == SidecarState::attached);
-        CHECK(((fs::status(sidecar_path_for(copy)).permissions() & fs::perms::mask) == (fs::perms::owner_read | fs::perms::owner_write)));
+        if (probe::permissions_kept(copy.parent_path())) {
+            CHECK(((fs::status(sidecar_path_for(copy)).permissions() & fs::perms::mask) == (fs::perms::owner_read | fs::perms::owner_write)));
+        }
         const std::string new_bytes = read_file(sidecar_path_for(copy));
         CHECK(new_bytes == old_bytes);
         (*side)->release_deferred(t);
@@ -824,7 +848,7 @@ TEST_CASE("rewrite") {
         REQUIRE(where_e);
         CHECK(bytes_at(fx.text, *where_e, new_e.length) == fx.big_e);
 
-        CHECK((fs::status(side).permissions() & fs::perms::mask) == static_cast<fs::perms>(0640));
+        if (probe::permissions_kept(side.parent_path())) CHECK((fs::status(side).permissions() & fs::perms::mask) == static_cast<fs::perms>(0640));
 
         // Reopening yields exactly the pruned tree; the lock is held, so read-only.
         {

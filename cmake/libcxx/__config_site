@@ -1,0 +1,10 @@
+// Put first on the C++ include path for macOS builds with Homebrew LLVM's libc++, which mod
+// links statically. libc++'s availability annotations describe the libc++ that ships with
+// macOS (to_chars needs 13.3, from_chars of a double macOS 26); they do not apply to a
+// library linked into the program, so they are turned off here.
+#include_next <__config_site>
+#undef _LIBCPP_HAS_VENDOR_AVAILABILITY_ANNOTATIONS
+#define _LIBCPP_HAS_VENDOR_AVAILABILITY_ANNOTATIONS 0
+#ifndef _LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS
+#define _LIBCPP_HAS_NO_VENDOR_AVAILABILITY_ANNOTATIONS
+#endif

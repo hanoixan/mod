@@ -410,8 +410,10 @@ TEST_CASE("LSP message examples") {
     const auto data = tokens.get("result")->get("data")->ints();
     CHECK(std::vector<std::int64_t>(data.begin(), data.end()) == std::vector<std::int64_t>{2, 5, 3, 0, 3, 0, 5, 4, 1, 0});
 
+#if !defined(__CYGWIN__)  // on Windows the path becomes C:/…: path_text_test
     CHECK(file_uri("/home/u/my file/a\xC3\xA9.cpp") == "file:///home/u/my%20file/a%C3%A9.cpp");
     CHECK(file_uri("/a/b_c-d.e~f") == "file:///a/b_c-d.e~f");
+#endif
 }
 
 TEST_CASE("erase removes one member of an object and keeps the order of the rest") {

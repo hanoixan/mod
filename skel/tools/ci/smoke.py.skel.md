@@ -13,5 +13,5 @@ On Windows it runs `mod.exe` in a Windows pseudo-console (ConPTY) through `pywin
 - **Required:** always for CI.
 - **Failure modes:** mod never draws the file, never exits, exits non-zero, or did not save: each fails with a message.
 - **Depends on:** none
-- **Referred by:** none known (the workflows in `.github/workflows`, and developers)
 - **Unknowns:** none
+- **Referred by:** [package.sh](./package.sh.skel.md)

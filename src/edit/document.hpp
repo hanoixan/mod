@@ -199,6 +199,8 @@ private:
 
     Result<Written> write_content(const std::filesystem::path& target, SaveMode mode, Clipboard* clipboard);
     void materialize_for_overwrite(const std::filesystem::path& target, Clipboard* clipboard);
+    // The clipboard's text taken off the overwritten file, as `copy_run` takes a run off it.
+    void rebind_clipboard(Clipboard* clipboard, const std::function<bool(PieceRun&)>& copy_run);
     void copy_live_text(const std::unordered_set<BufferIndex>& hit);
     Status finish_save(const std::filesystem::path& target, Written written);
 

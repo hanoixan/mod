@@ -13,3 +13,4 @@ Packages a Windows build into `dist/mod-<version>-windows-x86_64.zip`, run in an
 - **Referred by:** [install.ps1](../../install.ps1.skel.md)
 - **Depends on:** [CMakeLists.txt](../../CMakeLists.txt.skel.md)
 - **Unknowns:** none
+- **Referred by:** [package.sh](./package.sh.skel.md)
