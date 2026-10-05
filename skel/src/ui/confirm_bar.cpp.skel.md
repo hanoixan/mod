@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./confirm_bar.hpp.skel.md
-stamp: source 8b370538, stand-in 0d3381dc
+stamp: source ef1f8f4d, stand-in 0d3381dc
 ---
 # module: confirm_bar (implementation)
 

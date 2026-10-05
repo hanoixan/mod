@@ -154,7 +154,7 @@ std::string cli_usage() {
         "usage: mod [OPTION...] [PATH...]\n"
         "  PATH                  files to edit, each as a document; without any, an untitled buffer\n"
         "  -ro, --read-only      open the files in read-only mode\n"
-        "  --persist-history     keep the files' undo history in their .mod sidecars\n"
+        "  --persist-history     keep the files' undo history in their .history sidecars\n"
         "  --color NAME=SPEC     a color for this session, such as --color 'keyword=bold red'\n"
         "  -h, --help            print this and exit\n"
         "  --version             print the version and exit\n"

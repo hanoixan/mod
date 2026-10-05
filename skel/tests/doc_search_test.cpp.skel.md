@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 19013951, stand-in cbda6e77
+stamp: source 1807ceee, stand-in cbda6e77
 ---
 # module: doc_search_test
 

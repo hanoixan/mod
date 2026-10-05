@@ -1,7 +1,7 @@
 ---
 role: product
 kind: resource
-stamp: source d8aeedaa, stand-in 08662522
+stamp: source 43ff936d, stand-in 08662522
 ---
 # resource: undo-history.png
 

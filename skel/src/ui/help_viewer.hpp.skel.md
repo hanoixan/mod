@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source f746195d, stand-in c0bde50f
+stamp: source f746195d, stand-in aab4f61d
 ---
 # module: help_viewer
 
@@ -64,5 +64,5 @@ Keys, in the manner of the Lynx browser:
 
 - **Inputs:** a `Screen&`; the area.
 - **Returns:** nothing.
-- **State changes:** re-renders the page when the area's width changed (keeping the source line at the top), then draws the visible lines with their styles laid over the theme's page, link pieces in `md_link_text` and the highlighted link's pieces in `menu_selected`. `page()` returns the shown page, for the status line.
+- **State changes:** re-renders the page when the area's width changed (keeping the source line at the top), then draws the visible lines with their styles laid over the theme's page, link pieces in `md_link_text` and the highlighted link's pieces in `list_selected`. `page()` returns the shown page, for the status line.
 - **Access:** App.render.

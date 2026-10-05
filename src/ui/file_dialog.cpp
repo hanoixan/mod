@@ -332,7 +332,7 @@ void FileDialog::render(Screen& screen, Rect area) {
         screen.fill(row, area.col, right, fill);
         return row;
     };
-    auto zattr = [&](FocusZone z, Attr normal) { return focus_ == z ? attr_for(Style::menu_selected) : normal; };
+    auto zattr = [&](FocusZone z, Attr normal) { return focus_ == z ? attr_for(Style::list_selected) : normal; };
     bool cursor_placed = false;
     auto sep_row = [&](int row) {
         for (int c = area.col; c < right; ++c) screen.print(row, c, right, "─", attr_for(Style::gutter));
@@ -415,11 +415,11 @@ void FileDialog::render(Screen& screen, Rect area) {
             continue;
         }
         const bool sel = idx == selected_ && idx < n;
-        const int row = begin_row(sel ? attr_for(Style::menu_selected) : attr_for(Style::Default));
+        const int row = begin_row(sel ? attr_for(Style::list_selected) : attr_for(Style::Default));
         if (idx < n) {
             const DirEntry& e = entries_[static_cast<std::size_t>(idx)];
-            const Attr base = sel ? attr_for(Style::menu_selected) : attr_for(Style::Default);
-            const Attr sec = sel ? attr_for(Style::menu_selected) : attr_for(Style::gutter);
+            const Attr base = sel ? attr_for(Style::list_selected) : attr_for(Style::Default);
+            const Attr sec = sel ? attr_for(Style::list_selected) : attr_for(Style::gutter);
             screen.print(row, area.col + 1, right, e.is_dir ? "📁" : "📄", base);
             screen.print(row, area.col + 4, right, fit(e.name, std::max(1, wn - 3)), base);
             if (!e.is_dir) print_right(screen, row, size_end, format_size(e.size), sec, ws);
@@ -437,7 +437,7 @@ void FileDialog::render(Screen& screen, Rect area) {
         const int row = begin_row();
         const int col = screen.print(row, area.col + 1, right, "File: ", attr_for(Style::Default));
         const bool focus = focus_ == FocusZone::filename;
-        filename_.render(screen, row, col, std::max(1, right - col - 1), focus ? attr_for(Style::menu_selected) : attr_for(Style::status), focus && !cursor_placed);
+        filename_.render(screen, row, col, std::max(1, right - col - 1), focus ? attr_for(Style::list_selected) : attr_for(Style::status), focus && !cursor_placed);
         if (focus && !cursor_placed) cursor_placed = true;
         ++r;
     }

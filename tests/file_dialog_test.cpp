@@ -390,7 +390,7 @@ TEST_CASE("render draws the layout") {
     CHECK(row_text(screen, 5).find("📁") != std::string::npos);
     CHECK(row_text(screen, 7).find("a.txt") != std::string::npos);
     CHECK(row_text(screen, 7).find("📄") != std::string::npos);
-    CHECK(screen.cell(7, 5).attr == attr_for(Style::menu_selected));  // the selected row
+    CHECK(screen.cell(7, 5).attr == attr_for(Style::list_selected));  // the selected row
     CHECK(row_text(screen, 12).find("File: a.txt") != std::string::npos);  // selecting a file fills the field
     const std::string actions = row_text(screen, 13);
     CHECK(actions.find("[Save] [Cancel]") != std::string::npos);

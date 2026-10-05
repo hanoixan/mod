@@ -295,10 +295,22 @@ std::uint64_t utf16_length(std::span<const std::byte> bytes) {
     return n;
 }
 
+namespace {
+bool g_vt100_text = false;
+}  // namespace
+
+void set_vt100_text(bool on) noexcept { g_vt100_text = on; }
+bool vt100_text() noexcept { return g_vt100_text; }
+
 int text_columns(std::string_view text) {
     int columns = 0;
     for (std::size_t i = 0; i < text.size();) {
         const Decoded d = decode(std::as_bytes(std::span(text.data() + i, text.size() - i)));
+        if (d.valid && d.cp == 0x2026 && g_vt100_text) {
+            columns += 3;  // drawn as "..."
+            i += d.len;
+            continue;
+        }
         columns += d.valid ? display_width(d, static_cast<std::uint64_t>(columns), 1) : 1;
         i += d.len;
     }

@@ -2,14 +2,25 @@
 
 mod never throws history away when you undo. Undo a few steps and type something new, and the steps you undid stay in the history as a **branch** beside the new ones. Redo follows the branch you were on most recently; Edit > Next Branch and Previous Branch choose another.
 
-By default the history is kept in memory only, for as long as the file is open. To keep it, check **Persist History** in the Undo History pane: the history is then saved continuously in a file next to yours, named after it with `.mod` added (`notes.md.mod`), so it survives closing mod, and even a crash. When you open a file that has such a history file, mod loads it and keeps it up to date, with Persist History already checked. Saving the file also marks the point in the history, so you can see which state is on disk.
+By default the history is kept in memory only, for as long as the file is open. To keep it, check **Persist History** in the Undo History pane: the history is then saved continuously in a file next to yours, named after it with `.history` added (`notes.md.history`), so it survives closing mod, and even a crash. When you open a file that has such a history file, mod loads it and keeps it up to date, with Persist History already checked. Saving the file also marks the point in the history, so you can see which state is on disk.
 
 That history file holds everything you ever deleted. Anyone who can read it can read your deleted text, so it gets the same permissions as the file itself, and mod lets you clear or trim it.
 
 ## The Undo History pane
 
-Edit > Undo History… opens a pane on the left showing the whole history as a tree, newest first: `*` is where you are, `o` the other steps, with the kind of change, `saved` on saved states and how long ago. History from before a reload or a Clear History is shown dimmed and cannot be returned to.
+Edit > Undo History… opens a pane on the left showing the whole history as a tree, oldest at the top and your latest changes at the bottom: `●` is where you are, `○` the other steps, with the kind of change, `saved` on saved states and how long ago. Each line follows your most recent changes; steps you undid and then replaced are **branches**, which hang under the step they split from, like the contents of a folder:
 
+```text
+○ 11 delete
+○ 12 typed
+├─○ 13 paste
+│ ○ 16 typed
+● 14 typed
+```
+
+A step with a closed branch shows `>` after its `○`. The pane opens with every branch closed except the ones that lead to where you are, so if you never go back to old branches you simply see your recent changes in order. History from before a reload or a Clear History is at the top, closed to one dimmed row each; it can be opened to browse but cannot be returned to.
+
+- Right opens a step's branches (on an open step, moves into them) and Left closes them, or, inside a branch, goes to the step it split from, as in the [folder tree](folder-tree.md).
 - Up, Down, PageUp, PageDown, Home and End move through it. The text beside the pane shows the document as it was at the selected step, read-only, scrolled the least that brings that step's change into view, two lines clear of the top and bottom (a step without a change shows the lines you were looking at): the text that step inserted is highlighted, and the text it removed is shown struck through where it was. Nothing changes until you press Enter.
 - Tab and Shift+Tab move between the pane and the text; with the text selected, Up, Down, PageUp, PageDown, Home and End scroll it.
 - Enter returns the document to the selected step; your next edit branches from there.
@@ -29,10 +40,10 @@ Clearing and trimming are permanent: the removed text cannot be recovered.
 
 ### Persist History (P)
 
-Checked, the history is written to the `.mod` file; unchecked, it is kept in memory only and lost when the file is closed.
+Checked, the history is written to the `.history` file; unchecked, it is kept in memory only and lost when the file is closed.
 
 - Checking it writes the whole history of this session at once, so turning it on late loses nothing.
-- Unchecking it stops writing; the `.mod` file is left as it is, and opening the file again loads it.
-- If a `.mod` file is there but mod cannot read it (it is damaged, or not a history file), Persist History starts unchecked, and checking it asks before overwriting that file.
+- Unchecking it stops writing; the `.history` file is left as it is, and opening the file again loads it.
+- If a `.history` file is there but mod cannot read it (it is damaged, or not a history file), Persist History starts unchecked, and checking it asks before overwriting that file.
 - If another mod has the history open, it cannot be changed here.
 - For a new, unsaved document, checking it means the history file is created when you first save.

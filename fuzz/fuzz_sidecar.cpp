@@ -1,4 +1,4 @@
-// A .mod history file of any content next to a document (one could come with a cloned
+// A .history history file of any content next to a document (one could come with a cloned
 // repository): opening it never crashes, never changes the document, and whatever
 // history loads can be walked.
 #include <unistd.h>

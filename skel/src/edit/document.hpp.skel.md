@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 787ee9d0, stand-in bf3d6b75
+stamp: source 787ee9d0, stand-in ce8bf49c
 ---
 # module: document
 
@@ -179,7 +179,7 @@ Clear History… in the Undo History pane: deletes the sidecar and starts a new 
   2. Abandons any pending verification: the old history it would have attached to is being deleted. If the scanner has not yet produced the hash of the file on disk, it keeps running, and its hash, when it arrives, becomes the new root's base hash instead of being compared with a save point. Line counts are unaffected.
   3. Calls [Sidecar.clear](./sidecar.hpp.skel.md#function-clear), which deletes this document's sidecar file. Sidecars that Save As copied next to other names are not touched.
   4. Calls [UndoTree.reset](./undo_tree.hpp.skel.md#function-reset), then `add_root` with the present size and the present content's hash, and makes the new root `current`. Because the document is clean, the present content is the file on disk, so its hash is the one recorded by the last save or produced by the scanner (step 2). The root is also marked saved, so the document stays clean. Undo and redo cannot go past the new root. The old history's ops and payloads are gone from memory as well as from disk; only its text-free metadata stays, retired, so the undo-history panel can show it dimmed until the session ends.
-  5. The new root's ROOT record follows the deferral rule; the sidecar file is created again lazily, on the next append, so clearing the history of a file that is then only viewed leaves no `.mod` behind.
+  5. The new root's ROOT record follows the deferral rule; the sidecar file is created again lazily, on the next append, so clearing the history of a file that is then only viewed leaves no `.history` behind.
   6. The history state becomes `attached` (or stays `session_only` for an untitled document or one whose sidecar was unavailable). For a `disabled` sidecar whose path holds a foreign file (bad magic), only the in-memory history is cleared and the foreign file is never touched.
 - **Access:** App, after the user confirms Clear History…, and only on a clean document.
 - **Depends on:** [Sidecar.clear](./sidecar.hpp.skel.md#function-clear)
@@ -199,7 +199,7 @@ Counts what a prune would remove, so App can show the age prompt and the confirm
   - Errors, all `unsupported`, carry the message that App shows:
     - "history is still being verified": the state is `verifying`, or the current root's base hash is not known yet.
     - "history is open in another mod": `read_only`.
-    - "history is not being saved": `session_only` or `disabled`. That covers an untitled document, a sidecar that could not be created, and a foreign `.mod` file.
+    - "history is not being saved": `session_only` or `disabled`. That covers an untitled document, a sidecar that could not be created, and a foreign `.history` file.
 - **State changes:** closes the open group, because the plan must see it as a node. Nothing else.
 - **Access:** App, for the prune prompts.
 - **Depends on:** [UndoTree.plan_prune](./undo_tree.hpp.skel.md#function-plan_prune)
@@ -389,7 +389,7 @@ Shows the text as it is at a history node, for the Undo History pane, **without 
 
 ### function: set_persist_history
 
-**History is kept in memory by default.** A file is opened with its sidecar *paused* ([Sidecar.set_paused](./sidecar.hpp.skel.md#function-set_paused)), so editing never creates a `.mod` file, unless a sidecar file was there and could be loaded, in which case persistence is on and it keeps being written. `persist_history()` reports which. `history_unreadable()` is true when a sidecar file was there but could not be loaded (its header is not a sidecar's, or `open` failed); persistence is then off. A sidecar locked by another `mod` or written by a newer one is loaded read-only: persistence shows as on but nothing is written, and this function refuses to change it.
+**History is kept in memory by default.** A file is opened with its sidecar *paused* ([Sidecar.set_paused](./sidecar.hpp.skel.md#function-set_paused)), so editing never creates a `.history` file, unless a sidecar file was there and could be loaded, in which case persistence is on and it keeps being written. `persist_history()` reports which. `history_unreadable()` is true when a sidecar file was there but could not be loaded (its header is not a sidecar's, or `open` failed); persistence is then off. A sidecar locked by another `mod` or written by a newer one is loaded read-only: persistence shows as on but nothing is written, and this function refuses to change it.
 
 - **Inputs:** `on`; `overwrite`: permission to replace an unreadable sidecar file.
 - **Returns:** `Status`: `format` when `on` meets an unreadable sidecar and `overwrite` is false (App asks, then calls again with `overwrite` true); `unsupported` in `read_only`; an I/O error from writing the sidecar, with nothing changed.
@@ -397,7 +397,7 @@ Shows the text as it is at a history node, for the Undo History pane, **without 
   - `on`, untitled: remembered; the first `save_as` then copies the whole history to the new sidecar as it always has.
   - `on`, with this file's own paused sidecar: unpauses it, which writes every held record, so **the whole session's history** reaches the file.
   - `on`, otherwise (a session-only sidecar, an unreadable file, or a paused sidecar left at the document's previous path by a `save_as` made while persistence was off): with `overwrite`, the unreadable file is deleted first; then [copy_to](./sidecar.hpp.skel.md#function-copy_to) the document's path writes the whole history to a new sidecar, which replaces the current one.
-  - off: pauses the sidecar. Writing stops; the `.mod` file, if any, is left as it is, and the session's later steps are kept in memory only.
+  - off: pauses the sidecar. Writing stops; the `.history` file, if any, is left as it is, and the session's later steps are kept in memory only.
 - **Access:** App, for Persist History in the [Undo History pane](../ui/history_view.hpp.skel.md#class-historyview).
 
 ### function: history_state

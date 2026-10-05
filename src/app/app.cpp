@@ -17,6 +17,7 @@
 #include "syntax/layered_highlighter.hpp"
 #include "syntax/semantic_highlighter.hpp"
 #include "syntax/syntax_highlighter.hpp"
+#include "text/utf8.hpp"
 #include "ui/theme.hpp"
 #include "util/log.hpp"
 
@@ -629,7 +630,7 @@ void App::quit_on_escapes() {
 void App::request_exit() { exit_next(ws_.unsaved()); }
 
 void App::confirm_clear_history() {
-    const std::string gone = shown().doc->persist_history() ? std::format("Deleted text kept in {}.mod will be gone.", file_name())
+    const std::string gone = shown().doc->persist_history() ? std::format("Deleted text kept in {}.history will be gone.", file_name())
                                                            : std::string("Text it could bring back will be gone.");
     ask(std::format("Delete all undo history for {}? {}", file_name(), gone), "Clear", [this] {
         if (auto s = shown().doc->clear_history(); !s) {
@@ -689,7 +690,7 @@ void App::prune_confirm(std::uint64_t days) {
         preview->removed_trees > 0 ? std::format(", plus {} unreachable earlier histories", preview->removed_trees) : std::string();
     const std::uint64_t removed = preview->remove_count;
     const std::int64_t cutoff = preview->cutoff_ms;
-    ask(std::format("Remove {} of {} changes (older than {} days{})? Their text will be gone from {}.mod for good.", removed,
+    ask(std::format("Remove {} of {} changes (older than {} days{})? Their text will be gone from {}.history for good.", removed,
                     removed + preview->keep_count, days, plus, file_name()),
         "Trim", [this, removed, cutoff] {
             if (auto s = shown().doc->prune_history(cutoff); !s) {
@@ -910,7 +911,7 @@ void App::handle_file_dialog_key(const KeyEvent& key) {
     ask(std::format("{} already exists. Replace it?", path.filename().string()), "Replace", finish);
 }
 
-// Persist History: on writes the whole history to <file>.mod, off keeps it in memory only.
+// Persist History: on writes the whole history to <file>.history, off keeps it in memory only.
 void App::toggle_persist_history(bool overwrite) {
     Document& doc = *shown().doc;
     const bool on = !doc.persist_history();
@@ -1148,7 +1149,7 @@ void App::run_command(CommandId id) {
         case CommandId::About:
             prompt_.open_info("About mod",
                               "mod " MOD_VERSION ", a minimalist terminal text editor.\n"
-                              "Unlimited branching undo; Persist History keeps it in <file>.mod next to the file.\n"
+                              "Unlimited branching undo; Persist History keeps it in <file>.history next to the file.\n"
                               "Edit > Undo History… shows every branch.\n"
                               "Menus: Esc (or F10, Alt+X), then a menu's underlined letter.\n"
                               "Options > Key Bindings… lists every command and its keys, and changes them.\n"
@@ -1234,8 +1235,9 @@ void App::dispatch(const InputEvent& event) {
 }
 
 void App::dispatch_key(const KeyEvent& key) {
-    // Esc three times in quick succession quits, whatever has the focus (asking about unsaved work).
-    if (key.key == Key::Escape && key.mods == 0) {
+    // A menu key (Esc, or any key bound to Show Menu: F10, Alt+X) three times in quick
+    // succession, in any mix, quits, whatever has the focus (asking about unsaved work).
+    if ((key.key == Key::Escape && key.mods == 0) || keymap_.lookup(key) == CommandId::ShowMenu) {
         const auto now = Clock::now();
         // A press too long after the one before starts the count again.
         if (!escapes_.empty() && now - escapes_.back() > kQuitGap) escapes_.clear();
@@ -1245,6 +1247,8 @@ void App::dispatch_key(const KeyEvent& key) {
             quit_on_escapes();
             return;
         }
+    } else {
+        escapes_.clear();  // in a row: any other key starts the count again
     }
     // A question takes every key until it is answered.
     if (confirm_.is_open()) {
@@ -1726,6 +1730,7 @@ void App::render() {
     for (const Layout::Other& o : l.others) {
         DocumentSlot& s = ws_.at(o.index).slot;
         if (!s.view) continue;
+        s.view->set_split_focused(false);
         if (o.text.rows > 0) s.view->render(screen_, o.text, s.searcher->last_match(), false);
         if (l.band > 0) screen_.add_flags(o.text, kDim);
         s.view->render_status(screen_, o.status_row, "", StatusMark::unfocused, l.left);
@@ -1737,7 +1742,7 @@ void App::render() {
     if (l.pane) {
         const int split = l.pane->col + l.pane->cols;
         draw_frame(l.pane->row - 1, l.pane->row + l.pane->rows, l.text.cols > 0 ? std::optional<int>(split) : std::nullopt, {});
-        history_view_.render(screen_, *l.pane);
+        history_view_.render(screen_, *l.pane, !history_preview_.text_focused());
     }
     if (l.panel) {
         const Panel p = panel();
@@ -1761,6 +1766,7 @@ void App::render() {
     if (preview_) {
         if (l.text.rows > 0 && l.text.cols > 0) preview_->view->render(screen_, l.text, std::nullopt, false);
     } else if (l.text.rows > 0 && l.text.cols > 0) {
+        shown().view->set_split_focused(true);
         shown().view->render(screen_, l.text, shown().searcher->last_match(), text_focus);
     }
     if (prompt_.is_open() && !menu_.is_visible()) prompt_.render(screen_, l.prompt);
@@ -2089,6 +2095,7 @@ int App::run() {
     terminal_->start_screen(output);
     screen_.set_output(output);
     active_theme().set_vt100(terminal_mode_ == TerminalMode::vt100);
+    set_vt100_text(terminal_mode_ == TerminalMode::vt100);
     screen_.resize(terminal_->size());
     after_command();
     for (const InputEvent& e : decoder_.feed(std::as_bytes(std::span(typed.data(), typed.size())))) dispatch(e);

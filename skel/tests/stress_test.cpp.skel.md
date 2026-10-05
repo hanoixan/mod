@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source c4659bd8, stand-in 02c7809e
+stamp: source f2fec462, stand-in 02c7809e
 ---
 # module: stress_test
 

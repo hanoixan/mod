@@ -32,6 +32,7 @@ FONT_SIZE = 15
 
 ESC = b"\x1b"
 SHIFT_DOWN = b"\x1b[1;2B"
+UP, RIGHT = b"\x1b[A", b"\x1b[C"
 CTRL_G, CTRL_Z = b"\x07", b"\x1a"
 
 # xterm's 16 colors, and the page around them.
@@ -161,6 +162,13 @@ def undo_history(mod, work, config, out):
     s.type(" however small the screen.")
     s.menu(b"e", b"h")              # Edit > Undo History…
     s.pump(0.6)
+    # The undone words are a closed branch (○>) above the current state (●): open it.
+    rows = s.screen.display
+    branch = next(y for y, r in enumerate(rows) if "○>" in r)
+    current = next(y for y, r in enumerate(rows) if "●" in r)
+    for _ in range(current - branch):
+        s.send(UP)
+    s.send(RIGHT, settle=0.4)
     render(s.screen, out / "undo-history.png")
     s.close()
 

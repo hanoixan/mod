@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./help_viewer.hpp.skel.md
-stamp: source 2f6ee332, stand-in ed375706
+stamp: source 32848d62, stand-in ed375706
 ---
 # module: help_viewer (implementation)
 

@@ -110,9 +110,9 @@ TEST_CASE("render: rule, question, buttons with the focused one marked and the f
     CHECK(buttons == " [>Save<]  [Discard]  [Cancel]");
     const int save = static_cast<int>(buttons.find("Save"));
     CHECK((screen.cell(4, save).attr.flags & kUnderline) != 0);  // its key letter
-    CHECK(screen.cell(4, save + 1).attr == attr_for(Style::menu_selected));  // the focused button
+    CHECK(screen.cell(4, save + 1).attr == attr_for(Style::list_selected));  // the focused button
     const int discard = static_cast<int>(buttons.find("Discard"));
     CHECK((screen.cell(4, discard).attr.flags & kUnderline) != 0);
-    CHECK_FALSE(screen.cell(4, discard + 1).attr == attr_for(Style::menu_selected));
+    CHECK_FALSE(screen.cell(4, discard + 1).attr == attr_for(Style::list_selected));
     CHECK_FALSE(screen.cursor_visible());
 }

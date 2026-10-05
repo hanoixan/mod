@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source d4bef587, stand-in 49c87166
+stamp: source af5a27a3, stand-in 014701b2
 ---
 # module: history_view
 
@@ -8,9 +8,9 @@ The undo-history panel. The user asked for "a tree-view panel so the user can na
 
 It is opened by the `UndoHistory` command, from Edit > Undo History… only; it has no key. While it is open it has the input focus, like the menu and the prompt, so the document cannot be edited underneath it.
 
-Moving the selection does not change the document, but the text beside the pane **previews** the selected state: App shows it with [Document.begin_preview](../edit/document.hpp.skel.md#function-begin_preview), at the same lines that were in view when the pane opened, the step's inserted text highlighted and its removed text struck through. Only Enter changes the document, jumping to the selected state. Esc closes the panel and leaves the document exactly as it was. **Tab** and **Shift+Tab** move the focus between the pane and the previewed text; with the text focused, Up, Down, PageUp, PageDown, Home and End scroll it, read-only, and Enter and Esc work as in the pane. `selected_node()` gives the node of the selected row (none for a connector row or a read-only one, which preview the current state).
+Moving the selection does not change the document, but the text beside the pane **previews** the selected state: App shows it with [Document.begin_preview](../edit/document.hpp.skel.md#function-begin_preview), at the same lines that were in view when the pane opened, the step's inserted text highlighted and its removed text struck through. Only Enter changes the document, jumping to the selected state. Esc closes the panel and leaves the document exactly as it was. **Tab** and **Shift+Tab** move the focus between the pane and the previewed text; with the text focused, Up, Down, PageUp, PageDown, Home and End scroll it, read-only, and Enter and Esc work as in the pane. `selected_node()` gives the node of the selected row (none for a read-only one, which previews the current state).
 
-The pane also holds what manages the history as a whole, in a footer under the list: **Clear History…** (C), **Trim History…** (T) and the **Persist History** checkbox (P), which says whether the history is written to the `.mod` file beside the document (see [Document.set_persist_history](../edit/document.hpp.skel.md#function-set_persist_history)); it is off by default. They are not in any menu. Each asks its questions in a prompt over the pane, and the pane stays open and shows the history as it is afterwards.
+The pane also holds what manages the history as a whole, in a footer under the list: **Clear History…** (C), **Trim History…** (T) and the **Persist History** checkbox (P), which says whether the history is written to the `.history` file beside the document (see [Document.set_persist_history](../edit/document.hpp.skel.md#function-set_persist_history)); it is off by default. They are not in any menu. Each asks its questions in a prompt over the pane, and the pane stays open and shows the history as it is afterwards.
 
 #### Layout
 
@@ -19,11 +19,11 @@ The panel is a **side pane on the left** of the text area. The text stays visibl
 ```text
 File Edit View Options Help
 ┌────────────────┬─────────────────────┐
-│ * 14 typed     │  1 # Notes          │
-│ | o 13 paste   │  2                  │
-│ |/             │  3 First line       │
-│ o 12 typed     │  4 Second line      │
-│ o 11 delete    │  5                  │
+│ ○ 11 delete    │  1 # Notes          │
+│ ○ 12 typed     │  2                  │
+│ ├─○ 13 paste   │  3 First line       │
+│ ● 14 typed     │  4 Second line      │
+│                │  5                  │
 │────────────────│  6                  │
 │ Clear History… │  7                  │
 │ Trim History…  │  8                  │
@@ -34,15 +34,17 @@ File Edit View Options Help
 
 - The frame starts at the top of the body (row 0, or row 1 while the menu bar shows on row 0). The frame's top and bottom border rows and its three vertical rules take two rows and three columns from the text area. The last row is the status line, which shows ` Enter: jump   C: clear   T: trim   P: persist   Esc: close` while the panel is open, replaced temporarily by any status message (such as a refused Enter).
 - The bottom four rows of the pane are the **footer**: a rule of `─`, then `Clear History…`, `Trim History…` and `[x] Persist History` (`[ ]` when off), one per row, in the `menu` style with the key letter underlined (C, T, P), as a menu shows its accelerators. The checkbox's state is given with `set_persist`. The node list takes the rows above it and scrolls within them. A pane under six rows tall has no footer, so the list always keeps at least two rows; the keys still work.
-- Rows are drawn **newest first**, in the style of `git log --graph`: each node is `o`, the current node is `*`, a vertical `|` continues a lane, and a connector row such as `|/` closes a branch's lane into its parent's lane just above the parent. Each lane is two columns wide. After the graph comes the node's `NodeId` and its `EditKind` label. Labels are the `EditKind` names, except `typing`, which shows as `typed`; so `typed`, `delete`, `paste`, `cut`, `replace`, `replace_all`, `newline`, `indent` and `other`.
-- Indentation grows with the number of branches open at that row, never with node depth: a linear history of a million edits is a single lane, one column of `o`.
-- After the kind, if the row has room, come a save-point marker (` saved`) and the node's time relative to now, two spaces after the rest (`just now` under a minute, then `N min ago`, `N h ago`, `N days ago`); the row is truncated on the right to the pane width. The text of a row is `graph` followed by the id, a space and the kind, so the sketch's rows read `* 14 typed`, `| o 13 paste`, `|/`, `o 12 typed` and `o 11 delete`.
+- Rows are drawn **oldest first**, so the latest changes are at the bottom, and the tree reads like the folder tree. A **line** runs down from a change through its **newest child** (the highest `NodeId`), to a leaf. A change's other, older children start **side branches**: each is its own line, one level deeper, listed under the change it split from (oldest first) before that change's line goes on. Each row is the branch connectors, then `○` (`●` for the current state), then `>` while the change has side branches that are closed, then a space, the node's `NodeId` and its `EditKind` label. Each level is two columns: a branch's first change has `├─`, its later changes `│ `, and every enclosing branch adds a `│ ` before them. Labels are the `EditKind` names, except `typing`, which shows as `typed`; so `typed`, `delete`, `paste`, `cut`, `replace`, `replace_all`, `newline`, `indent` and `other`.
+- Branches **open and close like folders**: every change with side branches is opened (Right) and closed (Left) on its own; opening one shows its side branches with their own side branches closed. When the pane opens, everything is closed except the fewest branches that show the current state: every change the current state's path branched off from.
+- Indentation grows with branch nesting, never with node depth: a linear history of a million edits is a single line, one column of `○`.
+- After the kind, if the row has room, come a save-point marker (` saved`) and the node's time relative to now, two spaces after the rest (`just now` under a minute, then `N min ago`, `N h ago`, `N days ago`); the row is truncated on the right to the pane width. With 13 and 14 both children of 12 and 14 current, the pane opens on `○ 11 delete`, `○> 12 typed`, `● 14 typed`; Right on 12 gives `○ 12 typed`, `├─○ 13 paste`, `● 14 typed`.
+- In vt100 terminal mode the [screen](./screen.hpp.skel.md#class-screen) sends the connectors through the VT100's line-drawing set and `○` and `●` as `o` and `*` (see [TerminalOutput.append_cell](../platform/terminal_output.hpp.skel.md#function-append_cell)).
 
 #### Other histories
 
-The panel shows the **whole forest**: the current root's tree first, then every other tree, newest first. Other trees are histories recorded before a reload, before a verify mismatch or session-only fallback, and (for the rest of the session only) before a Clear History. History removed by a prune ([Document.prune_history](../edit/document.hpp.skel.md#function-prune_history)) is **not** shown at all: it is gone, not dimmed, and the pruned tree's root is drawn like any other root; see [UndoTree.reset](../edit/undo_tree.hpp.skel.md#function-reset). Their rows are **dimmed and read-only**: the selection can move onto them to browse, but Enter on one refuses with "read-only: history from before a reload or Clear History", and the panel stays open. Their base content is gone, so they can never become current.
+The panel shows the **whole forest**: the other trees at the top, oldest (by newest `NodeId`) first, each **closed** to one row, its newest line's last change with `>`, which Right opens to the whole tree (its own branches closed) and Left, on any row of its outer line, closes again; the current state's tree at the bottom, always open. Other trees are histories recorded before a reload, before a verify mismatch or session-only fallback, and (for the rest of the session only) before a Clear History. History removed by a prune ([Document.prune_history](../edit/document.hpp.skel.md#function-prune_history)) is **not** shown at all: it is gone, not dimmed, and the pruned tree's root is drawn like any other root; see [UndoTree.reset](../edit/undo_tree.hpp.skel.md#function-reset). Their rows are **dimmed and read-only**: the selection can move onto them to browse, but Enter on one refuses with "read-only: history from before a reload or Clear History", and the panel stays open. Their base content is gone, so they can never become current.
 
-- **Owns:** the open or closed state, the flattened row list for the tree being shown, the selected row, and the panel's scroll offset.
+- **Owns:** the open or closed state, the flattened row list, the set of open changes and open older trees, the selected row, and the panel's scroll offset.
 - **Access:** public. One instance, owned by [App](../app/app.hpp.skel.md#class-app). Main thread.
 - **Required:** optional — without it, branches are still reachable with undo, redo and Edit > Next/Previous Branch, one step at a time.
 - **Failure modes:**
@@ -74,16 +76,16 @@ The panel shows the **whole forest**: the current root's tree first, then every 
 
 ## symbol: HistoryRow
 
-`{ std::optional<NodeId> node; std::string graph; bool is_current; bool is_save_point; bool on_redo_path; bool read_only; }`. One row per node, plus one **connector row** (with no `node`) wherever lanes close into a parent's lane. `graph` is the row's lane glyphs in ASCII (`*`, `o`, `|`, `/`, `\`, space), two columns per lane: lane `k`'s glyph is in column `2k` and column `2k+1` is a space. A node row's `graph` runs to the end of its last open lane, including that lane's trailing space, so the id follows after one space. A connector row has `|` in each lane that stays open and `/` in column `2L−1` for each lane `L` it closes, with trailing spaces removed. `on_redo_path` marks nodes reachable from `current` by following preferred children, which is where redo would go. `read_only` marks rows of other trees and retired trees; they are drawn dimmed.
+`{ NodeId node; std::string graph; int depth; bool expandable; bool expanded; std::optional<NodeId> branch_from; bool is_current; bool is_save_point; bool on_redo_path; bool read_only; }`. One row per shown change. `graph` is what comes before the id, as the module's layout describes (`│ ` per enclosing level, `├─` or `│ ` for its own, `○` or `●`, `>` while closed, a space). `depth` is the branch nesting, two columns a level, so the `○` is at column `2 × depth`. `expandable` marks a change with side branches, or an older tree's closed row; `expanded` says they are shown. `branch_from` is the change the row's branch split from (none on a tree's outer line), where Left goes. `on_redo_path` marks nodes reachable from `current` by following preferred children, which is where redo would go. `read_only` marks rows of other trees and retired trees; they are drawn dimmed.
 
-Lane assignment, so that two implementations draw the same graph: rows are produced in display order (current tree first, then the other trees in descending order of their newest `NodeId`; within a tree, descending `NodeId`, which puts every child above its parent). Each open lane waits for one parent `NodeId`. A node takes the leftmost lane waiting for it, or, when none is (a leaf), the leftmost free lane. Any other lanes also waiting for it are closed by one connector row emitted just before the node's row. After the node's row, its lane waits for its parent, or is freed when the node is a root.
+Order, so that two implementations draw the same rows: trees as the module says; within an open tree, depth first along lines: a line's changes top to bottom, and under each open change its side branches in ascending `NodeId`, each in full (with its own open branches), before the line goes on with the change's newest child.
 
 - **Access:** internal to the panel; public only so that tests can inspect the row list.
 
 ## class: HistoryView
 
 - **Inputs:** `now_ms`: an optional clock returning Unix milliseconds, for the relative times (default: the system clock); tests inject one. The tree is passed to `open`, and the panel keeps a reference to it while open: App closes the panel before anything replaces the tree, and opens it again on the same tree straight after a clear or a prune, before the next frame is drawn.
-- **State changes:** `closed | open(rows, selected, scroll)`. Invariants while open: `rows` is the whole forest in the display order and lane assignment of [HistoryRow](#symbol-historyrow); `selected` indexes a row that has a `node` (connector rows are never selected); the selected row is inside the visible area after every key.
+- **State changes:** `closed | open(rows, selected, scroll)`. Invariants while open: `rows` are the shown changes in the order of [HistoryRow](#symbol-historyrow), given the open changes and open trees; `selected` indexes a row; the selected row is inside the visible area after every key, and stays on the same change when branches open or close.
 - **Owns:** see the module.
 - **Access:** App routes keys here while it is open and no prompt is. A prompt opened from the panel (by C or P) takes the keys until it closes, with the panel still drawn under it.
 - **Referred by:** [app](../app/app.hpp.skel.md)
@@ -94,7 +96,7 @@ Lane assignment, so that two implementations draw the same graph: rows are produ
 
 - **Inputs:** `tree`: a `const UndoTree&`.
 - **Returns:** nothing.
-- **State changes:** builds the row list from every root in `tree.roots()` and `tree.retired_roots()`, as [HistoryRow](#symbol-historyrow) describes, selects the current node's row, and scrolls it into view.
+- **State changes:** closes every branch and older tree, opens the changes the current state's path branched off from, builds the row list from every root in `tree.roots()` and `tree.retired_roots()` as [HistoryRow](#symbol-historyrow) describes, selects the current node's row (the last row when there is none), and scrolls it into view.
 - **Access:** App, on `UndoHistory`.
 
 ### function: handle_key
@@ -102,7 +104,9 @@ Lane assignment, so that two implementations draw the same graph: rows are produ
 - **Inputs:** a `KeyEvent`.
 - **Returns:** a `HistoryKeyResult { std::optional<NodeId> jump; bool closed; std::string message; std::optional<CommandId> command; }`: `jump` is the node to jump to when the user pressed Enter; `closed` is true when the key closed the panel (Esc); `message` is a refusal to show on the status line, or empty; `command` is `ClearHistory` or `TrimHistory` when the user pressed C or P.
 - **State changes:**
-  - Up and Down move the selection one node row, skipping connector rows; PageUp and PageDown move it one screen; Home and End go to the first and last node row.
+  - Up and Down move the selection one row; PageUp and PageDown move it one screen; Home and End go to the first and last row; all clamp at the ends.
+  - Right, like the folder tree's, on a change with closed side branches opens them (on an older tree's closed row, opens the tree); on an open one moves to the next row, its first branch; otherwise does nothing.
+  - Left on a change with open side branches closes them; else, inside a branch, moves to the change the branch split from; else, on the outer line of an open older tree, closes the tree and selects its row; otherwise does nothing.
   - Enter on a `read_only` row refuses with a status message and returns `nullopt`; the panel stays open.
   - Enter on any other row returns the selected node. App calls `Document.jump_to` with it, and closes the panel on success. On failure the panel stays open and the status line shows the reason.
   - Esc closes the panel without changing the document.
@@ -127,9 +131,9 @@ Lane assignment, so that two implementations draw the same graph: rows are produ
 
 ### function: render
 
-- **Inputs:** a `Screen&`; `area`: the rectangle App gives the pane, inside the frame, `history_pane_width(terminal columns)` wide.
+- **Inputs:** a `Screen&`; `area`: the rectangle App gives the pane, inside the frame, `history_pane_width(terminal columns)` wide; `focused`: whether the pane has the keys (false while the previewed text has them, after Tab; true by default).
 - **Returns:** nothing.
-- **State changes:** draws the visible rows with [attr_for](./theme.hpp.skel.md#function-attr_for): `menu` for rows, `menu_selected` for the selected row, `gutter_current` for the current node's `*` marker, and `history_read_only` (dim, an attribute rather than a color) for `read_only` rows. No new colors. The frame and the status-line hint are drawn by App.
+- **State changes:** draws the visible rows with [attr_for](./theme.hpp.skel.md#function-attr_for): the folder tree's look: plain (`Default`) for rows, `list_selected` for the selected row while `focused` and `list_selected_unfocused` otherwise, the footer's commands and rule in `menu`, `gutter_current` for the current node's `*` marker, and `history_read_only` (dim, an attribute rather than a color) for `read_only` rows. No new colors. The frame and the status-line hint are drawn by App.
 - **Access:** App.render.
 
 ### function: close

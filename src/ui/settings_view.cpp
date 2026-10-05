@@ -137,7 +137,7 @@ void SettingsView::render(Screen& screen, Rect area) {
     if (settings_ == nullptr || area.rows <= 0 || area.cols <= 0) return;
     const auto specs = setting_specs();
     const Attr plain = attr_for(Style::Default);
-    const Attr selected = attr_for(Style::menu_selected);
+    const Attr selected = attr_for(Style::list_selected);
     const int right = area.col + area.cols;
     for (int r = 0; r < area.rows; ++r) screen.fill(area.row + r, area.col, right, plain);
 

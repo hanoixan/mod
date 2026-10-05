@@ -110,7 +110,9 @@ int Screen::print(int row, int col, int col_end, std::string_view text, Attr att
             continue;
         }
         const int w = display_width(d, static_cast<std::uint64_t>(col), 1);
-        if (d.cp < 0x20 || d.cp == 0x7F) {
+        if (d.cp == 0x2026 && vt100_text()) {
+            for (int k = 0; k < 3 && col < col_end; ++k) put(row, col++, ".", 1, attr);  // a VT100 has no '…'
+        } else if (d.cp < 0x20 || d.cp == 0x7F) {
             put(row, col++, " ", 1, attr);
         } else if (w == 0) {
             put(row, col, text.substr(i, len), 0, attr);
@@ -155,6 +157,7 @@ Status Screen::flush() {
         sent_style_ = cursor_style_;
     }
     std::optional<Attr> current;
+    bool line_drawing = false;  // the VT100's line-drawing set is selected; end_frame deselects it
     int at_row = -1;
     int at_col = -1;
     for (int r = 0; r < rows_; ++r) {
@@ -167,7 +170,7 @@ Status Screen::flush() {
                 output_->append_attr(out_, b.attr);
                 current = b.attr;
             }
-            out_.append(b.utf8.data(), b.len);
+            output_->append_cell(out_, std::string_view(b.utf8.data(), b.len), line_drawing);
             at_row = r;
             at_col = c + b.width;
         }

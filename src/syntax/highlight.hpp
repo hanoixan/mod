@@ -71,7 +71,10 @@ enum class Style : std::uint8_t {
     page,  // the text area's background, which darkness sets
     history_inserted,  // the Undo History preview: text the selected step inserted
     history_removed,   // ...and text it removed
-    overflow_marker,
+    status_unfocused,         // a split's status line while another has the focus
+    list_selected,            // a list's selected row (the folder tree, Undo History) while it has the keys
+    list_selected_unfocused,  // ...and while it has not
+    overflow_marker,          // last: the theme's tables are sized by it
 };
 
 // StyleSpan::modifiers bits: the LSP modifiers the theme renders.

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./sidecar.hpp.skel.md
-stamp: source 87741a06, stand-in 5ddd415b
+stamp: source 5b244ca0, stand-in 5ddd415b
 ---
 # module: sidecar (implementation)
 

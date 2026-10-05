@@ -247,8 +247,8 @@ TEST_CASE("render: the search field, the rows, the selected row highlighted, and
     CHECK(screen_row(screen, 1).find("Search: find") != std::string::npos);
     CHECK(screen_row(screen, 2).find("Find/Replace") != std::string::npos);
     CHECK(screen_row(screen, 2).find("Ctrl+F") != std::string::npos);
-    CHECK(screen.cell(2, 1).attr == attr_for(Style::menu_selected));
-    CHECK(screen.cell(3, 1).attr != attr_for(Style::menu_selected));
+    CHECK(screen.cell(2, 1).attr == attr_for(Style::list_selected));
+    CHECK(screen.cell(3, 1).attr != attr_for(Style::list_selected));
     CHECK(screen_row(screen, 3).find("Find Next") != std::string::npos);
     CHECK(screen_row(screen, 0).empty());  // nothing outside the area
 

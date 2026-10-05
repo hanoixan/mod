@@ -15,7 +15,7 @@ Options > User Settings… lists every setting. Up and Down move, Enter or Space
 | `read_only_copy` | markdown | What Copy takes from a Markdown file shown laid out in [read-only mode](read-only.md): `markdown` copies the source, marks and all; `visible text` copies the text as you see it. |
 | `tab_inserts` | spaces | What Tab inserts: `spaces` up to the next tab stop, or a `tab` character. Shift+Tab removes up to a tab width of leading spaces, or a leading tab, from the line, or from every line of a selection. |
 | `cursor_style` | bar | The text cursor's shape: `bar` (a vertical line), `block` or `underline`, each also as `-blink` (`bar-blink`…). Some terminals ignore it; vt100 mode leaves the terminal's own cursor. Applies at once; mod restores the terminal's own shape when it exits. |
-| `terminal_mode` | auto | How mod writes to the terminal: `auto` detects it, `vt100` uses only VT100 codes (bold, underline and reverse, no colors, no alternate screen), `xterm` uses colors and modern features. A choice: Enter, Space or Left and Right step through the names. Applies the next time mod starts. |
+| `terminal_mode` | auto | How mod writes to the terminal: `auto` detects it, `vt100` uses only VT100 codes (bold, underline and reverse, no colors, no alternate screen; lines are drawn with the VT100's line-drawing characters and other symbols as plain ASCII, such as `...`, `o` and `*`), `xterm` uses colors and modern features. A choice: Enter, Space or Left and Right step through the names. Applies the next time mod starts. |
 | `keymap` | none changed | Your [key bindings](key-bindings.md), edited with Options > Key Bindings…. |
 | `colors` | none changed | Your [colors](colors.md), edited with Options > Colors…. |
 

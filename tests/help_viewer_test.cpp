@@ -110,7 +110,7 @@ TEST_CASE("the highlighted link is drawn in the selected look, other links in th
     f.press(key(Key::Down));
     const int alpha = static_cast<int>(f.row(3).find("Alpha"));
     const int beta = static_cast<int>(f.row(3).find("Beta"));
-    CHECK(f.screen.cell(3, alpha).attr == attr_for(Style::menu_selected));
+    CHECK(f.screen.cell(3, alpha).attr == attr_for(Style::list_selected));
     CHECK(f.screen.cell(3, beta).attr == attr_for(Style::md_link_text));
 }
 

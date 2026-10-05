@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source 63ab41b9, stand-in cfc24e2d
+stamp: source 63ab41b9, stand-in 881237d3
 ---
 # module: file_dialog
 
-../modi/'s (after ../modi/) Open and Save As dialog. It replaces the whole text area (the status line stays), and is driven by the keyboard only: there is no mouse. Its looks come from the [theme](./theme.hpp.skel.md): text in `text`, rules and secondary text in `gutter`, the focused zone and selection in `menuSelected`, links in `markdownLinkText`, the primary button in `gutterCurrent`, errors in `error`. App opens it for Open, Save As and the first save of an untitled document.
+../modi/'s (after ../modi/) Open and Save As dialog. It replaces the whole text area (the status line stays), and is driven by the keyboard only: there is no mouse. Its looks come from the [theme](./theme.hpp.skel.md): text in `text`, rules and secondary text in `gutter`, the focused zone and selection in `listSelected`, links in `markdownLinkText`, the primary button in `gutterCurrent`, errors in `error`. App opens it for Open, Save As and the first save of an untitled document.
 
 Layout, top to bottom, in the `body` rows the dialog is given (the *list rows* are what is left after the fixed rows, at least 1):
 
@@ -18,7 +18,7 @@ Layout, top to bottom, in the `body` rows the dialog is given (the *list rows* a
 8. **File:** ` File: ` and a text field holding the file name.
 9. **Actions:** a space, `[Open]` or `[Save]` (primary) and `[Cancel]`; right-aligned, a type-to-search mark `⌕ text` while a search is active, and `N of M` for the selected entry or `M items` when none is selected.
 
-A **focus zone** is where keys go; the focused button, header or list is drawn in `menuSelected`. The zones in Tab order are `up`, `home`, `folder`, `hidden`, `filter`, `sort_name`, `sort_size`, `sort_modified`, `list`, `filename`, `submit`, `cancel`. The dialog opens on `list`.
+A **focus zone** is where keys go; the focused button, header or list is drawn in `listSelected`. The zones in Tab order are `up`, `home`, `folder`, `hidden`, `filter`, `sort_name`, `sort_size`, `sort_modified`, `list`, `filename`, `submit`, `cancel`. The dialog opens on `list`.
 
 - **Owns:** the current directory, the entries, the filter, the hidden flag, the sort, the selection, the scroll position, the focus zone, the file name field, the type-to-search buffer and the error.
 - **Access:** public. One instance at a time, owned by [App](../app/app.hpp.skel.md#class-app), which also keeps it while the overwrite question is asked. Main thread.

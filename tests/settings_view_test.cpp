@@ -189,8 +189,8 @@ TEST_CASE("render: the rows, the selected row highlighted, and its help text bel
     for (std::size_t r = 0; r < setting_specs().size(); ++r) {
         CHECK(screen_row(screen, 1 + static_cast<int>(r)).find(setting_specs()[r].label) != std::string::npos);
     }
-    CHECK(screen.cell(1 + static_cast<int>(i), 1).attr == attr_for(Style::menu_selected));
-    CHECK(screen.cell(1, 1).attr != attr_for(Style::menu_selected));
+    CHECK(screen.cell(1 + static_cast<int>(i), 1).attr == attr_for(Style::list_selected));
+    CHECK(screen.cell(1, 1).attr != attr_for(Style::list_selected));
     std::string below;
     for (int r = 1 + static_cast<int>(setting_specs().size()); r < 19; ++r) below += screen_row(screen, r) + " ";
     CHECK(below.find("Show the line-number gutter") != std::string::npos);

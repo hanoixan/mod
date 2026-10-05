@@ -47,7 +47,7 @@ mod --help                # every option, including any setting for one session
 
 ## Features
 
-- **Undo that never forgets.** The history is a tree, not a line: undo a few steps and type something new, and the old edits stay on their own branch instead of being thrown away. Edit > Undo History… shows every branch, lets you preview any point and jump to it. There is no limit on its size, and with Persist History (or `--persist-history`) it is kept in a `.mod` file beside yours, so it survives closing the editor and rebooting.
+- **Undo that never forgets.** The history is a tree, not a line: undo a few steps and type something new, and the old edits stay on their own branch instead of being thrown away. Edit > Undo History… shows every branch, lets you preview any point and jump to it. There is no limit on its size, and with Persist History (or `--persist-history`) it is kept in a `.history` file beside yours, so it survives closing the editor and rebooting.
 
   ![the Undo History pane showing a branch](docs/images/undo-history.png)
 

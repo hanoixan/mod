@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source e46f4a49, stand-in 44608300
+stamp: source d157e5cc, stand-in 44608300
 ---
 # module: file_dialog_test
 

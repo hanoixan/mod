@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 61570298, stand-in 718c90e3
+stamp: source dbc9b31b, stand-in 718c90e3
 ---
 # resource: command-line.md
 

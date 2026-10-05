@@ -61,7 +61,7 @@ struct Scratch {
     void remove_all() const {
         std::error_code ec;
         fs::remove(file, ec);
-        fs::remove(file.parent_path() / ("." + file.filename().string() + ".mod"), ec);
+        fs::remove(file.parent_path() / ("." + file.filename().string() + ".history"), ec);
         fs::remove_all(config, ec);
     }
 };

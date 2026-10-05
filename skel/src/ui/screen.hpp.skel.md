@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1f7e27b8, stand-in adfd1755
+stamp: source 1f7e27b8, stand-in a43373fd
 ---
 # module: screen
 
@@ -99,7 +99,7 @@ A double-buffered cell grid that renders to VT escape sequences. Each frame is d
 
 - **Inputs:** `row`, `col`, `col_end`, `text`: UTF-8, `attr`.
 - **Returns:** the column after the last cell drawn.
-- **State changes:** draws `text` cell by cell with [display_width](../text/utf8.hpp.skel.md#function-display_width) (tab width 1), up to but not including `col_end`. A wide character that would cross `col_end` stops the drawing; control characters show as a space and invalid bytes as `?`. For labels, prompts and the status line, never for document text, which EditorView lays out itself.
+- **State changes:** draws `text` cell by cell with [display_width](../text/utf8.hpp.skel.md#function-display_width) (tab width 1), up to but not including `col_end`. A wide character that would cross `col_end` stops the drawing; control characters show as a space and invalid bytes as `?`. In vt100 text mode ([set_vt100_text](../text/utf8.hpp.skel.md#function-set_vt100_text)) a `…` is drawn as three `.` cells, as [text_columns](../text/utf8.hpp.skel.md#function-text_columns) counts it. For labels, prompts and the status line, never for document text, which EditorView lays out itself.
 - **Access:** views.
 
 ### function: cell
@@ -134,7 +134,7 @@ A double-buffered cell grid that renders to VT escape sequences. Each frame is d
 
 - **Inputs:** none.
 - **Returns:** `Status`.
-- **State changes:** diffs back against front, builds the frame through its [TerminalOutput](../platform/terminal_output.hpp.skel.md#class-terminaloutput) (the frame's prefix and suffix, cursor moves `ESC[r;cH`, the output's SGR for each change of look, text), writes it, and copies back to front. `set_output` chooses the output (xterm until then) and invalidates the screen. `set_cursor_style` chooses the cursor's shape (a bar until then); the frame sends it through [cursor_shape](../platform/terminal_output.hpp.skel.md#function-cursor_shape) when it differs from the last one sent, and after every full redraw.
+- **State changes:** diffs back against front, builds the frame through its [TerminalOutput](../platform/terminal_output.hpp.skel.md#class-terminaloutput) (the frame's prefix and suffix, cursor moves `ESC[r;cH`, the output's SGR for each change of look, each cell's character through [append_cell](../platform/terminal_output.hpp.skel.md#function-append_cell)), writes it, and copies back to front. `set_output` chooses the output (xterm until then) and invalidates the screen. `set_cursor_style` chooses the cursor's shape (a bar until then); the frame sends it through [cursor_shape](../platform/terminal_output.hpp.skel.md#function-cursor_shape) when it differs from the last one sent, and after every full redraw.
 - **Access:** App, once per loop iteration when anything changed, and from App's progress sink while a long operation blocks the loop.
 
 ### function: invalidate

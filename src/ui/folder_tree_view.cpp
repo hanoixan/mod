@@ -54,7 +54,7 @@ TreeKeyResult FolderTreeView::handle_key(const KeyEvent& key) {
 void FolderTreeView::render(Screen& screen, Rect area, bool focused) {
     if (tree_ == nullptr || area.rows <= 0 || area.cols <= 0) return;
     const Attr plain = attr_for(Style::Default);
-    const Attr selected = focused ? attr_for(Style::menu_selected) : attr_for(Style::selection);
+    const Attr selected = attr_for(focused ? Style::list_selected : Style::list_selected_unfocused);
     list_rows_ = std::max(1, area.rows - 1);
     const auto& rows = tree_->rows();
     const std::size_t sel = tree_->selected();

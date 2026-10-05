@@ -1,7 +1,7 @@
 ---
 role: product
 kind: resource
-stamp: source af5c529e, stand-in 60535b12
+stamp: source 62bba2b3, stand-in 60535b12
 ---
 # resource: README.md
 

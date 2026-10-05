@@ -190,7 +190,7 @@ TEST_CASE("the search panel draws the field, the count, and the rows with the se
     CHECK(screen_row(screen, 1).find("Search the manual: prune") != std::string::npos);
     CHECK(screen_row(screen, 1).find("3 matches") != std::string::npos);
     CHECK(screen_row(screen, 2).find("more/deep.md:2") != std::string::npos);
-    CHECK(screen.cell(2, 1).attr == attr_for(Style::menu_selected));
+    CHECK(screen.cell(2, 1).attr == attr_for(Style::list_selected));
     CHECK(screen_row(screen, 3).find("undo.md:2") != std::string::npos);
     CHECK(screen_row(screen, 0).empty());
     v.handle_key(key(Key::Backspace, kCtrl));

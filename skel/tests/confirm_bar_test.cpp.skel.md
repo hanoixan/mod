@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 41678779, stand-in 8282085b
+stamp: source 94195d6d, stand-in 8282085b
 ---
 # module: confirm_bar_test
 

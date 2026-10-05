@@ -62,16 +62,19 @@ constexpr Attr legacy_attr(Style style, std::uint8_t modifiers = 0) {
         case Style::selection: a.flags = kReverse; break;
         case Style::gutter: a.flags = kDim; break;
         case Style::gutter_current: a.flags = kBold; break;
-        case Style::status: a.flags = kReverse; break;
-        case Style::menu: a.flags = kReverse; break;
+        case Style::status:
+        case Style::menu: a = {black, white + bright, 0}; break;
+        case Style::status_unfocused: a = {white, black + bright, 0}; break;
+        case Style::list_selected: a = {black, blue + bright, kBold}; break;
+        case Style::list_selected_unfocused: a.flags = kReverse; break;
         case Style::menu_selected: a = {white + bright, blue, kBold}; break;
-        case Style::menu_accel: a.flags = kReverse | kUnderline; break;
+        case Style::menu_accel: a = {black, white + bright, kUnderline}; break;
         case Style::error: a = {white + bright, red, kBold}; break;
         case Style::history_read_only: a.flags = kDim; break;
         case Style::page:
         case Style::history_inserted:
         case Style::history_removed: break;
-        case Style::overflow_marker: a.flags = kReverse; break;
+        case Style::overflow_marker: a = {black, white + bright, 0}; break;
     }
     // Modifiers, in the theme table's order.
     if (modifiers & kModDeclaration) a.flags |= kBold;
@@ -231,7 +234,7 @@ TEST_CASE("vt100: the fallback table, with no color and only bold, underline and
     CHECK(t.attr(Style::lsp_number) == plain);
     CHECK(t.attr(Style::lsp_variable) == plain);
     CHECK(t.attr(Style::status) == Attr{kDefaultColor, kDefaultColor, kReverse});
-    CHECK(t.attr(Style::menu_selected) == Attr{kDefaultColor, kDefaultColor, kBold});
+    CHECK(t.attr(Style::menu_selected) == Attr{});
     CHECK(t.attr(Style::search_match) == Attr{kDefaultColor, kDefaultColor, kReverse});
     CHECK(t.attr(Style::lsp_function, kModDeprecated) == Attr{kDefaultColor, kDefaultColor, kReverse});
     CHECK(t.attr(Style::lsp_function, kModDeclaration) == Attr{kDefaultColor, kDefaultColor, kBold});
@@ -245,28 +248,34 @@ TEST_CASE("vt100: the fallback table, with no color and only bold, underline and
     CHECK(t.attr(Style::lsp_keyword) == Attr{red, kDefaultColor, kBold});  // the override is back
 }
 
-TEST_CASE("darkness: normal is unchanged; night trades reverse for bright bold; paper inverts") {
+TEST_CASE("darkness: the bars are the same black on bright white in every look; paper inverts the page") {
     ColorTheme t;
-    CHECK(t.darkness() == Darkness::normal);
-    CHECK(t.attr(Style::status) == Attr{kDefaultColor, kDefaultColor, kReverse});
+    const Attr bar{black, white + bright, 0};
+    const Attr unfocused{white, black + bright, 0};
+    for (const Darkness d : {Darkness::normal, Darkness::night, Darkness::paper}) {
+        CAPTURE(static_cast<int>(d));
+        t.set_darkness(d);
+        CHECK(t.attr(Style::status) == bar);
+        CHECK(t.attr(Style::menu) == bar);
+        CHECK(t.attr(Style::overflow_marker) == bar);
+        CHECK(t.attr(Style::menu_accel) == Attr{black, white + bright, kUnderline});
+        CHECK(t.attr(Style::status_unfocused) == unfocused);
+        CHECK(t.unfocused_status() == unfocused);
+        CHECK(t.is_default("status"));
+    }
+    t.set_darkness(Darkness::normal);
     CHECK(t.attr(Style::page) == Attr{});
-    t.set_darkness(Darkness::night);
-    // Bold bright white on a dark grey band: brighter than the text, without reverse video.
-    const Attr band{white + bright, black + bright, kBold};
-    CHECK(t.attr(Style::status) == band);
-    CHECK(t.attr(Style::menu) == band);
-    CHECK(t.attr(Style::overflow_marker) == band);
-    CHECK(t.attr(Style::menu_accel) == Attr{white + bright, black + bright, kBold | kUnderline});
-    CHECK(t.attr(Style::selection) == Attr{kDefaultColor, kDefaultColor, kReverse});  // the selection stays
-    CHECK(t.spec_of("status") == "bold bright-white on-bright-black");
-    CHECK(t.is_default("status"));
     t.set_darkness(Darkness::paper);
-    CHECK(t.attr(Style::status) == Attr{});
-    CHECK(t.attr(Style::menu) == Attr{});
-    CHECK(t.attr(Style::menu_accel) == Attr{kDefaultColor, kDefaultColor, kUnderline});
-    CHECK(t.attr(Style::overflow_marker) == Attr{});
     CHECK(t.attr(Style::page) == Attr{black, white + bright, 0});
     CHECK(t.spec_of("page") == "black on-bright-white");
+}
+
+TEST_CASE("the unfocused status line is a color of its own, set like any other") {
+    ColorTheme t;
+    CHECK(t.spec_of("statusUnfocused") == "white on-bright-black");
+    REQUIRE(t.set("statusUnfocused", "yellow on-blue"));
+    CHECK(t.unfocused_status() == Attr{yellow, blue, 0});
+    CHECK(t.attr(Style::status) == Attr{black, white + bright, 0});  // the focused one is its own
 }
 
 TEST_CASE("darkness: overrides still win, and a spec equal to the level's default is no override") {
@@ -274,7 +283,7 @@ TEST_CASE("darkness: overrides still win, and a spec equal to the level's defaul
     t.set_darkness(Darkness::night);
     REQUIRE(t.set("status", "red"));
     CHECK(t.attr(Style::status).fg == red);
-    REQUIRE(t.set("status", "bold bright-white on-bright-black"));  // night's own default
+    REQUIRE(t.set("status", "black on-bright-white"));  // the default, in night as in normal
     CHECK(t.is_default("status"));
     t.set_darkness(Darkness::paper);
     REQUIRE(t.set("page", "black on-white"));
@@ -291,17 +300,25 @@ TEST_CASE("on_page lays a look over the page: default colors take the page's, re
     CHECK(t.on_page(Attr{magenta, kDefaultColor, 0}) == Attr{magenta, kDefaultColor, 0});
 }
 
-TEST_CASE("darkness in vt100 mode: night drops reverse for bold, paper reverses the page") {
+TEST_CASE("vt100: the bars, menus and lists stand out from text, the same in every darkness") {
     ColorTheme t;
     t.set_vt100(true);
-    t.set_darkness(Darkness::night);
-    CHECK(t.attr(Style::status) == Attr{kDefaultColor, kDefaultColor, kBold});
-    CHECK(t.attr(Style::menu_accel) == Attr{kDefaultColor, kDefaultColor, kBold | kUnderline});
-    t.set_darkness(Darkness::paper);
-    CHECK(t.attr(Style::status) == Attr{});
-    CHECK(t.attr(Style::page) == Attr{kDefaultColor, kDefaultColor, kReverse});
-    CHECK(t.on_page(Attr{}) == Attr{kDefaultColor, kDefaultColor, kReverse});
-    CHECK(t.on_page(Attr{kDefaultColor, kDefaultColor, kReverse}) == Attr{});  // a selection shows inverted
+    for (const Darkness d : {Darkness::normal, Darkness::night, Darkness::paper}) {
+        CAPTURE(static_cast<int>(d));
+        t.set_darkness(d);
+        CHECK(t.attr(Style::status) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        // Reverse like the focused one: only the focused line's '>' tells them apart.
+        CHECK(t.attr(Style::status_unfocused) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.unfocused_status() == t.attr(Style::status));
+        CHECK(t.attr(Style::menu) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.attr(Style::menu_accel) == Attr{kDefaultColor, kDefaultColor, kReverse | kUnderline});
+        CHECK(t.attr(Style::menu_selected) == Attr{});  // cut out of the reverse menu
+        CHECK(t.attr(Style::list_selected) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.attr(Style::list_selected_unfocused) == Attr{kDefaultColor, kDefaultColor, kUnderline});
+        CHECK(t.attr(Style::overflow_marker) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.attr(Style::page) == Attr{});  // paper's page is not reversed either
+        CHECK(t.on_page(Attr{}) == Attr{});
+    }
 }
 
 TEST_CASE("defaults use no dark blue on a dark screen; paper keeps the plain blues") {
@@ -344,27 +361,5 @@ TEST_CASE("session colors: drawn over the saved ones, never among the overrides,
     CHECK(t.is_default("number"));
 }
 }  // namespace
-TEST_CASE("an unfocused split's status line: readable text on a darker band, fixed for each darkness") {
-    auto attr_of = [](std::string_view spec) {
-        const auto c = parse_color_spec(spec, false);
-        REQUIRE(c);
-        return Attr{c->fg.value_or(kDefaultColor), c->bg.value_or(kDefaultColor), c->flags};
-    };
-    ColorTheme t;
-    t.set_darkness(Darkness::normal);
-    CHECK(t.unfocused_status() == attr_of("white on-bright-black"));
-    t.set_darkness(Darkness::night);
-    CHECK(t.unfocused_status() == attr_of("white on-black"));
-    t.set_darkness(Darkness::paper);
-    CHECK(t.unfocused_status() == attr_of("black on-white"));
-    for (const Darkness d : {Darkness::normal, Darkness::night, Darkness::paper}) {
-        t.set_darkness(d);
-        const Attr a = t.unfocused_status();
-        CHECK(a.fg != a.bg);  // never text the color of its band
-        CHECK((a.flags & kDim) == 0);
-    }
-    t.set_vt100(true);  // no colors: the focused look, the '>' tells them apart
-    CHECK(t.unfocused_status() == t.attr(Style::status));
-}
 
 }  // namespace mod

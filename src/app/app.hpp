@@ -273,7 +273,8 @@ private:
     static constexpr std::chrono::milliseconds kMenuFlash{120};
     std::optional<CommandId> flash_command_;
     std::optional<Clock::time_point> flash_deadline_;
-    // Recent Esc presses: kQuitEscapes in a row, each within kQuitGap of the one before, quit.
+    // Recent menu-key presses (Esc, or a Show Menu key): kQuitEscapes in a row, each within
+    // kQuitGap of the one before, quit.
     static constexpr std::chrono::milliseconds kQuitGap{250};
     static constexpr std::size_t kQuitEscapes = 3;
     std::vector<Clock::time_point> escapes_;

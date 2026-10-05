@@ -280,7 +280,7 @@ bool is_sidecar_header(const fs::path& path) {
 
 fs::path sidecar_path_for(const fs::path& document_path) {
     fs::path p = document_path;
-    p += ".mod";
+    p += ".history";
     return p;
 }
 

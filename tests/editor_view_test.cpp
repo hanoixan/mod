@@ -109,8 +109,8 @@ const Attr kMarker = attr_for(Style::overflow_marker);
 
 }  // namespace
 
-TEST_CASE("the overflow marker is reverse video") {
-    CHECK(kMarker.flags == kReverse);
+TEST_CASE("the overflow marker looks like the focused status line, not like text") {
+    CHECK(kMarker == attr_for(Style::status));
     CHECK(kMarker != attr_for(Style::Default));
 }
 
@@ -510,4 +510,18 @@ TEST_CASE("scroll_to keeps a place on screen and out of the margin rows, moving 
         f.view->scroll_to(start(5), 10, 40, 2, true);   // above
         CHECK(top_line() == 3);
     }
+}
+
+TEST_CASE("a cut line's overflow marker takes its split's status look: focused, or unfocused") {
+    Fixture f("marker.txt", std::string(60, 'x') + "\n", 4, 20);
+    f.view->set_word_wrap(false);
+    f.draw();
+    CHECK(f.row(0).ends_with(">"));
+    CHECK(f.screen.cell(0, 19).attr == attr_for(Style::overflow_marker));
+    f.view->set_split_focused(false);
+    f.draw();
+    CHECK(f.screen.cell(0, 19).attr == active_theme().unfocused_status());
+    f.view->set_split_focused(true);
+    f.draw();
+    CHECK(f.screen.cell(0, 19).attr == attr_for(Style::overflow_marker));
 }

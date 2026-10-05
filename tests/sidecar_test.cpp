@@ -198,9 +198,9 @@ constexpr std::string_view kWorkedExampleHex = R"(
 
 }  // namespace
 
-TEST_CASE("sidecar_path_for appends .mod to the full name") {
-    CHECK(sidecar_path_for("/a/b/notes.txt") == fs::path("/a/b/notes.txt.mod"));
-    CHECK(sidecar_path_for("/a/b/go") == fs::path("/a/b/go.mod"));
+TEST_CASE("sidecar_path_for appends .history to the full name") {
+    CHECK(sidecar_path_for("/a/b/notes.txt") == fs::path("/a/b/notes.txt.history"));
+    CHECK(sidecar_path_for("/a/b/go") == fs::path("/a/b/go.history"));
 }
 
 TEST_CASE("golden hashes match sha256sum of the fixtures") {
