@@ -20,9 +20,9 @@ Despite that, `mod` has some things going for it:
 
 ## Is this Vibe Coded?
 
-Absolutely. 100%. This was generated using Claude Code and my ![skel plugin](https://github.com/hanoixan/claude-plugins), and then hammered with tests until I felt it was good enough for a v1.0.
+Absolutely. 100%. This was generated using Claude Code and my [skel plugin](https://github.com/hanoixan/claude-plugins), and then hammered with tests until I felt it was good enough for a v1.0.
 
-And if don't use vibe coded software, I support you. Check out [Fresh](https://itsfoss.com/fresh-terminal-text-editor/). I think he put way more work into his than I did into mine, and it shows.
+If you don't use vibe coded software, I support you. Check out [Fresh](https://itsfoss.com/fresh-terminal-text-editor/). I think he put way more work into his than I did into mine, and it shows.
 
 ## Install
 
