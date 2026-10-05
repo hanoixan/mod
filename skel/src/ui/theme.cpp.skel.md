@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./theme.hpp.skel.md
-stamp: source 2b2d5bfc, stand-in e7f6cfc6
+stamp: source e81924d1, stand-in e7f6cfc6
 ---
 # module: theme (implementation)
 

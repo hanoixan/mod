@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source 4ff19f0c, stand-in 6d38c038
+stamp: source 4ff19f0c, stand-in 182ed99d
 ---
 # module: confirm_bar
 
-The **confirm bar**, as in ../modi/: a question with buttons, drawn in App's band at the bottom of the screen, below the status lines (above any prompt). From the top: a rule, the question (wrapped to the width, one or more lines), then the buttons on one row, `[>Save<]  [Discard]  [Cancel]`, the focused one in `menuSelected` with `>`/`<` marks and every button's underlined first letter as its key.
+The **confirm bar**, as in ../modi/: a question with buttons, drawn in App's band at the bottom of the screen, below the status lines (above any prompt). From the top: a rule, the question (wrapped to the width, one or more lines), then the buttons on one row, `[>Save<]  [Discard]  [Cancel]`, the focused one in `listSelected` with `>`/`<` marks and every button's underlined first letter as its key.
 
 Keys: Tab, Right and Shift+Tab, Left move the focus (wrapping); Enter chooses the focused button; a button's first letter chooses it (any case, without Ctrl or Alt); Esc chooses the caller's Esc choice. Every other key is consumed. The bar closes before its callback runs, so a callback may open another question.
 

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./settings_view.hpp.skel.md
-stamp: source 2eac5e61, stand-in 4373eef5
+stamp: source 4398c181, stand-in 4373eef5
 ---
 # module: settings_view (implementation)
 

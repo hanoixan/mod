@@ -1738,7 +1738,7 @@ void App::render() {
     if (l.pane) {
         const int split = l.pane->col + l.pane->cols;
         draw_frame(l.pane->row - 1, l.pane->row + l.pane->rows, l.text.cols > 0 ? std::optional<int>(split) : std::nullopt, {});
-        history_view_.render(screen_, *l.pane);
+        history_view_.render(screen_, *l.pane, !history_preview_.text_focused());
     }
     if (l.panel) {
         const Panel p = panel();

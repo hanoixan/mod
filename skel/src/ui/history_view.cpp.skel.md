@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./history_view.hpp.skel.md
-stamp: source b4a141bd, stand-in 2ef3dfe2
+stamp: source bb0d1b8b, stand-in 2ef3dfe2
 ---
 # module: history_view (implementation)
 

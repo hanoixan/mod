@@ -119,14 +119,19 @@ std::string_view default_spec(const ColorEntry& e, Darkness d) {
     return e.default_spec;
 }
 
-// The vt100 look of a style: no color, only bold, underline and reverse.
-std::uint8_t vt100_flags(Style s, Darkness d) {
+// The vt100 look of a style: no color, only bold, underline and reverse, and the same
+// whatever the darkness.
+std::uint8_t vt100_flags(Style s) {
     switch (s) {
         case status:
         case menu:
-        case overflow_marker: return d == Darkness::normal ? kReverse : d == Darkness::night ? kBold : 0;
-        case menu_accel: return d == Darkness::normal ? kReverse | kUnderline : d == Darkness::night ? kBold | kUnderline : kUnderline;
-        case page: return d == Darkness::paper ? kReverse : 0;
+        case overflow_marker:
+        case list_selected: return kReverse;
+        case status_unfocused: return kBold;
+        case menu_accel: return kReverse | kUnderline;
+        case list_selected_unfocused: return kUnderline;
+        case menu_selected: return 0;  // plain: cut out of the reverse menu
+        case page: return 0;
         case lsp_keyword:
         case lsp_modifier:
         case lsp_macro:
@@ -137,8 +142,7 @@ std::uint8_t vt100_flags(Style s, Darkness d) {
         case md_heading5:
         case md_heading6:
         case md_strong:
-        case gutter_current:
-        case menu_selected: return kBold;
+        case gutter_current: return kBold;
         case lsp_comment:
         case md_emphasis:
         case md_quote:
@@ -292,7 +296,7 @@ Json ColorTheme::overrides() const {
 
 Attr ColorTheme::attr(Style style, std::uint8_t modifiers) const {
     if (vt100_) {
-        Attr a{kDefaultColor, kDefaultColor, vt100_flags(style, darkness_)};
+        Attr a{kDefaultColor, kDefaultColor, vt100_flags(style)};
         if (modifiers & kModDeclaration) a.flags |= kBold;
         if (modifiers & kModDeprecated) a.flags |= kReverse;
         return a;

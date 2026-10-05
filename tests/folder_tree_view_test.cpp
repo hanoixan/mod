@@ -68,9 +68,9 @@ TEST_CASE("rows: an open folder ▾, a closed one ▸, files indented under thei
     CHECK(f.row(3).starts_with("    file10.txt"));
     CHECK(f.row(7).find("Space: view") != std::string::npos);  // the tree's own line: the short hints in 20 columns
     CHECK((f.screen.cell(1, 4).attr.flags & kDim) != 0);  // a hidden name is dim
-    CHECK(f.screen.cell(0, 2).attr == attr_for(Style::menu_selected));  // the selection, focused
+    CHECK(f.screen.cell(0, 2).attr == attr_for(Style::list_selected));  // the selection, with the keys
     f.draw(false);
-    CHECK(f.screen.cell(0, 2).attr != attr_for(Style::menu_selected));  // not while the keys are elsewhere
+    CHECK(f.screen.cell(0, 2).attr == attr_for(Style::list_selected_unfocused));  // and without them
 }
 
 TEST_CASE("keys: arrows and pages move, Right and Left open and close, Space previews and Enter opens a file") {

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./doc_search_view.hpp.skel.md
-stamp: source 9d0c2cac, stand-in e5d43094
+stamp: source 6da16c12, stand-in e5d43094
 ---
 # module: doc_search_view (implementation)
 

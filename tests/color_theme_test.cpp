@@ -234,7 +234,7 @@ TEST_CASE("vt100: the fallback table, with no color and only bold, underline and
     CHECK(t.attr(Style::lsp_number) == plain);
     CHECK(t.attr(Style::lsp_variable) == plain);
     CHECK(t.attr(Style::status) == Attr{kDefaultColor, kDefaultColor, kReverse});
-    CHECK(t.attr(Style::menu_selected) == Attr{kDefaultColor, kDefaultColor, kBold});
+    CHECK(t.attr(Style::menu_selected) == Attr{});
     CHECK(t.attr(Style::search_match) == Attr{kDefaultColor, kDefaultColor, kReverse});
     CHECK(t.attr(Style::lsp_function, kModDeprecated) == Attr{kDefaultColor, kDefaultColor, kReverse});
     CHECK(t.attr(Style::lsp_function, kModDeclaration) == Attr{kDefaultColor, kDefaultColor, kBold});
@@ -300,17 +300,24 @@ TEST_CASE("on_page lays a look over the page: default colors take the page's, re
     CHECK(t.on_page(Attr{magenta, kDefaultColor, 0}) == Attr{magenta, kDefaultColor, 0});
 }
 
-TEST_CASE("darkness in vt100 mode: night drops reverse for bold, paper reverses the page") {
+TEST_CASE("vt100: the bars, menus and lists stand out from text, the same in every darkness") {
     ColorTheme t;
     t.set_vt100(true);
-    t.set_darkness(Darkness::night);
-    CHECK(t.attr(Style::status) == Attr{kDefaultColor, kDefaultColor, kBold});
-    CHECK(t.attr(Style::menu_accel) == Attr{kDefaultColor, kDefaultColor, kBold | kUnderline});
-    t.set_darkness(Darkness::paper);
-    CHECK(t.attr(Style::status) == Attr{});
-    CHECK(t.attr(Style::page) == Attr{kDefaultColor, kDefaultColor, kReverse});
-    CHECK(t.on_page(Attr{}) == Attr{kDefaultColor, kDefaultColor, kReverse});
-    CHECK(t.on_page(Attr{kDefaultColor, kDefaultColor, kReverse}) == Attr{});  // a selection shows inverted
+    for (const Darkness d : {Darkness::normal, Darkness::night, Darkness::paper}) {
+        CAPTURE(static_cast<int>(d));
+        t.set_darkness(d);
+        CHECK(t.attr(Style::status) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.attr(Style::status_unfocused) == Attr{kDefaultColor, kDefaultColor, kBold});
+        CHECK(t.unfocused_status() == Attr{kDefaultColor, kDefaultColor, kBold});
+        CHECK(t.attr(Style::menu) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.attr(Style::menu_accel) == Attr{kDefaultColor, kDefaultColor, kReverse | kUnderline});
+        CHECK(t.attr(Style::menu_selected) == Attr{});  // cut out of the reverse menu
+        CHECK(t.attr(Style::list_selected) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.attr(Style::list_selected_unfocused) == Attr{kDefaultColor, kDefaultColor, kUnderline});
+        CHECK(t.attr(Style::overflow_marker) == Attr{kDefaultColor, kDefaultColor, kReverse});
+        CHECK(t.attr(Style::page) == Attr{});  // paper's page is not reversed either
+        CHECK(t.on_page(Attr{}) == Attr{});
+    }
 }
 
 TEST_CASE("defaults use no dark blue on a dark screen; paper keeps the plain blues") {

@@ -94,7 +94,7 @@ ColorsKeyResult ColorsView::handle_key(const KeyEvent& key) {
 void ColorsView::render(Screen& screen, Rect area) {
     if (theme_ == nullptr || area.rows <= 0 || area.cols <= 0) return;
     const Attr plain = attr_for(Style::Default);
-    const Attr selected = attr_for(Style::menu_selected);
+    const Attr selected = attr_for(Style::list_selected);
     const int right = area.col + area.cols;
     const auto visible = static_cast<std::size_t>(area.rows);
     scroll_ = scroll_to_show(selected_, scroll_, visible);

@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source dbc0b4c2, stand-in 85ebfcc0
+stamp: source d8c9b1a0, stand-in 85ebfcc0
 ---
 # module: keymap_view_test
 

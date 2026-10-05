@@ -366,7 +366,7 @@ TEST_CASE("render truncates a long row to the area") {
     CHECK(screen_row(screen, 2, 1, 9) == "| o 13 p");
     CHECK(screen_row(screen, 3, 1, 9) == "|/      ");
     CHECK(screen_row(screen, 1, 9, 12) == "   ");  // nothing past the area
-    CHECK(screen.cell(1, 1).attr == attr_for(Style::menu_selected));
+    CHECK(screen.cell(1, 1).attr == attr_for(Style::list_selected));
 }
 
 TEST_CASE("the footer: Clear History…, Trim History… and Persist History under a rule, with C, T and P underlined") {
@@ -407,8 +407,26 @@ TEST_CASE("the list scrolls within the rows above the footer") {
     v.render(screen, area);
     const std::string last = v.row_text(v.selected());
     CHECK(screen_row(screen, 2, 0, 30).starts_with(last.substr(0, 10)));  // the last list row
-    CHECK(screen.cell(2, 0).attr == attr_for(Style::menu_selected));
+    CHECK(screen.cell(2, 0).attr == attr_for(Style::list_selected));
     CHECK(screen_row(screen, 4, 0, 14) == "Clear History…");
+}
+
+TEST_CASE("the list has the folder tree's look: plain rows, the list highlight, unfocused while the text has the keys") {
+    Sketch s;
+    HistoryView v(fixed_clock());
+    v.open(s.t);
+    NullTerminal term;
+    Screen screen(term);
+    screen.resize({12, 40});
+    const Rect area{0, 0, 7, 30};
+    v.render(screen, area);
+    const auto sel = static_cast<int>(v.selected());  // the list starts at the top here
+    // The last column: clear of the current step's bold '*'.
+    CHECK(screen.cell(sel, 29).attr == attr_for(Style::list_selected));
+    const int other = sel == 0 ? 1 : 0;
+    CHECK(screen.cell(other, 29).attr == attr_for(Style::Default));  // plain, not the menu's band
+    v.render(screen, area, false);  // Tab gave the keys to the previewed text
+    CHECK(screen.cell(sel, 29).attr == attr_for(Style::list_selected_unfocused));
 }
 
 TEST_CASE("a pane under six rows has no footer") {

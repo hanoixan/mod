@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source d4bef587, stand-in 49c87166
+stamp: source 2686efc5, stand-in 45f4e988
 ---
 # module: history_view
 
@@ -127,9 +127,9 @@ Lane assignment, so that two implementations draw the same graph: rows are produ
 
 ### function: render
 
-- **Inputs:** a `Screen&`; `area`: the rectangle App gives the pane, inside the frame, `history_pane_width(terminal columns)` wide.
+- **Inputs:** a `Screen&`; `area`: the rectangle App gives the pane, inside the frame, `history_pane_width(terminal columns)` wide; `focused`: whether the pane has the keys (false while the previewed text has them, after Tab; true by default).
 - **Returns:** nothing.
-- **State changes:** draws the visible rows with [attr_for](./theme.hpp.skel.md#function-attr_for): `menu` for rows, `menu_selected` for the selected row, `gutter_current` for the current node's `*` marker, and `history_read_only` (dim, an attribute rather than a color) for `read_only` rows. No new colors. The frame and the status-line hint are drawn by App.
+- **State changes:** draws the visible rows with [attr_for](./theme.hpp.skel.md#function-attr_for): the folder tree's look: plain (`Default`) for rows, `list_selected` for the selected row while `focused` and `list_selected_unfocused` otherwise, the footer's commands and rule in `menu`, `gutter_current` for the current node's `*` marker, and `history_read_only` (dim, an attribute rather than a color) for `read_only` rows. No new colors. The frame and the status-line hint are drawn by App.
 - **Access:** App.render.
 
 ### function: close

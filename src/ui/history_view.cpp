@@ -275,16 +275,19 @@ HistoryKeyResult HistoryView::handle_key(const KeyEvent& key) {
     return result;
 }
 
-void HistoryView::render(Screen& screen, Rect area) {
+void HistoryView::render(Screen& screen, Rect area, bool focused) {
     if (!is_open()) return;
     // The footer takes the bottom rows when the pane is tall enough to keep a list too.
     const bool footer = area.rows >= kMinRowsForFooter;
     const int list_rows = footer ? area.rows - kFooterRows : area.rows;
     view_rows_ = std::max(1, list_rows);
     keep_visible();
+    // The list looks like the folder tree: plain rows and the list highlight; the footer's
+    // commands keep the menu's look.
     const Attr base = attr_for(Style::menu);
-    const Attr selected = attr_for(Style::menu_selected);
-    Attr read_only = base;
+    const Attr plain = attr_for(Style::Default);
+    const Attr selected = attr_for(focused ? Style::list_selected : Style::list_selected_unfocused);
+    Attr read_only = plain;
     read_only.flags |= attr_for(Style::history_read_only).flags;
     const int right = area.col + area.cols;
     if (footer) {
@@ -308,11 +311,11 @@ void HistoryView::render(Screen& screen, Rect area) {
         const int row = area.row + r;
         const std::size_t i = scroll_ + static_cast<std::size_t>(r);
         if (i >= rows_.size()) {
-            screen.fill(row, area.col, right, base);
+            screen.fill(row, area.col, right, plain);
             continue;
         }
         const HistoryRow& hr = rows_[i];
-        const Attr a = i == selected_ ? selected : (hr.read_only ? read_only : base);
+        const Attr a = i == selected_ ? selected : (hr.read_only ? read_only : plain);
         screen.fill(row, area.col, right, a);
         screen.print(row, area.col, right, row_text(i), a);
         if (hr.is_current) {

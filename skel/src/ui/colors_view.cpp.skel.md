@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./colors_view.hpp.skel.md
-stamp: source 56b0cac1, stand-in 97e0405c
+stamp: source 5b0b2f4e, stand-in 97e0405c
 ---
 # module: colors_view (implementation)
 

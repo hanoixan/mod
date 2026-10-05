@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 6221a102, stand-in c7fd5652
+stamp: source 6221a102, stand-in d3f78ecf
 ---
 # module: folder_tree_view
 
@@ -41,5 +41,5 @@ What a key asks App to do: `kind` of `enum class TreeKey { none, moved, preview,
 
 - **Inputs:** `screen`, `area`, `focused`.
 - **Returns:** nothing.
-- **State changes:** draws the rows above the area's last row: two columns of indent a level, `▾ ` before an open folder and `▸ ` before a closed one (two spaces before a file), the name; hidden names dim; the selected row in `menuSelected` while `focused`, in `selection` otherwise. The selected row is kept in view (the first row shown moves the least), and the rows are panned sideways so the selected row's whole text shows, back to the left edge whenever it fits. The last row is the panel's own line in the status color: App's message (`set_message`, until the next key), else the tree's message, else the hints `Space: preview  Enter: open  Shift+Right: back`, or `Space: view  Enter: open` when those do not fit.
+- **State changes:** draws the rows above the area's last row: two columns of indent a level, `▾ ` before an open folder and `▸ ` before a closed one (two spaces before a file), the name; hidden names dim; the selected row in `listSelected` while `focused`, in `listSelectedUnfocused` otherwise (the same look as the Undo History pane's). The selected row is kept in view (the first row shown moves the least), and the rows are panned sideways so the selected row's whole text shows, back to the left edge whenever it fits. The last row is the panel's own line in the status color: App's message (`set_message`, until the next key), else the tree's message, else the hints `Space: preview  Enter: open  Shift+Right: back`, or `Space: view  Enter: open` when those do not fit.
 - **Access:** App.

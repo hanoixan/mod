@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./keymap_view.hpp.skel.md
-stamp: source a77699e5, stand-in 2fc9f20f
+stamp: source 7ffbef26, stand-in 2fc9f20f
 ---
 # module: keymap_view (implementation)
 

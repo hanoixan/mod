@@ -79,7 +79,7 @@ int ConfirmBar::rows(int cols) const { return open_ ? 2 + static_cast<int>(quest
 void ConfirmBar::render(Screen& screen, Rect area) const {
     if (!open_ || area.rows <= 0) return;
     const Attr plain = attr_for(Style::Default);
-    const Attr selected = attr_for(Style::menu_selected);
+    const Attr selected = attr_for(Style::list_selected);
     const int right = area.col + area.cols;
     const int bottom = area.row + area.rows;
     int row = area.row;

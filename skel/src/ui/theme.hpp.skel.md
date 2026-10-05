@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1a669e53, stand-in 338b11cd
+stamp: source 1a669e53, stand-in 50274114
 ---
 # module: theme
 
@@ -79,7 +79,7 @@ Modifiers are applied on top of the style's look in this order, each adding its 
 | `deprecated` | `kModDeprecated` | `strike` |
 | `documentation` | `kModDocumentation` | `italic` |
 
-**In vt100 mode** there is no color, dim, italic or strike, so the theme answers from a fixed fallback table instead, and color overrides do not apply: keywords, modifiers, macros, Markdown headings and strong text, `gutterCurrent` and the `declaration` modifier are bold; comments, Markdown emphasis, quotes and links are underlined; strike (Markdown, `deprecated` and `historyRemoved`) becomes reverse; `historyInserted` is underlined; the reverse-video looks (`selection`, `status`, `menu`, `overflowMarker`) stay reverse and `menuAccel` reverse underline; `searchMatch` is reverse, `menuSelected` bold (drawn on the reverse bar, so it stands out), `error` bold reverse; everything else, color-only text included, is plain.
+**In vt100 mode** there is no color, dim, italic or strike, so the theme answers from a fixed fallback table instead, and color overrides do not apply: keywords, modifiers, macros, Markdown headings and strong text, `gutterCurrent` and the `declaration` modifier are bold; comments, Markdown emphasis, quotes and links are underlined; strike (Markdown, `deprecated` and `historyRemoved`) becomes reverse; `historyInserted` is underlined; the bars and highlights stand out from plain text: `selection`, `status`, `menu`, `overflowMarker`, `searchMatch` and `listSelected` are reverse, `menuAccel` reverse underline, `statusUnfocused` bold, `listSelectedUnfocused` underlined, and `menuSelected` plain (cut out of the reverse menu); `error` is bold reverse; everything else, color-only text included, is plain. The vt100 look does not follow darkness: it is the same in normal, night and paper, the page included.
 
 **Darkness** (`enum class Darkness { night, normal, paper }`, the `darkness` [setting](../app/settings.hpp.skel.md#function-setting_specs)) changes the defaults of the page and the blues (the bars are the same in every look) (no default uses dark blue on a dark screen; paper's light page keeps it), and only the defaults: an override still wins, and a spec equal to the level's default is no override.
 
@@ -90,7 +90,7 @@ Modifiers are applied on top of the style's look in this order, each adding its 
 | `markdownLinkText` | `underline bright-blue` | `underline bright-blue` | `underline blue` |
 | `menuSelected`, `listSelected` | `bold black on-bright-blue` | `bold black on-bright-blue` | `bold bright-white on-blue` |
 
-`page` is the background the text area is drawn on: EditorView and the help viewer lay each of their looks over it with `on_page` (its colors fill in a look's default colors, and its reverse inverts the look, so a selection still shows). The overflow marker is not laid over it, so in paper it stands out as the terminal's own colors. In vt100 mode night draws those looks bold instead of reverse, and paper draws them plain and the page in reverse.
+`page` is the background the text area is drawn on: EditorView and the help viewer lay each of their looks over it with `on_page` (its colors fill in a look's default colors, and its reverse inverts the look, so a selection still shows). The overflow marker is not laid over it, so in paper it stands out as the terminal's own colors. In vt100 mode the page is plain whatever the darkness.
 
 `selection` and `searchMatch` are overlays: EditorView combines them with the text's own look as before (the selection adds its attributes; a search match replaces the look). Apart from `variable`, `property`, `parameter`, the new `constant` and the two new modifiers, every default is the look the fixed table gave before.
 

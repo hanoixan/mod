@@ -206,7 +206,7 @@ void HelpViewer::render(Screen& screen, Rect area) {
     }
     const Attr plain = on_page(attr_for(Style::Default));
     const Attr link_look = on_page(attr_for(Style::md_link_text));
-    const Attr selected_look = attr_for(Style::menu_selected);
+    const Attr selected_look = attr_for(Style::list_selected);
     const int right = area.col + area.cols;
     for (int r = 0; r < area.rows; ++r) {
         const int row = area.row + r;

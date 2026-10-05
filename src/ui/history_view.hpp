@@ -53,7 +53,8 @@ public:
     void set_persist(bool on) noexcept { persist_ = on; }
 
     HistoryKeyResult handle_key(const KeyEvent& key);
-    void render(Screen& screen, Rect area);
+    // `focused`: the pane has the keys (not the previewed text, after Tab).
+    void render(Screen& screen, Rect area, bool focused = true);
 
     const std::vector<HistoryRow>& rows() const noexcept { return rows_; }
     std::size_t selected() const noexcept { return selected_; }

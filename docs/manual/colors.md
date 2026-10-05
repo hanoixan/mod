@@ -111,12 +111,12 @@ The editor shows a modifier's sample as a variable with the modifier on.
 | `status` | The status line of the view you are in | `black on-bright-white` |
 | `statusUnfocused` | The status lines of the other split views | `white on-bright-black` |
 | `menu` | The menu bar and open menus | `black on-bright-white` |
-| `menuSelected` | The selected menu item and panel row | `bold black on-bright-blue` |
+| `menuSelected` | The selected menu item | `bold black on-bright-blue` |
 | `menuAccel` | A menu item's underlined letter | `underline black on-bright-white` |
 | `error` | Error messages | `bold bright-white on-red` |
 | `historyReadOnly` | The read-only text in the Undo History pane | `dim` |
 | `overflowMarker` | The marks at the edge of a line that runs off the screen, in the view you are in (another split view's take `statusUnfocused`) | `black on-bright-white` |
-| `listSelected` | The selected row of the folder tree and the Undo History pane, while it has the keys | `bold black on-bright-blue` |
+| `listSelected` | The selected row of the folder tree, the Undo History pane and the other panels and dialogs, and the focused button, while they have the keys | `bold black on-bright-blue` |
 | `listSelectedUnfocused` | ...and while it has not | `reverse` |
 | `page` | The background the text is drawn on, in the editor and the help | `plain` |
 | `historyInserted` | In the Undo History preview, the text the selected step inserted | `black on-green` |
@@ -133,7 +133,20 @@ The `darkness` [setting](settings.md) changes the defaults of the page, and of t
 | `markdownLinkText` | `underline bright-blue` | `underline bright-blue` | `underline blue` |
 | `menuSelected`, `listSelected` | `bold black on-bright-blue` | `bold black on-bright-blue` | `bold bright-white on-blue` |
 
-The bars are the same in every look: the status line of the view you are in, the menu bar and the overflow markers are black on bright white, and the other split views' status lines are white on dark grey. Paper turns the text area into a light page. In a terminal in vt100 mode, where there are no colors, paper draws the text area in reverse video.
+The bars are the same in every look: the status line of the view you are in, the menu bar and the overflow markers are black on bright white, and the other split views' status lines are white on dark grey. Paper turns the text area into a light page.
+
+## In vt100 mode
+
+In `vt100` [terminal mode](settings.md) there are no colors, so your colors and the darkness do not apply. Everything that is not plain text uses bold, underline or reverse video, the same in every darkness:
+
+| What | Looks |
+|---|---|
+| The status line of the view you are in, the menu bar and open menus, the overflow markers | reverse |
+| The other split views' status lines | bold |
+| A menu's underlined letter | reverse underline |
+| The selected menu item | plain, cut out of the reverse menu |
+| The selected row of the folder tree, the Undo History pane and other panels | reverse; underlined while they do not have the keys |
+| The selection and search matches | reverse |
 
 ## In settings.json
 
