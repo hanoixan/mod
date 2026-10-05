@@ -18,7 +18,7 @@ The directory work behind the file dialog, kept apart from drawing so that it ca
 
 ## symbol: DirEntry
 
-`{ std::string name; bool is_dir; uint64_t size; std::string modified; }`. `size` is 0 for a directory. `modified` is the local modification time as `YYYY-MM-DD HH:MM` (the file clock is turned into the system clock by their offset now, since not every standard library has `clock_cast`).
+`{ std::string name; bool is_dir; uint64_t size; std::string modified; }`. `size` is 0 for a directory. `modified` is the local modification time as `YYYY-MM-DD HH:MM` (through `file_clock::to_sys`, exact, since not every standard library has `clock_cast`).
 
 - **Access:** public.
 

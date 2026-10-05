@@ -21,9 +21,9 @@ std::string lower(std::string s) {
 }
 
 std::string format_time(fs::file_time_type t) {
-    // No clock_cast in every standard library (libc++ has none): offset from now on both clocks.
-    const auto sys = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
-        std::chrono::system_clock::now() + (t - fs::file_time_type::clock::now()));
+    // file_clock's own exact conversion: libc++ has no clock_cast, and an offset between two
+    // now() readings is off by the time between them (a file at 00:00 showed 23:59).
+    const auto sys = std::chrono::time_point_cast<std::chrono::system_clock::duration>(fs::file_time_type::clock::to_sys(t));
     const std::time_t tt = std::chrono::system_clock::to_time_t(sys);
     std::tm tm{};
     if (localtime_r(&tt, &tm) == nullptr) return {};

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./file_listing.hpp.skel.md
-stamp: source 3603ac79, stand-in 3b7b89a7
+stamp: source a241accd, stand-in 3b7b89a7
 ---
 # module: file_listing (implementation)
 
