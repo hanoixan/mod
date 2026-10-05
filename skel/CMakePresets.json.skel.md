@@ -8,7 +8,7 @@ CMake presets for repeatable configure, build and test on every platform. The Li
 
 - **Source:** hand-authored.
 - **Required:** optional — without it developers must pass the generator and compiler by hand.
-- **Failure modes:** `g++-13` is not on `PATH` on another Linux machine, so configure fails with a clear message. Developers can override with a `CMakeUserPresets.json`, which is git-ignored. `windows-release` is for the MSYS2 MSYS environment (`hostSystemName` `MSYS` or `CYGWIN`), with its `g++`. `macos-release` targets macOS 13 and is configured with Homebrew LLVM's `clang++` and `MOD_LIBCXX_PREFIX` passed on the command line.
+- **Failure modes:** `g++-13` is not on `PATH` on another Linux machine, so configure fails with a clear message. Developers can override with a `CMakeUserPresets.json`, which is git-ignored. `windows-release` is for the MSYS2 MSYS environment (`hostSystemName` `MSYS` or `CYGWIN`), with its `g++`. `macos-release` targets macOS 13.3 (the system libc++'s floating-point `to_chars`, which `std::format` uses, needs 13.3) and is configured with Homebrew LLVM's `clang++` passed on the command line.
 - **Depends on:** [CMakeLists.txt](./CMakeLists.txt.skel.md)
 - **Referred by:** none known (consumed by developers and CI via `cmake --preset`)
 - **Unknowns:** none
@@ -27,7 +27,7 @@ CMake presets for repeatable configure, build and test on every platform. The Li
     { "name": "linux-release", "inherits": "base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_CXX_COMPILER": "g++-13" } },
     { "name": "macos-release", "inherits": "base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.0" },
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3" },
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" } },
     { "name": "windows-release", "inherits": "base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_CXX_COMPILER": "g++" },

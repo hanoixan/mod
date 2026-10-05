@@ -26,7 +26,7 @@ A candidate and its release carry:
 - `mod-<version>-1.x86_64.rpm` for Fedora and other RPM distributions,
 - `mod-<version>-1-x86_64.pkg.tar.zst` for Arch (`pacman -U`),
 - `mod-<version>-linux-x86_64.tar.gz`, the same files to unpack anywhere; `install.sh` uses it when it cannot use a package manager,
-- `mod-<version>-macos-universal.tar.gz` for macOS 13 or later, Apple silicon and Intel; `install.sh` uses it on a Mac,
+- `mod-<version>-macos-universal.tar.gz` for macOS 13.3 or later, Apple silicon and Intel; `install.sh` uses it on a Mac,
 - `mod-<version>-windows-x86_64.zip` for Windows 11, `mod.exe` with the MSYS2 runtime (`msys-2.0.dll`) beside it; `install.ps1` installs it,
 - `PKGBUILD` and `mod-<version>.tar.gz`, to build the Arch package from source with `makepkg`.
 
@@ -42,7 +42,7 @@ If a run fails after its tag was pushed, delete the tag (`git push origin :refs/
 
 `tools/ci/package.sh` is what CI runs. On Ubuntu 22.04 or later it needs `g++-13`, `cmake` 3.25 or later, `ninja-build`, `rpm` and Docker; it leaves the packages and the tarball in `dist/`. `MOD_SKIP_PACKAGE_TESTS=1` skips the install checks.
 
-On Windows, in an [MSYS2](https://www.msys2.org/) MSYS shell (not UCRT64 or MINGW64: mod runs on the MSYS2 runtime, which provides the POSIX calls it uses) with `pacman -S gcc cmake ninja zip`: `cmake --preset windows-release`, `cmake --build --preset windows-release`, `ctest --preset windows-release`, then `tools/ci/package_windows.sh` for the zip. On macOS, with `brew install llvm ninja cmake`: configure with `cmake --preset macos-release -DCMAKE_CXX_COMPILER="$(brew --prefix llvm)/bin/clang++" -DMOD_LIBCXX_PREFIX="$(brew --prefix llvm)"` (Homebrew's own libc++, linked in), then build and test with the `macos-release` presets; `tools/ci/package_macos.sh` joins an arm64 and an x86_64 install into the universal tarball. `python3 tools/ci/smoke.py <mod>` smoke tests any build (on Windows, with `pip install pywinpty`, in a Windows pseudo-console).
+On Windows, in an [MSYS2](https://www.msys2.org/) MSYS shell (not UCRT64 or MINGW64: mod runs on the MSYS2 runtime, which provides the POSIX calls it uses) with `pacman -S gcc cmake ninja zip`: `cmake --preset windows-release`, `cmake --build --preset windows-release`, `ctest --preset windows-release`, then `tools/ci/package_windows.sh` for the zip. On macOS, with `brew install llvm ninja cmake`: configure with `cmake --preset macos-release -DCMAKE_CXX_COMPILER="$(brew --prefix llvm)/bin/clang++"` (with macOS's own libc++, so the binary needs nothing from Homebrew), then build and test with the `macos-release` presets; `tools/ci/package_macos.sh` joins an arm64 and an x86_64 install into the universal tarball. `python3 tools/ci/smoke.py <mod>` smoke tests any build (on Windows, with `pip install pywinpty`, in a Windows pseudo-console).
 
 To run the other checks locally (clang 19 and libstdc++ 13 for the first two):
 

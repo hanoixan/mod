@@ -25,24 +25,6 @@ option(MOD_WERROR "Treat warnings as errors" OFF)
 option(MOD_BUILD_FUZZERS "Build the libFuzzer targets (clang only)" OFF)
 
 find_package(Threads REQUIRED)
-if(APPLE AND MOD_LIBCXX_PREFIX)
-  # macOS with Homebrew LLVM (MOD_LIBCXX_PREFIX=$(brew --prefix llvm)): its own libc++ headers
-  # (its clang would otherwise use Xcode's, which lack C++23 parts) and its libc++ linked
-  # statically into every executable, so mod needs nothing from Homebrew at run time.
-  # cmake/libcxx comes first: it turns off the availability annotations, which describe the
-  # libc++ macOS ships, not one linked in.
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>
-                      "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-isystem ${CMAKE_SOURCE_DIR}/cmake/libcxx>"
-                      "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-isystem ${MOD_LIBCXX_PREFIX}/include/c++/v1>")
-  add_link_options(-nostdlib++ ${MOD_LIBCXX_PREFIX}/lib/c++/libc++.a ${MOD_LIBCXX_PREFIX}/lib/c++/libc++abi.a)
-  # Typed operator new (on by default in newer Apple clang) aborts at startup when libc++abi is
-  # linked statically and a static initializer allocates: libc++ itself says to turn it off.
-  include(CheckCXXCompilerFlag)
-  check_cxx_compiler_flag(-fno-typed-cxx-new-delete MOD_HAS_NO_TYPED_NEW)
-  if(MOD_HAS_NO_TYPED_NEW)
-    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-typed-cxx-new-delete>)
-  endif()
-endif()
 if(CMAKE_SYSTEM_NAME MATCHES "CYGWIN|MSYS")
   # The MSYS2 runtime hides POSIX and BSD extensions (FNM_CASEFOLD, pipe2, …) under a strict -std.
   add_compile_definitions(_GNU_SOURCE)

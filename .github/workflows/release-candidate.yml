@@ -109,7 +109,7 @@ jobs:
       - name: Build, test and install
         run: |
           llvm=$(brew --prefix llvm)
-          cmake --preset macos-release -DCMAKE_CXX_COMPILER="$llvm/bin/clang++" -DMOD_LIBCXX_PREFIX="$llvm"
+          cmake --preset macos-release -DCMAKE_CXX_COMPILER="$llvm/bin/clang++"
           cmake --build --preset macos-release
           ctest --preset macos-release
           python3 tools/ci/smoke.py build/macos-release/mod
