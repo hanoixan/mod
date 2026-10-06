@@ -525,3 +525,101 @@ TEST_CASE("a cut line's overflow marker takes its split's status look: focused, 
     f.draw();
     CHECK(f.screen.cell(0, 19).attr == attr_for(Style::overflow_marker));
 }
+
+namespace {
+
+// "L0" to "L29", one per line, no final line feed.
+std::string thirty_lines() {
+    std::string t;
+    for (int i = 0; i < 30; ++i) t += (i > 0 ? "\n" : "") + std::string("L") + std::to_string(i);
+    return t;
+}
+
+std::uint64_t line_offset(int n) {
+    std::uint64_t off = 0;
+    for (int i = 0; i < n; ++i) off += std::to_string(i).size() + 2;  // "L<i>\n"
+    return off;
+}
+
+}  // namespace
+
+TEST_CASE("scroll_rows moves the view one row and leaves the cursor where it is, off screen too") {
+    Fixture f("scroll-rows.txt", thirty_lines(), 10, 20);
+    f.draw();
+    CHECK(f.row(0) == "L0");
+    CHECK_FALSE(f.view->scroll_rows(-1, 10, 20));  // nothing above
+    REQUIRE(f.view->scroll_rows(1, 10, 20));
+    f.draw();  // the view stays scrolled: the cursor, on L0, is above it
+    CHECK(f.row(0) == "L1");
+    CHECK(f.ed->cursor() == 0);
+    for (int i = 0; i < 30; ++i) f.view->scroll_rows(1, 10, 20);
+    f.draw();
+    CHECK(f.row(0) == "L20");  // the text fills the view: the last line on the bottom row
+    CHECK(f.row(9) == "L29");
+    CHECK_FALSE(f.view->scroll_rows(1, 10, 20));
+    REQUIRE(f.view->scroll_rows(-1, 10, 20));
+    f.draw();
+    CHECK(f.row(0) == "L19");
+}
+
+TEST_CASE("following the cursor back from off screen leaves up to 5 rows on the side it was beyond") {
+    Fixture f("scroll-back.txt", thirty_lines(), 10, 20);
+    SUBCASE("from above: 5 rows above it") {
+        f.at(line_offset(12));
+        f.draw();
+        while (f.view->scroll_rows(1, 10, 20)) {
+        }
+        f.draw();
+        CHECK(f.row(0) == "L20");
+        f.view->follow_cursor();
+        f.draw();
+        CHECK(f.row(0) == "L7");
+        CHECK(f.row(5) == "L12");
+    }
+    SUBCASE("from below: 5 rows below it") {
+        f.at(line_offset(20));
+        f.draw();  // the cursor starts below the view, so it comes in 5 rows up already
+        CHECK(f.row(4) == "L20");
+        for (int i = 0; i < 12; ++i) f.view->scroll_rows(-1, 10, 20);
+        f.draw();
+        CHECK(f.row(0) == "L4");
+        f.view->follow_cursor();
+        f.draw();
+        CHECK(f.row(4) == "L20");
+        CHECK(f.row(9) == "L25");
+    }
+    SUBCASE("from below near the end: never fewer rows than an ordinary follow keeps (3)") {
+        f.at(line_offset(28));
+        f.draw();
+        for (int i = 0; i < 15; ++i) f.view->scroll_rows(-1, 10, 20);
+        f.view->follow_cursor();
+        f.draw();
+        CHECK(f.row(6) == "L28");
+        CHECK(f.row(7) == "L29");
+        const std::string top = f.row(0);
+        f.draw();  // and the next follow leaves it there
+        CHECK(f.row(0) == top);
+    }
+    SUBCASE("on screen, nothing moves") {
+        f.at(line_offset(4));
+        f.draw();
+        const std::string top = f.row(0);
+        f.view->follow_cursor();
+        f.draw();
+        CHECK(f.row(0) == top);
+    }
+}
+
+TEST_CASE("with word wrap, scroll_rows moves one wrapped row") {
+    std::string longline;
+    for (int i = 0; i < 45; ++i) longline += static_cast<char>('a' + i % 26);
+    Fixture f("scroll-wrap.txt", longline + "\nshort\n", 3, 20);
+    f.view->set_word_wrap(true);
+    f.draw();
+    CHECK(f.row(0).starts_with("abc"));
+    REQUIRE(f.view->scroll_rows(1, 3, 20));
+    f.draw();
+    CHECK_FALSE(f.row(0).starts_with("abc"));
+    CHECK(longline.find(f.row(0)) != std::string::npos);  // still the long line: its second row
+    CHECK(f.ed->cursor() == 0);
+}

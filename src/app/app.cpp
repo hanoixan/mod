@@ -982,6 +982,13 @@ void App::run_command(CommandId id) {
     if (help_viewer_.is_open() && !stays_in_help(id)) leave_help();  // Open, Save, Close, Exit… act on the document
     sync_wrap();  // a motion must see the rows as they are drawn now
     const Layout l = layout();
+    if (id == CommandId::ScrollLineUp || id == CommandId::ScrollLineDown) {
+        // The view alone moves; it stays there (the cursor off screen too) until a command
+        // or typed text reaches the document, which brings it back to the cursor.
+        if (shown().view) shown().view->scroll_rows(id == CommandId::ScrollLineUp ? -1 : 1, l.text.rows, l.text.cols);
+        return;
+    }
+    if (shown().view) shown().view->follow_cursor();
     const auto page = static_cast<std::uint64_t>(std::max(1, l.text.rows - 1));
     bool extend = false;
     if (const auto m = motion_of(id, extend)) {
@@ -1235,6 +1242,7 @@ void App::dispatch(const InputEvent& event) {
         refuse_edit();
         return;
     }
+    shown().view->follow_cursor();
     shown().editor->paste_text(paste.bytes, paste.more);
     after_command();
 }
@@ -1379,6 +1387,7 @@ void App::dispatch_key(const KeyEvent& key) {
             refuse_edit();
             return;
         }
+        shown().view->follow_cursor();
         shown().editor->insert_text(to_utf8(key.ch), EditKind::typing);
         after_command();
     }
@@ -1953,10 +1962,16 @@ void App::handle_preview_key(const KeyEvent& key) {
     }
     bool extend = false;
     const auto id = keymap_.lookup(key);
+    if (id == CommandId::ScrollLineUp || id == CommandId::ScrollLineDown) {
+        const Layout l = layout();
+        preview_->view->scroll_rows(id == CommandId::ScrollLineUp ? -1 : 1, l.text.rows, l.text.cols);
+        return;
+    }
     const auto m = id ? motion_of(*id, extend) : std::nullopt;
     if (!m) return;
     const Layout l = layout();
     DocumentSlot& p = *preview_;
+    p.view->follow_cursor();
     if (const ReadingLayout* r = p.view->reading_layout()) {
         const std::uint64_t to = r->move(*m, p.editor->cursor(), std::max<std::size_t>(1, p.view->reading_rows() - 1), p.view->reading_sticky());
         p.editor->select_range(to, to);

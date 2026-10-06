@@ -72,6 +72,8 @@ Plain typing keys (letters, digits, Shift with them) and Esc cannot be bound. Ct
 | `PageDown` | Move Page Down |
 | `Ctrl+Home` | Move Doc Start |
 | `Ctrl+End` | Move Doc End |
+| `Ctrl+Up` | Scroll Line Up |
+| `Ctrl+Down` | Scroll Line Down |
 
 ## Selecting
 

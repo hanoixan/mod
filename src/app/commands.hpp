@@ -83,6 +83,9 @@ enum class CommandId {
     SelectPageDown,
     SelectDocStart,
     SelectDocEnd,
+    // The view, without moving the cursor (Ctrl+Up, Ctrl+Down).
+    ScrollLineUp,
+    ScrollLineDown,
     // Editing.
     Newline,
     InsertTab,

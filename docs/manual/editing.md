@@ -4,6 +4,8 @@
 
 Arrows move by character and line, Home and End to the start and end of the line, PageUp and PageDown by a screen, and Ctrl+Home and Ctrl+End to the start and end of the file. Ctrl+Left and Ctrl+Right move by word. Ctrl+A and Ctrl+E also go to the start and end of the line.
 
+Ctrl+Up and Ctrl+Down scroll the view a row at a time without moving the cursor, as in VS Code: the text and the cursor move together, and the cursor may scroll out of view. Scrolling stops when the first line is at the top or the last line at the bottom. The next key that moves the cursor or edits brings the view back to it, with up to five rows of text showing beyond it on the side it was scrolled off.
+
 Hold Shift with any of these to select. Typing replaces the selection.
 
 The cursor never stops inside a character made of several code points, such as an emoji with a skin tone or a letter with an accent, and never between the two halves of a Windows line ending.

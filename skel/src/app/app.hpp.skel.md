@@ -1,7 +1,7 @@
 ---
 role: product
 untested: needs a real terminal and every component wired together; it is exercised by running mod, and no automated test drives it
-stamp: source c30dd177, stand-in 690f0036
+stamp: source c30dd177, stand-in f091bdcd
 ---
 # module: app
 
@@ -156,6 +156,7 @@ The event loop.
 - **Inputs:** a `CommandId`.
 - **Returns:** nothing.
 - **State changes:** executes the command against the owned components. After every command, `EditorView.scroll_to_cursor` runs.
+  - `ScrollLineUp` and `ScrollLineDown` call [EditorView.scroll_rows](../ui/editor_view.hpp.skel.md#function-scroll_rows) (−1, +1) on the shown view (or the file preview's) and return without following the cursor. Every other command, typed text and a paste first call [EditorView.follow_cursor](../ui/editor_view.hpp.skel.md#function-follow_cursor), so the view comes back to the cursor; a resize does not.
   - Motions and edits go to Editor. `InsertTab` inserts one tab character (`\t`) as typed text, replacing the selection like any typed character; it never inserts spaces.
   - Save and Save As go to [save_document](#function-save_document). Save on an untitled document opens the `save_as` prompt instead.
   - `Find` opens the Prompt, prefilled with a selection of up to `kMaxFindPrefill` bytes, else the last query ([Prompt.last_query](../ui/prompt.hpp.skel.md#function-open_find); never what another prompt was given). `FindNext` and `FindPrev` (F3, Shift+F3) call [Searcher.find_next](../search/search.hpp.skel.md#function-find_next) from the cursor, forward or backward, with the last query, whether or not the find bar is open. When no query has been set in this session, F3 and Shift+F3 open the find bar exactly as `Find` (Ctrl+F) does. `GotoLine` (Ctrl+G) opens the `goto_line` prompt.

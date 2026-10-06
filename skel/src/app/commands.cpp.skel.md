@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./commands.hpp.skel.md
-stamp: source 116e2d40, stand-in 1485f4c2
+stamp: source 00bcff53, stand-in 1485f4c2
 ---
 # module: commands (implementation)
 

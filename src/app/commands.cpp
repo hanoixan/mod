@@ -73,6 +73,8 @@ constexpr std::array<CommandInfo, kCommandCount> kTable{{
     {C::SelectPageDown, "SelectPageDown", ""},
     {C::SelectDocStart, "SelectDocStart", ""},
     {C::SelectDocEnd, "SelectDocEnd", ""},
+    {C::ScrollLineUp, "ScrollLineUp", ""},
+    {C::ScrollLineDown, "ScrollLineDown", ""},
     {C::Newline, "Newline", ""},
     {C::InsertTab, "InsertTab", ""},
     {C::Outdent, "Outdent", ""},

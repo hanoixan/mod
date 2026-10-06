@@ -30,6 +30,8 @@ void draw_status_line(Screen& screen, int row, std::string_view left, std::strin
 class EditorView final : public DocumentListener {
 public:
     static constexpr int kRowMargin = 3;
+    // Coming back to a cursor that was out of view, the rows kept beyond it on that side.
+    static constexpr int kReturnMargin = 5;
     static constexpr int kColMargin = 8;
 
     EditorView(Document& doc, const Editor& editor, Highlighter* highlighter, int tab_width = 4);
@@ -42,12 +44,22 @@ public:
     // '>' then takes the focused or the unfocused status look.
     void set_split_focused(bool on) noexcept { split_focused_ = on; }
     void render_status(Screen& screen, int row, std::string_view message, StatusMark mark = StatusMark::none, int col = 0, int width = -1);
+    // Follows the cursor (kRowMargin; kReturnMargin on the side it was beyond when it was out
+    // of view), unless the view was scrolled away from it and not yet told to follow again.
     void scroll_to_cursor(int area_rows, int area_cols);
+    // Ctrl+Up / Ctrl+Down: the view one screen row up (`delta` -1) or down (+1), the cursor
+    // staying on its text, off screen too; false when there is nothing more to show that way
+    // (the text always fills the view). The view then stays where it is until follow_cursor.
+    bool scroll_rows(int delta, int area_rows, int area_cols);
+    // A command or typed text reached the document: scroll_to_cursor follows it again.
+    void follow_cursor() noexcept { scrolled_away_ = false; }
+    bool scrolled_away() const noexcept { return scrolled_away_; }
     // Scrolls the least that puts `pos` on screen, at least `row_margin` rows above the bottom
     // (fewer on a short view), and, with `margin_above`, as many below the top too; without it,
     // a place above the view comes in `row_margin` rows down. In a document laid out for
     // reading, its line on screen. scroll_to_cursor is this for the cursor: kRowMargin, not above.
-    void scroll_to(std::uint64_t pos, int area_rows, int area_cols, int row_margin, bool margin_above);
+    // `margin_cap` limits the margin, (area_rows - 1) / 2 when negative.
+    void scroll_to(std::uint64_t pos, int area_rows, int area_cols, int row_margin, bool margin_above, int margin_cap = -1);
     void set_tab_width(int width);
     void set_line_numbers(bool on) { line_numbers_ = on; }
     bool line_numbers() const noexcept { return line_numbers_; }
@@ -128,7 +140,11 @@ private:
     // text or the width changed; nullptr when reading is off or the area is too narrow.
     const ReadingLayout* layout_for(int area_cols);
     void render_reading(Screen& screen, Rect area, const std::optional<Match>& search, bool focused);
-    void scroll_wrapped(std::uint64_t pos, int area_rows, int area_cols, int row_margin, bool margin_above);
+    void scroll_wrapped(std::uint64_t pos, int area_rows, int area_cols, int row_margin, bool margin_above, int margin_cap);
+    // -1 when `pos` is above the view, 1 below it, 0 on screen.
+    int side_of_view(std::uint64_t pos, int area_rows, int area_cols);
+    // The screen rows of text after `pos`'s row, up to `limit`.
+    int rows_after(std::uint64_t pos, int area_cols, int limit);
 
     Document& doc_;
     const Editor& editor_;
@@ -138,6 +154,7 @@ private:
     bool wrap_ = false;
     bool read_only_ = false;
     std::uint64_t top_ = 0;
+    bool scrolled_away_ = false;  // by scroll_rows, until follow_cursor
     std::uint64_t hscroll_ = 0;
     std::string line_buf_;            // per-frame scratch, reused
     std::string row_buf_;             // per-frame scratch, reused
