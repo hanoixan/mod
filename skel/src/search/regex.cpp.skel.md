@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./regex.hpp.skel.md
-stamp: source 8f8bbccf, stand-in e6fe3a8d
+stamp: source d2567c93, stand-in c93a283e
 ---
 # module: regex (implementation)
 
@@ -12,6 +12,7 @@ Implements [Regex](./regex.hpp.skel.md#class-regex) on top of the PCRE2 8-bit AP
 - Budget: a match context with `pcre2_set_match_limit`, `pcre2_set_depth_limit` and `pcre2_set_heap_limit`. `PCRE2_ERROR_MATCHLIMIT`, `PCRE2_ERROR_DEPTHLIMIT` and `PCRE2_ERROR_HEAPLIMIT` map to `ErrorCode::regex` with "pattern too complex".
 - `expand_replacement` is hand-written rather than `pcre2_substitute`, because the match lives in a window that may have moved on; it reads group bytes through the `read` callback and parses `$n`, `${n}`, `${name}` and `$$` as the header describes. A pattern compiled with `literal` returns the template unchanged.
 - Match data comes from `pcre2_match_data_create_from_pattern` once per compiled pattern and is reused for every call.
+- **Without JIT** (PCRE2 built without it under the MSYS2 runtime, where JIT code faults; or JIT compilation refused, or `allow_jit` false): PCRE2's interpreter re-validates the whole subject on every call when `PCRE2_MATCH_INVALID_UTF` is set, which makes match after match on a long line quadratic. So `compile` also compiles the pattern without that flag, and `search_window` checks each line's UTF-8 once (no overlong forms, surrogates or code points above U+10FFFF; a sequence cut off at the end is invalid), caching the answer in the `LineCursor` for that line and end; a valid line is matched with that pattern and `PCRE2_NO_UTF_CHECK`, an invalid one with the original pattern, as with JIT.
 
 - **Owns:** engine handles and match data.
 - **Access:** internal.

@@ -1,20 +1,21 @@
 #pragma once
 
 #include <cstddef>
-#include <functional>
 #include <iterator>
 #include <mutex>
 #include <utility>
 #include <vector>
+
+#include "util/unique_function.hpp"
 
 namespace mod {
 
 // The single crossing point from worker threads to the main thread.
 class EventQueue {
 public:
-    using Task = std::move_only_function<void()>;
+    using Task = UniqueFunction<void()>;
 
-    explicit EventQueue(std::move_only_function<void()> wake) : wake_(std::move(wake)) {}
+    explicit EventQueue(UniqueFunction<void()> wake) : wake_(std::move(wake)) {}
 
     EventQueue(const EventQueue&) = delete;
     EventQueue& operator=(const EventQueue&) = delete;
@@ -61,7 +62,7 @@ public:
     }
 
 private:
-    std::move_only_function<void()> wake_;
+    UniqueFunction<void()> wake_;
     std::mutex mutex_;
     std::vector<Task> tasks_;
     bool closed_ = false;

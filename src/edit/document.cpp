@@ -73,7 +73,7 @@ std::int64_t Document::now() const {
 }
 
 // The sidecar shares the document's clock, so an injected clock also drives `load_ms`.
-SidecarSeams Document::sidecar_seams() const { return SidecarSeams{options_.now_ms, {}, {}, options_.progress}; }
+SidecarSeams Document::sidecar_seams() const { return SidecarSeams{options_.now_ms, {}, {}, options_.progress, {}}; }
 
 NodeMeta Document::root_meta() const { return NodeMeta{0, kNoParent, now(), EditKind::other, 0, 0}; }
 
@@ -856,6 +856,15 @@ void Document::materialize_for_overwrite(const fs::path& target, Clipboard* clip
     for (const void* m : maps) sidecar_->detach_views(m);
     copy_live_text(hit);
 
+    rebind_clipboard(clipboard, copy_run);
+    // Nothing reads those buffers now: let their mappings close, or Windows refuses to
+    // shorten the file under them.
+    for (const BufferIndex idx : hit) tree_.release_buffer(idx);
+    std::erase_if(mappings_, [&](const auto& entry) { return hit.contains(entry.second); });
+    if (scan_mapping_ && same_file(scan_mapping_->identity(), *id)) scan_mapping_.reset();
+}
+
+void Document::rebind_clipboard(Clipboard* clipboard, const std::function<bool(PieceRun&)>& copy_run) {
     if (clipboard == nullptr || clipboard->get() == nullptr) return;
     const ClipContent& c = *clipboard->get();
     PieceRun run;

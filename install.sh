@@ -1,8 +1,9 @@
 #!/bin/sh
-# Installs mod on Linux x86_64:
+# Installs mod on Linux x86_64 and macOS (Apple silicon and Intel):
 #   curl -fsSL https://raw.githubusercontent.com/hanoixan/mod/main/install.sh | sh
-# With apt-get, dnf or pacman and root or sudo, installs the release's package; otherwise
-# (or with MOD_INSTALL_LOCAL=1) unpacks it into MOD_PREFIX, ~/.local by default.
+# On Linux with apt-get, dnf or pacman and root or sudo, installs the release's package;
+# otherwise (on macOS, or with MOD_INSTALL_LOCAL=1) unpacks it into MOD_PREFIX, ~/.local by
+# default. On Windows, use install.ps1.
 # MOD_VERSION picks a release (default: the latest), or a release candidate such as 1.2.0-rc.1.
 set -eu
 
@@ -13,8 +14,12 @@ prefix=${MOD_PREFIX:-$HOME/.local}
 say() { printf 'mod install: %s\n' "$*"; }
 die() { say "$*" >&2; exit 1; }
 
-[ "$(uname -s)" = Linux ] || die "only Linux is supported by this installer"
-[ "$(uname -m)" = x86_64 ] || die "only x86_64 builds are published (this is $(uname -m))"
+os=$(uname -s)
+case $os in
+    Linux) [ "$(uname -m)" = x86_64 ] || die "only x86_64 builds are published for Linux (this is $(uname -m))" ;;
+    Darwin) ;;  # one universal binary, for Apple silicon and Intel
+    *) die "only Linux and macOS are supported by this installer (on Windows, use install.ps1)" ;;
+esac
 command -v curl >/dev/null 2>&1 || die "curl is needed"
 
 # `release` names the tag (v1.2.0, or v1.2.0-rc.1 for a candidate); `version`, the files in it,
@@ -43,7 +48,7 @@ else
     sudo=none
 fi
 
-if [ "${MOD_INSTALL_LOCAL:-0}" != 1 ] && [ "$sudo" != none ]; then
+if [ "$os" = Linux ] && [ "${MOD_INSTALL_LOCAL:-0}" != 1 ] && [ "$sudo" != none ]; then
     if command -v apt-get >/dev/null 2>&1; then
         fetch "mod_${version}_amd64.deb"
         $sudo apt-get install -y "$tmp/mod_${version}_amd64.deb"
@@ -63,7 +68,11 @@ if [ "${MOD_INSTALL_LOCAL:-0}" != 1 ] && [ "$sudo" != none ]; then
 fi
 
 # No package manager to use: unpack into the prefix.
-name=mod-$version-linux-x86_64
+if [ "$os" = Darwin ]; then
+    name=mod-$version-macos-universal
+else
+    name=mod-$version-linux-x86_64
+fi
 fetch "$name.tar.gz"
 tar -xzf "$tmp/$name.tar.gz" -C "$tmp"
 mkdir -p "$prefix"

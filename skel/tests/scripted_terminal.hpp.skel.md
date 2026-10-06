@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source c3a7e509, stand-in 5f1fa279
+stamp: source 8d4b313f, stand-in 35bd4e0f
 ---
 # module: scripted_terminal
 
@@ -32,7 +32,7 @@ The screen a terminal would show for what mod writes: cursor moves (`CSI row;col
 
 ## symbol: ScriptStep
 
-A step: `name`, `keys` typed, `until` (a condition on the screen, or none: done once the keys are read) and `limit`; the run fills in `took`, `done` and `timed_out`. A step whose keys end in Esc waits its `esc_settle` first (300 ms by default, longer than App's 250 ms between quitting Escapes, so steps never add up to a quit), since a lone Esc is only Esc once the decoder's wait has passed.
+A step: `name`, `keys` typed, `until` (a condition on the screen, or none: done once the keys are read) and `limit`; the run fills in `took`, `done` and `timed_out`. A step whose keys end in Esc waits its `esc_settle` first (400 ms by default, well over App's 250 ms between quitting menu keys, with room for a late timer on a slow machine, so steps never add up to a quit), since a lone Esc is only Esc once the decoder's wait has passed.
 
 - **Access:** app_test, stress_test.
 

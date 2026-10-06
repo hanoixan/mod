@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./piece_tree.hpp.skel.md
-stamp: source 3517eeab, stand-in 0e3bbe05
+stamp: source 8f66a02b, stand-in 0e3bbe05
 ---
 # module: piece_tree (implementation)
 

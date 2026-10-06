@@ -376,7 +376,11 @@ TEST_CASE("render draws the layout") {
     f.press(Key::Down);  // a.txt selected
     f.dlg.render(screen, Rect{0, 0, 14, 140});
     CHECK(row_text(screen, 0).rfind("── Save As ─", 0) == 0);
+#if defined(__CYGWIN__)
+    CHECK(row_text(screen, 1).substr(2, 3) == ": >");  // " D: > a > …", from the drive
+#else
     CHECK(row_text(screen, 1).substr(0, 4) == " / >");
+#endif
     CHECK(row_text(screen, 1).find("> file_dialog_test > render") != std::string::npos);
     const std::string toolbar = row_text(screen, 2);
     CHECK(toolbar.find("[↑Up] [⌂Home] [+Folder]") != std::string::npos);

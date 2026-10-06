@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source ba165883, stand-in cbdef0f8
+stamp: source 207688b0, stand-in b8afb4e1
 ---
 # module: piece_tree
 
@@ -108,6 +108,13 @@ Design guidance: this module is on the hot path for both rendering and typing. K
 - **Returns:** the new `BufferIndex`.
 - **State changes:** appends to the buffer table.
 - **Access:** [Sidecar](../edit/sidecar.hpp.skel.md#class-sidecar) payload rebinding, through Document.
+
+### function: release_buffer
+
+- **Inputs:** `buffer`: a file buffer's index that no piece uses any more (the caller guarantees it).
+- **Returns:** nothing.
+- **State changes:** drops the buffer's mapping and its line-count caches, so the mapping can close; the index is never reused. Index 0 (the add buffer) and unknown indexes are ignored.
+- **Access:** [Document.save](../edit/document.hpp.skel.md#function-save), before an in-place write.
 
 ### function: size
 

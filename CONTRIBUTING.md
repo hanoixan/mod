@@ -9,14 +9,14 @@
 3. Wait for CI to pass. It builds the release configuration, runs the tests, builds the `.deb`, `.rpm` and Arch packages and the tarball, and installs and runs each one on its own distribution (the tarball on Debian 12). The packages are attached to the run for seven days. Alongside, it fuzzes every parser for 60 seconds each from the corpus in `fuzz/corpus/`, runs `clang-tidy` with the checks in `.clang-tidy` (any finding fails), runs every test under valgrind memcheck, and runs 1 GB and 4 GB text files and a 1 GB binary file through the editor (the `stress` tests).
 4. Merge the pull request, then delete the branch.
 
-`main` is protected: a change reaches it only through a pull request whose CI jobs (linux, fuzz, clang-tidy, valgrind and stress) have passed, and `main` cannot be force-pushed or deleted. No approving review is required, since GitHub does not let you approve your own pull request.
+`main` is protected: a change reaches it only through a pull request whose CI jobs (linux, windows, the two macos builds, macos-universal, fuzz, clang-tidy, valgrind and stress) have passed, and `main` cannot be force-pushed or deleted. No approving review is required, since GitHub does not let you approve your own pull request.
 
 ## Releasing
 
 A release starts as a release candidate, made from `main`, which is promoted once it has been tried. Promotion builds nothing: the release is the candidate's files, byte for byte.
 
 1. In a pull request, set the new version in `CMakeLists.txt` (`project(mod VERSION 1.2.0 …)`), and merge it.
-2. In GitHub, open Actions > Release candidate > Run workflow, keep the branch on `main`, and enter the same version. The workflow checks that it runs on `main`, that the version matches `CMakeLists.txt` and is not released yet, builds and tests, packages, tags `v1.2.0-rc.1` (`rc.2` for the next candidate of that version, and so on) and publishes it as a GitHub prerelease, "mod 1.2.0 release candidate 1".
+2. In GitHub, open Actions > Release candidate > Run workflow, keep the branch on `main`, and enter the same version. The workflow checks that it runs on `main`, that the version matches `CMakeLists.txt` and is not released yet, builds, tests, packages and smoke tests on Linux, Windows and macOS (Apple silicon and Intel, joined into one universal binary), tags `v1.2.0-rc.1` (`rc.2` for the next candidate of that version, and so on) and publishes it as a GitHub prerelease, "mod 1.2.0 release candidate 1".
 3. Try it. `MOD_VERSION=1.2.0-rc.1` points the install one-liner at a candidate; without it the one-liner installs the latest release and never a candidate. To fix something, merge the fix and run step 2 again for the next candidate.
 4. Open Actions > Promote release > Run workflow, enter the candidate's tag (`v1.2.0-rc.2`) and type its version (`1.2.0`) to confirm. The workflow tags `v1.2.0` on the candidate's commit and publishes the candidate's files as the release "mod 1.2.0", with notes on every change since the previous release. It runs in the `release` environment, which has a required reviewer: the run waits until the reviewer approves it in GitHub (the run's page shows Review deployments).
 
@@ -26,6 +26,8 @@ A candidate and its release carry:
 - `mod-<version>-1.x86_64.rpm` for Fedora and other RPM distributions,
 - `mod-<version>-1-x86_64.pkg.tar.zst` for Arch (`pacman -U`),
 - `mod-<version>-linux-x86_64.tar.gz`, the same files to unpack anywhere; `install.sh` uses it when it cannot use a package manager,
+- `mod-<version>-macos-universal.tar.gz` for macOS 13.3 or later, Apple silicon and Intel; `install.sh` uses it on a Mac,
+- `mod-<version>-windows-x86_64.zip` for Windows 11, `mod.exe` with the MSYS2 runtime (`msys-2.0.dll`) beside it; `install.ps1` installs it,
 - `PKGBUILD` and `mod-<version>.tar.gz`, to build the Arch package from source with `makepkg`.
 
 The files carry the plain version, never `rc`: that is what lets the release be the very files tried. So `mod --version` on a candidate says `1.2.0`, and its `PKGBUILD` downloads its source from the release, which works once the candidate is promoted (the `.pkg.tar.zst` works on a candidate).
@@ -39,6 +41,8 @@ If a run fails after its tag was pushed, delete the tag (`git push origin :refs/
 ## Building the packages locally
 
 `tools/ci/package.sh` is what CI runs. On Ubuntu 22.04 or later it needs `g++-13`, `cmake` 3.25 or later, `ninja-build`, `rpm` and Docker; it leaves the packages and the tarball in `dist/`. `MOD_SKIP_PACKAGE_TESTS=1` skips the install checks.
+
+On Windows, in an [MSYS2](https://www.msys2.org/) MSYS shell (not UCRT64 or MINGW64: mod runs on the MSYS2 runtime, which provides the POSIX calls it uses) with `pacman -S gcc cmake ninja zip`: `cmake --preset windows-release`, `cmake --build --preset windows-release`, `ctest --preset windows-release`, then `tools/ci/package_windows.sh` for the zip. On macOS, with `brew install llvm ninja cmake`: configure with `cmake --preset macos-release -DCMAKE_CXX_COMPILER="$(brew --prefix llvm)/bin/clang++"` (with macOS's own libc++, so the binary needs nothing from Homebrew), then build and test with the `macos-release` presets; `tools/ci/package_macos.sh` joins an arm64 and an x86_64 install into the universal tarball. `python3 tools/ci/smoke.py <mod>` smoke tests any build (on Windows, with `pip install pywinpty`, in a Windows pseudo-console).
 
 To run the other checks locally (clang 19 and libstdc++ 13 for the first two):
 

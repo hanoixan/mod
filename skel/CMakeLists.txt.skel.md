@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source 7adc03bc, stand-in 0adefcdd
+stamp: source c8c96af1, stand-in 28048796
 ---
 # resource: CMakeLists.txt
 
@@ -20,7 +20,9 @@ Contract for the implementer:
 - Link `Threads::Threads`.
 - The sources of `mod_core` are one list, `MOD_CORE_SOURCES`; `mod` is `src/main.cpp` linked against `mod_core`. `mod_core` exposes `src/` as its public include directory. Warning and sanitizer flags are applied by one helper function used for `mod`, `mod_core` and the test executables. With `MOD_SANITIZE`, `mod_core` also carries `-fsanitize=address,undefined` as an interface link option, so everything that links it gets the runtimes.
 - When the build is split into batches, the file lists only sources that exist; the PCRE2 dependency, the `languages.json` embedding, the `mod` executable and its `-static-libstdc++` link arrive with the batches that add `regex.cpp`, `languages.json` and `main.cpp`.
-- On Linux with GCC, link `mod` with `-static-libstdc++` (for example `target_link_options(mod PRIVATE -static-libstdc++)` under `if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")`), so that the binary built with GCC 13 runs on a stock Ubuntu 22.04, whose system libstdc++ is older. Nothing else is linked statically: glibc, libgcc_s and libm stay dynamic. macOS links the system libc++ dynamically as usual. Test executables need not link statically.
+- With GCC (Linux, and Windows on the MSYS2 runtime), link `mod` with `-static-libstdc++ -static-libgcc` (under `if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT APPLE)`): on Linux so that the binary built with GCC 13 runs on a stock Ubuntu 22.04, whose system libstdc++ is older; on Windows so that `mod.exe` needs only `msys-2.0.dll` beside it. glibc and libm stay dynamic. macOS (Homebrew LLVM's clang) uses the SDK's headers and links the system's own libc++ dynamically, as usual: it is on every Mac, so the binary needs nothing from Homebrew. (Homebrew's static libc++ was tried: it is built for macOS 15, and with a static libc++abi typed operator new aborts at startup.)
+- PCRE2 is built with JIT except under the MSYS2 runtime, where JIT-compiled code faults; there every search runs in PCRE2's interpreter, as it does anywhere JIT compilation fails. Test executables need not link statically.
+- Under the MSYS2 runtime (`CMAKE_SYSTEM_NAME` `MSYS` or `CYGWIN`), define `_GNU_SOURCE`: its headers hide POSIX and BSD extensions such as `FNM_CASEFOLD` under a strict `-std`.
 - Embed defaults: `file(READ config/languages.json …)`, then `file(CONFIGURE OUTPUT ${CMAKE_BINARY_DIR}/generated/default_languages.inc CONTENT … @ONLY)` (no template file in the source tree) as a raw string literal with the delimiter `mod_json`. Configure fails with `FATAL_ERROR` if the JSON contains `)mod_json"`. `config/languages.json` is added to the directory's `CMAKE_CONFIGURE_DEPENDS`, so editing it re-runs configure, and the generated directory is a `PRIVATE` include directory of `mod_core`. See [language_config (implementation)](./src/syntax/language_config.cpp.skel.md).
 - Options: `MOD_BUILD_TESTS` (ON when top-level), `MOD_SANITIZE` (address and undefined behavior, for Debug; undefined behavior aborts, `-fno-sanitize-recover=undefined`, so a test that meets it fails) and `MOD_BUILD_FUZZERS` (clang only: the core is compiled with `-fsanitize=fuzzer-no-link,address,undefined` and `-fno-sanitize-recover=undefined`, and the [fuzz targets](./fuzz/CMakeLists.txt.skel.md) are built). `fuzz/` is added when tests or fuzzers are built.
 - `install(TARGETS mod)`, and with `include(GNUInstallDirs)`: `docs/manual/` to `${CMAKE_INSTALL_DATADIR}/mod/doc`, `docs/sidecar-format.md` and the generated `settings.json` to `${CMAKE_INSTALL_DATADIR}/mod`. The `settings.json` comes from an executable `gen_default_settings` ([tools/gen_default_settings.cpp](./tools/gen_default_settings.cpp.skel.md), linking `mod_core`, with the shared warning options) run by an `add_custom_command` writing `${CMAKE_BINARY_DIR}/generated/settings.json`, made part of `ALL` by a `default_settings` target. `mod_core` gets two private compile definitions for the help screen: `MOD_INSTALL_DOC_DIR` (`${CMAKE_INSTALL_FULL_DATADIR}/mod/doc`) and `MOD_SOURCE_DOC_DIR` (the source tree's `docs/manual`). The `LICENSE` (MIT, `Copyright (c) 2026 hanoixan`) is installed to `${CMAKE_INSTALL_DATADIR}/licenses/mod`.
@@ -86,6 +88,7 @@ Contract for the implementer:
 - **Depends on:** [docs/manual/help.md](./docs/manual/help.md.skel.md)
 - **Depends on:** [src/platform/file_map_posix.cpp](./src/platform/file_map_posix.cpp.skel.md)
 - **Depends on:** [src/platform/fs_posix.cpp](./src/platform/fs_posix.cpp.skel.md)
+- **Depends on:** [src/platform/path_text.cpp](./src/platform/path_text.cpp.skel.md)
 - **Depends on:** [src/platform/process_posix.cpp](./src/platform/process_posix.cpp.skel.md)
 - **Depends on:** [src/platform/terminal_posix.cpp](./src/platform/terminal_posix.cpp.skel.md)
 - **Depends on:** [src/search/regex.cpp](./src/search/regex.cpp.skel.md)
@@ -117,3 +120,5 @@ Contract for the implementer:
 - **Unknowns:** none
 - **Referred by:** [package.sh](./tools/ci/package.sh.skel.md)
 - **Referred by:** [release.sh](./tools/ci/release.sh.skel.md)
+- **Referred by:** [package_macos.sh](./tools/ci/package_macos.sh.skel.md)
+- **Referred by:** [package_windows.sh](./tools/ci/package_windows.sh.skel.md)

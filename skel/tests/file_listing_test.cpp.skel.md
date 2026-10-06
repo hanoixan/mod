@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 1b60f483, stand-in 57f4d071
+stamp: source 83f878dd, stand-in 06d1175d
 ---
 # module: file_listing_test
 
@@ -15,5 +15,6 @@ stamp: source 1b60f483, stand-in 57f4d071
 - **Depends on:** [format_size](../src/app/file_listing.hpp.skel.md#function-format_size)
 - **Depends on:** [path_parts](../src/app/file_listing.hpp.skel.md#function-path_parts)
 - **Depends on:** [make_directory](../src/app/file_listing.hpp.skel.md#function-make_directory)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none. Tests use doctest; see [tests/CMakeLists.txt](./CMakeLists.txt.skel.md).
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

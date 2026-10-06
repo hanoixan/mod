@@ -8,6 +8,8 @@
 #include <ctime>
 #include <format>
 
+#include "platform/path_text.hpp"
+
 namespace fs = std::filesystem;
 
 namespace mod {
@@ -19,7 +21,9 @@ std::string lower(std::string s) {
 }
 
 std::string format_time(fs::file_time_type t) {
-    const auto sys = std::chrono::clock_cast<std::chrono::system_clock>(t);
+    // file_clock's own exact conversion: libc++ has no clock_cast, and an offset between two
+    // now() readings is off by the time between them (a file at 00:00 showed 23:59).
+    const auto sys = std::chrono::time_point_cast<std::chrono::system_clock::duration>(fs::file_time_type::clock::to_sys(t));
     const std::time_t tt = std::chrono::system_clock::to_time_t(sys);
     std::tm tm{};
     if (localtime_r(&tt, &tm) == nullptr) return {};
@@ -92,8 +96,20 @@ std::string format_size(std::uint64_t bytes) {
 }
 
 std::vector<std::string> path_parts(const fs::path& dir) {
-    std::vector<std::string> parts{"/"};
     const fs::path abs = fs::absolute(dir).lexically_normal();
+    const std::string shown = display_path(abs);
+    if (!shown.starts_with('/')) {
+        // Windows: C:\Users\me reads C: > Users > me.
+        std::vector<std::string> parts;
+        std::size_t start = 0;
+        while (start <= shown.size()) {
+            const std::size_t end = std::min(shown.find('\\', start), shown.size());
+            if (end > start) parts.push_back(shown.substr(start, end - start));
+            start = end + 1;
+        }
+        return parts;
+    }
+    std::vector<std::string> parts{"/"};
     for (const fs::path& p : abs.relative_path())
         if (!p.empty() && p != ".") parts.push_back(p.string());
     return parts;

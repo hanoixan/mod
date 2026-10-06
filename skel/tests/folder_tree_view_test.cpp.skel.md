@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 1ac5f522, stand-in 0ac50350
+stamp: source e7a3d4b7, stand-in e26830d3
 ---
 # module: folder_tree_view_test
 
@@ -11,5 +11,6 @@ Rows drawn with ▾/▸ and indents, the short hints on the panel's own line in 
 - **Required:** conditional — when `MOD_BUILD_TESTS` is ON.
 - **Failure modes:** none.
 - **Depends on:** [FolderTreeView](../src/ui/folder_tree_view.hpp.skel.md#class-foldertreeview)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

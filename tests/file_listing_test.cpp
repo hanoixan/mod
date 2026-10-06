@@ -10,6 +10,7 @@
 #include <string>
 
 #include "app/file_listing.hpp"
+#include "fs_probe.hpp"
 
 using namespace mod;
 namespace fs = std::filesystem;
@@ -68,6 +69,10 @@ TEST_CASE("hidden names, filters, and links") {
     write(d / "noext", "x");
     fs::create_directories(d / ".hdir");
     fs::create_directories(d / "docs");
+    if (!probe::symlinks_work(d)) {
+        MESSAGE("skipped: no symbolic links here");
+        return;
+    }
     fs::create_symlink(d / "docs", d / "linkdir");
     fs::create_symlink(d / "missing", d / "broken");
 
@@ -139,9 +144,15 @@ TEST_CASE("format_size") {
 }
 
 TEST_CASE("path_parts") {
+#if defined(__CYGWIN__)
+    // Windows: the parts of C:\Windows\System32, from the drive.
+    CHECK(path_parts("/c/Windows/System32") == std::vector<std::string>{"C:", "Windows", "System32"});
+    CHECK(path_parts("/c/Windows/") == std::vector<std::string>{"C:", "Windows"});
+#else
     CHECK(path_parts("/") == std::vector<std::string>{"/"});
     CHECK(path_parts("/home/user") == std::vector<std::string>{"/", "home", "user"});
     CHECK(path_parts("/home/user/") == std::vector<std::string>{"/", "home", "user"});
+#endif
 }
 
 TEST_CASE("make_directory creates nested folders and accepts an existing one") {

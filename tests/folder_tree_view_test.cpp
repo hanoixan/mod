@@ -11,6 +11,7 @@
 #include "ui/folder_tree_view.hpp"
 #include "ui/screen.hpp"
 #include "ui/theme.hpp"
+#include "fs_probe.hpp"
 
 using namespace mod;
 namespace fs = std::filesystem;
@@ -140,6 +141,9 @@ TEST_CASE("a message from the tree replaces the hints on the bottom line") {
     f.view.handle_key(key(Key::Right));
     f.draw();
     fs::permissions(root / "src", fs::perms::owner_all);
-    if (::geteuid() == 0) return;
+    if (!probe::permissions_enforced(root)) {
+        MESSAGE("skipped: permissions are not enforced here");
+        return;
+    }
     CHECK(f.row(7).find("cannot open src") != std::string::npos);
 }

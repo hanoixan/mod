@@ -707,9 +707,15 @@ bool Sidecar::ensure_file() {
     if (failed_) return false;
     if (fd_ >= 0) {
         if (truncate_to_) {
-            if (::ftruncate(fd_, static_cast<off_t>(*truncate_to_)) != 0) {
-                fail(std::string("cannot cut the damaged tail of the history: ") + std::strerror(errno), SidecarState::disabled);
-                return false;
+            // Windows cannot shorten a file it still has mapped (payloads read from it):
+            // there the good part is written to a new file instead.
+            const auto size = static_cast<off_t>(*truncate_to_);
+            if ((seams_.truncate ? seams_.truncate(fd_, size) : ::ftruncate(fd_, size)) != 0) {
+                const int err = errno;
+                if (!rewrite_without_tail(*truncate_to_)) {
+                    fail(std::string("cannot cut the damaged tail of the history: ") + std::strerror(err), SidecarState::disabled);
+                    return false;
+                }
             }
             file_size_ = good_size_ = *truncate_to_;
             truncate_to_.reset();
@@ -735,6 +741,31 @@ bool Sidecar::ensure_file() {
     if (!write_bytes(as_bytes(header))) return false;
     need_header_ = false;
     good_size_ = file_size_;
+    return true;
+}
+
+bool Sidecar::rewrite_without_tail(std::uint64_t size) {
+    const ContentProducer produce = [&](const ByteSink& sink) -> Status {
+        std::vector<std::byte> buf(1 << 20);
+        for (std::uint64_t pos = 0; pos < size;) {
+            const auto want = static_cast<std::size_t>(std::min<std::uint64_t>(size - pos, buf.size()));
+            const ssize_t n = ::pread(fd_, buf.data(), want, static_cast<off_t>(pos));
+            if (n < 0 && errno == EINTR) continue;
+            if (n <= 0) return std::unexpected(make_error(ErrorCode::io, "cannot read the history to rewrite it"));
+            if (auto st = sink(std::span(buf.data(), static_cast<std::size_t>(n))); !st) return st;
+            pos += static_cast<std::uint64_t>(n);
+        }
+        return {};
+    };
+    if (!path_ || !write_atomically(*path_, produce, std::nullopt, file_mode_)) return false;
+    // Lock the new file, then release the old one; the old mapping stays valid for payloads.
+    const int fd = ::open(path_->c_str(), O_RDWR | O_APPEND | O_CLOEXEC);
+    if (fd < 0 || ::flock(fd, LOCK_EX | LOCK_NB) != 0) {
+        if (fd >= 0) ::close(fd);
+        return false;
+    }
+    ::close(fd_);
+    fd_ = fd;
     return true;
 }
 

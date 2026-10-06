@@ -1,5 +1,14 @@
 #include "syntax/json.hpp"
 
+#if defined(__APPLE__)
+#include <xlocale.h>
+
+#include <cerrno>
+#include <clocale>
+#include <cstdlib>
+#include <string>
+#endif
+
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -12,6 +21,26 @@
 
 namespace mod {
 namespace {
+
+// The double in [first, last), which the parser has already checked is a JSON number, as
+// std::from_chars reads it. macOS's libc++ has no floating-point from_chars before macOS 26,
+// so there the C library reads it, in the C locale.
+std::from_chars_result parse_double(const char* first, const char* last, double& out) {
+#if defined(__APPLE__)
+    static const locale_t c_locale = ::newlocale(LC_ALL_MASK, "C", nullptr);
+    const std::string text(first, last);
+    char* end = nullptr;
+    errno = 0;
+    const double d = ::strtod_l(text.c_str(), &end, c_locale);
+    const auto used = static_cast<std::size_t>(end - text.c_str());
+    if (used == 0) return {first, std::errc::invalid_argument};
+    if (errno == ERANGE && (d == 0 || std::isinf(d))) return {first + used, std::errc::result_out_of_range};
+    out = d;
+    return {first + used, std::errc{}};
+#else
+    return std::from_chars(first, last, out);
+#endif
+}
 
 const std::string kEmptyString;
 
@@ -313,7 +342,7 @@ private:
             }
         }
         double d = 0;
-        const auto r = std::from_chars(first, last, d);
+        const auto r = parse_double(first, last, d);
         if (r.ec == std::errc::result_out_of_range) {
             // Too large overflows to infinity; too small underflows to zero.
             bool tiny = false;

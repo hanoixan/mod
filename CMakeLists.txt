@@ -25,6 +25,10 @@ option(MOD_WERROR "Treat warnings as errors" OFF)
 option(MOD_BUILD_FUZZERS "Build the libFuzzer targets (clang only)" OFF)
 
 find_package(Threads REQUIRED)
+if(CMAKE_SYSTEM_NAME MATCHES "CYGWIN|MSYS")
+  # The MSYS2 runtime hides POSIX and BSD extensions (FNM_CASEFOLD, pipe2, …) under a strict -std.
+  add_compile_definitions(_GNU_SOURCE)
+endif()
 include(FetchContent)
 # The fetched dependencies are built into mod, never installed: on CMake 3.28 and later
 # their own install rules are left out with EXCLUDE_FROM_ALL.
@@ -49,11 +53,16 @@ function(mod_target_options target)
   endif()
 endfunction()
 
-# PCRE2 for regex search: the 8-bit library only, static, with JIT.
+# PCRE2 for regex search: the 8-bit library only, static, with JIT, except under the MSYS2
+# runtime, where JIT-compiled code faults: there the interpreter runs every search.
 set(PCRE2_BUILD_PCRE2_8 ON CACHE BOOL "" FORCE)
 set(PCRE2_BUILD_PCRE2_16 OFF CACHE BOOL "" FORCE)
 set(PCRE2_BUILD_PCRE2_32 OFF CACHE BOOL "" FORCE)
-set(PCRE2_SUPPORT_JIT ON CACHE BOOL "" FORCE)
+if(CMAKE_SYSTEM_NAME MATCHES "CYGWIN|MSYS")
+  set(PCRE2_SUPPORT_JIT OFF CACHE BOOL "" FORCE)
+else()
+  set(PCRE2_SUPPORT_JIT ON CACHE BOOL "" FORCE)
+endif()
 set(PCRE2_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(PCRE2_BUILD_PCRE2GREP OFF CACHE BOOL "" FORCE)
 set(PCRE2_STATIC_PIC ON CACHE BOOL "" FORCE)
@@ -106,6 +115,7 @@ set(MOD_CORE_SOURCES
   src/edit/undo_tree.cpp
   src/platform/file_map_posix.cpp
   src/platform/fs_posix.cpp
+  src/platform/path_text.cpp
   src/platform/process_posix.cpp
   src/platform/terminal_posix.cpp
   src/platform/terminal_output.cpp
@@ -167,10 +177,12 @@ endif()
 add_executable(mod src/main.cpp)
 target_link_libraries(mod PRIVATE mod_core)
 mod_target_options(mod)
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  # Runs on a stock Ubuntu 22.04, whose system libstdc++ is older than GCC 13's.
-  target_link_options(mod PRIVATE -static-libstdc++)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT APPLE)
+  # Linux: runs on a stock Ubuntu 22.04, whose system libstdc++ is older than GCC 13's.
+  # Windows (the MSYS2 runtime): needs only msys-2.0.dll beside it, not GCC's own DLLs.
+  target_link_options(mod PRIVATE -static-libstdc++ -static-libgcc)
 endif()
+
 install(TARGETS mod)
 
 # The manual and a reference settings.json, under <prefix>/share/mod. The defaults file is

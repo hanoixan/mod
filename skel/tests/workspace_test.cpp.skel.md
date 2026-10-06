@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 29261be4, stand-in 4c9ad9b0
+stamp: source 4d2fa0c8, stand-in 4bbe59d4
 ---
 # module: workspace_test
 
@@ -11,5 +11,6 @@ One empty view to start; opening parks and showing takes back; a file shown only
 - **Required:** conditional — when `MOD_BUILD_TESTS` is ON.
 - **Failure modes:** none.
 - **Depends on:** [Workspace](../src/app/workspace.hpp.skel.md#class-workspace)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

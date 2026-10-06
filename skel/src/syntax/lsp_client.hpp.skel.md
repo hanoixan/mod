@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 24819b03, stand-in cf3d7c58
+stamp: source 24819b03, stand-in ba0cd80d
 ---
 # module: lsp_client
 
@@ -33,6 +33,7 @@ The size cap is `max_file_bytes` from the language's [LanguageServerSpec](./lang
 
 There is no timer thread. Every timeout (initialize, restart backoff, full-sync coalescing) is a deadline run by [tick](#function-tick), which the highlighter calls from App's loop. An operation that arms a timer sets a flag, and the next `tick` sets the deadline from its `now`; so tests drive time by passing `now`, and nothing reads a clock behind their back.
 
+- **Depends on:** [uri_path](../platform/path_text.hpp.skel.md#function-uri_path)
 - **Unknowns:** none
 
 ## symbol: PositionEncoding
@@ -68,7 +69,7 @@ There is no timer thread. Every timeout (initialize, restart backoff, full-sync 
 ## function: file_uri
 
 - **Inputs:** `path`: an absolute path.
-- **Returns:** `file://` followed by the path with every byte outside the RFC 3986 unreserved set (`A–Z a–z 0–9 - . _ ~`) and `/` percent-encoded with uppercase hex. Used for `rootUri`, the workspace folder and the document URI.
+- **Returns:** `file://` followed by the path's [uri_path](../platform/path_text.hpp.skel.md#function-uri_path) (on Windows `C:/…`, with a `/` before it), every byte outside the RFC 3986 unreserved set (`A–Z a–z 0–9 - . _ ~`) and `/` percent-encoded with uppercase hex. Used for `rootUri`, the workspace folder and the document URI; servers on Windows are native programs, so they get Windows paths.
 - **State changes:** none.
 - **Access:** public.
 - **Referred by:** [json_test](../../tests/json_test.cpp.skel.md)

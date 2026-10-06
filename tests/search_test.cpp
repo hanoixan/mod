@@ -386,23 +386,46 @@ TEST_CASE("Replace All over one long line replaces every match") {
     CHECK(f.text().size() == line.size() + 1);
 }
 
-TEST_CASE("searching one very long line match after match takes linear time") {
+TEST_CASE("searching one very long line match after match takes linear time, with JIT and without") {
     std::string line;
     while (line.size() < 4'000'000) line += "a b ";
-    const Regex re = compile("a", RegexOptions{.literal = true});
     const auto window = std::as_bytes(std::span(line.data(), line.size()));
-    LineCursor cursor;
-    std::uint64_t from = 0;
-    std::size_t found = 0;
-    const auto start = std::chrono::steady_clock::now();
-    for (;;) {
-        auto r = re.search_window(window, 0, from, true, &cursor);
-        REQUIRE(r);
-        if (r->kind != WindowResult::found) break;
-        ++found;
-        from = r->match.end;
+    for (const bool jit : {true, false}) {  // without: as under the MSYS2 runtime
+        CAPTURE(jit);
+        const Regex re = compile("a", RegexOptions{.literal = true, .allow_jit = jit});
+        LineCursor cursor;
+        std::uint64_t from = 0;
+        std::size_t found = 0;
+        const auto start = std::chrono::steady_clock::now();
+        for (;;) {
+            auto r = re.search_window(window, 0, from, true, &cursor);
+            REQUIRE(r);
+            if (r->kind != WindowResult::found) break;
+            ++found;
+            from = r->match.end;
+        }
+        const auto seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+        CHECK(found == line.size() / 4);
+        CHECK(seconds < time_budget(10.0));
     }
-    const auto seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
-    CHECK(found == line.size() / 4);
-    CHECK(seconds < time_budget(10.0));
+}
+
+TEST_CASE("without JIT, a line with invalid UTF-8 is still searched") {
+    const std::string text = "ab\xFF cd ab\nab \xC3\xA9 ab\n";
+    const auto window = std::as_bytes(std::span(text.data(), text.size()));
+    for (const bool jit : {true, false}) {
+        CAPTURE(jit);
+        const Regex re = compile("ab", RegexOptions{.allow_jit = jit});
+        LineCursor cursor;
+        std::vector<std::uint64_t> starts;
+        std::uint64_t from = 0;
+        for (;;) {
+            auto r = re.search_window(window, 0, from, true, &cursor);
+            REQUIRE(r);
+            if (r->kind != WindowResult::found) break;
+            starts.push_back(r->match.start);
+            from = r->match.end;
+        }
+        CHECK(starts == std::vector<std::uint64_t>{0, 7, 10, 16});
+    }
 }

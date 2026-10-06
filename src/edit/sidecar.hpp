@@ -37,6 +37,7 @@ struct SidecarSeams {
     std::function<long(int fd, const void* data, std::size_t size)> write;  // as ::write
     std::function<int(int fd)> sync;                            // as fdatasync
     ProgressSink progress;  // copy_to, rewrite and flush report here
+    std::function<int(int fd, std::int64_t size)> truncate;     // as ftruncate (Windows refuses one on a mapped file)
 };
 
 enum class SidecarState { pathless, attached, read_only, disabled, session_only };
@@ -175,6 +176,9 @@ private:
 
     // Writer thread (or the main thread while the writer is paused and idle).
     bool ensure_file();
+    // Replaces the file with its first `size` bytes, for a system that cannot shorten a file
+    // while it is mapped (Windows); false when that fails too.
+    bool rewrite_without_tail(std::uint64_t size);
     bool write_bytes(std::span<const std::byte> bytes);
     bool write_job(Job& job);
     void fail(const std::string& message, SidecarState state);

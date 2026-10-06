@@ -17,9 +17,10 @@ extern char** environ;
 namespace mod {
 namespace {
 
-// glibc 2.29 and later can change the child's directory as a spawn file action; elsewhere
-// (macOS, where addchdir_np is deprecated, among others) the child changes it through /bin/sh.
-#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 29))
+// glibc 2.29 and later and the MSYS2 runtime (Windows, which has no /bin/sh beside an
+// installed mod) can change the child's directory as a spawn file action; elsewhere (macOS,
+// where addchdir_np is deprecated, among others) the child changes it through /bin/sh.
+#if (defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 29))) || defined(__CYGWIN__)
 #define MOD_HAS_ADDCHDIR 1
 #endif
 
@@ -39,6 +40,25 @@ bool make_pipe(int fds[2]) {
 #endif
 }
 
+#if !defined(MOD_HAS_ADDCHDIR)
+// Whether `command` names an executable, as posix_spawnp would find it: a path with a slash
+// as it is, otherwise each folder of $PATH (an empty entry is the current folder).
+bool executable_exists(const std::string& command) {
+    if (command.find('/') != std::string::npos) return ::access(command.c_str(), X_OK) == 0;
+    const char* env = std::getenv("PATH");
+    const std::string_view path = env != nullptr ? env : "/usr/bin:/bin";
+    std::size_t start = 0;
+    while (start <= path.size()) {
+        const std::size_t end = std::min(path.find(':', start), path.size());
+        const std::string dir(path.substr(start, end - start));
+        const std::string candidate = (dir.empty() ? std::string(".") : dir) + "/" + command;
+        if (::access(candidate.c_str(), X_OK) == 0) return true;
+        start = end + 1;
+    }
+    return false;
+}
+#endif
+
 std::optional<int> decode_status(int status) {
     if (WIFEXITED(status)) return WEXITSTATUS(status);
     if (WIFSIGNALED(status)) return 128 + WTERMSIG(status);
@@ -50,6 +70,15 @@ std::optional<int> decode_status(int status) {
 Result<std::unique_ptr<ChildProcess>> ChildProcess::spawn(const std::vector<std::string>& argv,
                                                           const std::filesystem::path& cwd) {
     if (argv.empty() || argv[0].empty()) return std::unexpected(make_error(ErrorCode::internal, "empty command"));
+#if !defined(MOD_HAS_ADDCHDIR)
+    // Through /bin/sh the spawn itself always succeeds, so a missing command is found first.
+    if (!executable_exists(argv[0])) {
+        errno = ENOENT;
+        Error e = from_errno("start " + argv[0]);
+        e.code = ErrorCode::not_found;
+        return std::unexpected(std::move(e));
+    }
+#endif
 
     int in_pipe[2] = {-1, -1};
     int out_pipe[2] = {-1, -1};

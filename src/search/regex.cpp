@@ -38,10 +38,52 @@ std::string escape_literal(std::string_view text) {
     return out;
 }
 
+// Whether `s` is UTF-8 as PCRE2 accepts it: no overlong forms, surrogates or code points
+// above U+10FFFF. A sequence cut off at the end is invalid.
+bool valid_utf8(std::string_view s) {
+    const auto* p = reinterpret_cast<const unsigned char*>(s.data());
+    const std::size_t n = s.size();
+    std::size_t i = 0;
+    while (i < n) {
+        const unsigned c = p[i];
+        if (c < 0x80) {
+            ++i;
+            continue;
+        }
+        std::size_t len = 0;
+        unsigned lo = 0x80;
+        unsigned hi = 0xBF;
+        if (c >= 0xC2 && c <= 0xDF) {
+            len = 2;
+        } else if (c >= 0xE0 && c <= 0xEF) {
+            len = 3;
+            if (c == 0xE0) lo = 0xA0;
+            if (c == 0xED) hi = 0x9F;  // no surrogates
+        } else if (c >= 0xF0 && c <= 0xF4) {
+            len = 4;
+            if (c == 0xF0) lo = 0x90;
+            if (c == 0xF4) hi = 0x8F;  // nothing above U+10FFFF
+        } else {
+            return false;
+        }
+        if (n - i < len) return false;
+        if (p[i + 1] < lo || p[i + 1] > hi) return false;
+        for (std::size_t k = 2; k < len; ++k) {
+            if ((p[i + k] & 0xC0) != 0x80) return false;
+        }
+        i += len;
+    }
+    return true;
+}
+
 }  // namespace
 
 struct Regex::Impl {
     pcre2_code* code = nullptr;
+    // Without JIT only: the pattern without PCRE2_MATCH_INVALID_UTF, for lines known to be
+    // valid UTF-8 (matched with PCRE2_NO_UTF_CHECK). The interpreter otherwise re-checks the
+    // whole line on every call, which makes match after match on a long line quadratic.
+    pcre2_code* valid_code = nullptr;
     pcre2_match_data* match_data = nullptr;
     pcre2_match_context* match_context = nullptr;
     pcre2_jit_stack* jit_stack = nullptr;
@@ -54,6 +96,7 @@ struct Regex::Impl {
         if (match_context != nullptr) pcre2_match_context_free(match_context);
         if (jit_stack != nullptr) pcre2_jit_stack_free(jit_stack);
         if (code != nullptr) pcre2_code_free(code);
+        if (valid_code != nullptr) pcre2_code_free(valid_code);
     }
 };
 
@@ -88,8 +131,13 @@ Result<Regex> Regex::compile(std::string_view pattern, const RegexOptions& optio
     if (impl->code == nullptr) {
         return std::unexpected(make_error(ErrorCode::regex, std::format("{} at offset {}", error_text(err), err_offset)));
     }
-    // Under a W^X policy JIT fails; the interpreter is then used silently.
-    const bool jit = pcre2_jit_compile(impl->code, PCRE2_JIT_COMPLETE | PCRE2_JIT_PARTIAL_HARD) == 0;
+    // Under a W^X policy, or where PCRE2 has no JIT (the MSYS2 runtime), the interpreter is
+    // used silently.
+    const bool jit = options.allow_jit && pcre2_jit_compile(impl->code, PCRE2_JIT_COMPLETE | PCRE2_JIT_PARTIAL_HARD) == 0;
+    if (!jit) {
+        impl->valid_code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(source.data()), source.size(),
+                                         flags & ~static_cast<std::uint32_t>(PCRE2_MATCH_INVALID_UTF), &err, &err_offset, nullptr);
+    }
 
     pcre2_pattern_info(impl->code, PCRE2_INFO_CAPTURECOUNT, &impl->capture_count);
     std::uint32_t name_count = 0;
@@ -136,6 +184,7 @@ Result<WindowResult> Regex::search_window(std::span<const std::byte> window, std
         const void* lf = first && same_line ? (cursor->line_feed < size ? static_cast<const void*>(base + cursor->line_feed) : nullptr)
                          : line < size     ? std::memchr(base + line, '\n', size - line)
                                            : nullptr;
+        const LineCursor before = cursor != nullptr ? *cursor : LineCursor{};
         if (cursor != nullptr && first) {
             *cursor = LineCursor{true, fr, line, lf != nullptr ? static_cast<std::size_t>(static_cast<const char*>(lf) - base) : size};
         }
@@ -151,8 +200,23 @@ Result<WindowResult> Regex::search_window(std::span<const std::byte> window, std
             continue;
         }
         const std::size_t start = first ? fr - line : 0;
-        const std::uint32_t opts = complete ? 0 : PCRE2_PARTIAL_HARD;
-        const int rc = pcre2_match(impl_->code, reinterpret_cast<PCRE2_SPTR>(base + line), len, start, opts,
+        std::uint32_t opts = complete ? 0 : PCRE2_PARTIAL_HARD;
+        const pcre2_code* code = impl_->code;
+        if (impl_->valid_code != nullptr) {
+            // The line's validity, from the cursor when it already checked this very line.
+            const bool cached = first && same_line && before.utf_known && before.line == line && before.utf_end == end;
+            const bool valid = cached ? before.utf_valid : valid_utf8(std::string_view(base + line, len));
+            if (cursor != nullptr && first) {
+                cursor->utf_known = true;
+                cursor->utf_valid = valid;
+                cursor->utf_end = end;
+            }
+            if (valid) {
+                code = impl_->valid_code;
+                opts |= PCRE2_NO_UTF_CHECK;
+            }
+        }
+        const int rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(base + line), len, start, opts,
                                    impl_->match_data, impl_->match_context);
         if (rc >= 0) {
             const PCRE2_SIZE* ov = pcre2_get_ovector_pointer(impl_->match_data);

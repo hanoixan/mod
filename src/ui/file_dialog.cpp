@@ -6,6 +6,7 @@
 #include <format>
 #include <span>
 
+#include "platform/path_text.hpp"
 #include "text/utf8.hpp"
 #include "ui/theme.hpp"
 
@@ -157,7 +158,7 @@ void FileDialog::leave_edit_modes() {
 
 FileDialogResult FileDialog::submit(const std::string& name) {
     if (name.empty()) return {};
-    const fs::path full = dir_ / name;
+    const fs::path full = dir_ / path_from_user(name);  // an absolute name replaces dir_
     std::error_code ec;
     if (fs::is_directory(full, ec)) {
         navigate_to(full);

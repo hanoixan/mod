@@ -152,6 +152,11 @@ public:
     // One path for Ctrl+T and for a SIGTSTP sent from outside: both run on_tstp.
     void suspend() noexcept override { (void)::raise(SIGTSTP); }  // fails only for an invalid signal
 
+#if defined(__CYGWIN__)
+    // A parent outside the MSYS2 runtime (PowerShell, Windows Terminal) shows as pid 1.
+    bool can_suspend() const noexcept override { return ::getppid() != 1; }
+#endif
+
     void wake_with(char c) noexcept {
         const int saved_errno = errno;
         ssize_t n;

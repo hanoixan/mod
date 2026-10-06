@@ -12,6 +12,7 @@
 #include "app/settings.hpp"
 #include "platform/fs.hpp"
 #include "syntax/json.hpp"
+#include "fs_probe.hpp"
 
 using namespace mod;
 namespace fs = std::filesystem;
@@ -299,8 +300,11 @@ TEST_CASE("recent() reads hand-written times and ignores malformed ones") {
 }
 
 TEST_CASE("an unwritable directory returns permission; the value still applies") {
-    if (::geteuid() == 0) return;  // root writes anywhere
     const fs::path dir = scratch("readonly");
+    if (!probe::permissions_enforced(dir.parent_path())) {  // root, or Windows
+        MESSAGE("skipped: permissions are not enforced here");
+        return;
+    }
     fs::create_directories(dir);
     fs::permissions(dir, fs::perms::owner_read | fs::perms::owner_exec);
     Settings s(dir);
@@ -483,6 +487,10 @@ TEST_CASE("saving keeps a symlinked settings.json a symlink, and keeps its permi
     const fs::path dir = scratch("symlinked");
     const fs::path dotfiles = scratch("dotfiles");
     fs::create_directories(dir);
+    if (!probe::symlinks_work(dir)) {
+        MESSAGE("skipped: no symbolic links here");
+        return;
+    }
     write_file(dotfiles / "settings.json", "{}\n");
     fs::permissions(dotfiles / "settings.json", fs::perms::owner_read | fs::perms::owner_write);
     fs::create_symlink(dotfiles / "settings.json", dir / "settings.json");
@@ -491,7 +499,7 @@ TEST_CASE("saving keeps a symlinked settings.json a symlink, and keeps its permi
     REQUIRE(s.set("tab_width", 2));
     CHECK(fs::is_symlink(dir / "settings.json"));
     CHECK(read_file(dotfiles / "settings.json").find("\"tab_width\":2") != std::string::npos);
-    CHECK(fs::status(dotfiles / "settings.json").permissions() == (fs::perms::owner_read | fs::perms::owner_write));
+    if (probe::permissions_kept(dir)) CHECK(fs::status(dotfiles / "settings.json").permissions() == (fs::perms::owner_read | fs::perms::owner_write));
 }
 
 TEST_CASE("two mods changing different settings keep both changes") {

@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source f32353f5, stand-in 0a433fd1
+stamp: source fa6505fc, stand-in 95d96bb2
 ---
 # module: folder_tree_test
 
@@ -11,5 +11,6 @@ On a real scratch folder: the root, open, then every entry, folders first and by
 - **Required:** conditional — when `MOD_BUILD_TESTS` is ON.
 - **Failure modes:** none.
 - **Depends on:** [FolderTree](../src/app/folder_tree.hpp.skel.md#class-foldertree)
+- **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

@@ -52,6 +52,9 @@ public:
     // re-entered when the job continues, which reports `resized` from the next `wait` so the
     // caller redraws. The default does nothing, for terminals that cannot stop (tests).
     virtual void suspend() noexcept {}
+    // Whether `suspend` can come back: false on Windows when no MSYS2 or Cygwin shell started
+    // mod (from PowerShell or Windows Terminal nothing could continue it).
+    virtual bool can_suspend() const noexcept { return true; }
 };
 
 // The POSIX backend; `unsupported` when stdin or stdout is not a TTY.

@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source 4d8514ae, stand-in 48d709c9
+stamp: source c54600c9, stand-in fce03171
 ---
 # data: CMakePresets
 
@@ -8,7 +8,7 @@ CMake presets for repeatable configure, build and test on every platform. The Li
 
 - **Source:** hand-authored.
 - **Required:** optional — without it developers must pass the generator and compiler by hand.
-- **Failure modes:** `g++-13` is not on `PATH` on another Linux machine, so configure fails with a clear message. Developers can override with a `CMakeUserPresets.json`, which is git-ignored. There is no Windows preset in this phase. Windows builds will use the MSYS2 MSYS environment; its preset is added when a Windows build is made.
+- **Failure modes:** `g++-13` is not on `PATH` on another Linux machine, so configure fails with a clear message. Developers can override with a `CMakeUserPresets.json`, which is git-ignored. `windows-release` is for the MSYS2 MSYS environment (`hostSystemName` `MSYS` or `CYGWIN`), with its `g++`. `macos-release` targets macOS 13.3 (the system libc++'s floating-point `to_chars`, which `std::format` uses, needs 13.3) and is configured with Homebrew LLVM's `clang++` passed on the command line.
 - **Depends on:** [CMakeLists.txt](./CMakeLists.txt.skel.md)
 - **Referred by:** none known (consumed by developers and CI via `cmake --preset`)
 - **Unknowns:** none
@@ -27,9 +27,11 @@ CMake presets for repeatable configure, build and test on every platform. The Li
     { "name": "linux-release", "inherits": "base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_CXX_COMPILER": "g++-13" } },
     { "name": "macos-release", "inherits": "base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" },
-      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" } }
-    // No Windows preset in this phase (MSYS2 MSYS environment, later).
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_OSX_DEPLOYMENT_TARGET": "13.3" },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" } },
+    { "name": "windows-release", "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_CXX_COMPILER": "g++" },
+      "condition": { "type": "inList", "string": "${hostSystemName}", "list": ["MSYS", "CYGWIN"] } }
   ],
   "buildPresets": [ { "name": "linux-debug", "configurePreset": "linux-debug" } /* ...one per configure preset */ ],
   "testPresets":  [ { "name": "linux-debug", "configurePreset": "linux-debug",

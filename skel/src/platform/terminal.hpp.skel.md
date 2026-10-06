@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source cd2a7daf, stand-in 2d821882
+stamp: source 9e9a5659, stand-in 029c1713
 ---
 # module: terminal
 
@@ -104,6 +104,13 @@ A pure-virtual interface.
 - **Returns:** nothing, once the process has been continued.
 - **State changes:** stops the process as a shell job. On POSIX it raises SIGTSTP, whose handler (also reached by a SIGTSTP sent from outside) is async-signal-safe: it restores the terminal as `restore` does, stops the process with the default action, and when the job is continued (`fg`, SIGCONT) saves the shell's current modes, re-applies raw mode, writes the enter sequence again, and sets the resize latch so the next `wait` reports `resized` and the caller redraws everything. A process that cannot be stopped (an orphaned process group) continues at once. The base-class default does nothing, for terminals in tests.
 - **Access:** App (the `Suspend` command).
+
+### function: can_suspend
+
+- **Inputs:** none.
+- **Returns:** whether `suspend` could come back: true everywhere except on Windows when no MSYS2 or Cygwin process started mod (its parent then shows as pid 1, as when started from PowerShell or Windows Terminal), where a stopped mod could never be continued. The base-class default is true.
+- **State changes:** none.
+- **Access:** App, before `suspend`.
 
 ## function: make_terminal
 

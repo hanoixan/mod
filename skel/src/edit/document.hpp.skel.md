@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 787ee9d0, stand-in ce8bf49c
+stamp: source 3cbaefb4, stand-in 3b8a526d
 ---
 # module: document
 
@@ -244,7 +244,7 @@ Writes the document to its path.
 - **Returns:** `Status`. `ErrorCode::not_atomic` means atomic replacement is impossible for this target; nothing was written, the document is unchanged, and the caller asks the user whether to retry with `in_place`.
 - **State changes:**
   1. Closes the group.
-  2. With `atomic`, calls [write_atomically](../platform/fs.hpp.skel.md#function-write_atomically). With `in_place`, first flushes the sidecar (step 3, brought forward) so that `Pieces` payloads become `SidecarRef`s before any byte of the mapped file changes, then **materializes every in-session reference into the mapping that is about to be overwritten** (below), then calls [write_in_place](../platform/fs.hpp.skel.md#function-write_in_place), which stages the whole new content in a temporary file under `$TMPDIR` and only then copies it over the target, so the producer always reads the original mapping intact. Its producer streams `PieceTree.read` over the whole document, feeding a `ContentHasher` and recording per-chunk line-feed counts at the same chunk boundaries the tree uses.
+  2. With `atomic`, calls [write_atomically](../platform/fs.hpp.skel.md#function-write_atomically). With `in_place`, first flushes the sidecar (step 3, brought forward) so that `Pieces` payloads become `SidecarRef`s before any byte of the mapped file changes, then **materializes every in-session reference into the mapping that is about to be overwritten** (below; the text, the undo history and the clipboard, in that order) and then releases that file's buffers ([PieceTree.release_buffer](../text/piece_tree.hpp.skel.md#function-release_buffer)) and mappings, so nothing maps the file while it is overwritten (Windows refuses to shorten a mapped file), then calls [write_in_place](../platform/fs.hpp.skel.md#function-write_in_place), which stages the whole new content in a temporary file under `$TMPDIR` and only then copies it over the target, so the producer always reads the original mapping intact. Its producer streams `PieceTree.read` over the whole document, feeding a `ContentHasher` and recording per-chunk line-feed counts at the same chunk boundaries the tree uses.
      **Materialization before an in-place write.** The mappings at risk are every original buffer this document mapped from the target's inode (same device and inode as the file about to be written); older mappings of replaced inodes are safe. Before the first byte of the target changes:
      - every `Pieces` undo payload that still refers to such a mapping (the sidecar flush rebinds payloads only in `attached`, and never those held back by the deferral rule) is copied into the add buffer with [PieceTree.store](../text/piece_tree.hpp.skel.md#function-store) and replaced in the [UndoTree](./undo_tree.hpp.skel.md#function-visit_pieces);
      - every record still queued in the sidecar whose payload view points into such a mapping gets its own copy of the bytes ([Sidecar.detach_views](./sidecar.hpp.skel.md#function-detach_views));
@@ -261,6 +261,7 @@ Writes the document to its path.
 - **Depends on:** [write_atomically](../platform/fs.hpp.skel.md#function-write_atomically)
 - **Depends on:** [ContentHasher](../util/hash.hpp.skel.md#class-contenthasher)
 - **Depends on:** [write_in_place](../platform/fs.hpp.skel.md#function-write_in_place)
+- **Depends on:** [PieceTree.release_buffer](../text/piece_tree.hpp.skel.md#function-release_buffer)
 - **Depends on:** [PieceTree.store](../text/piece_tree.hpp.skel.md#function-store)
 - **Depends on:** [Sidecar.detach_views](./sidecar.hpp.skel.md#function-detach_views)
 - **Depends on:** [Clipboard.rebind](./clipboard.hpp.skel.md#function-rebind)
