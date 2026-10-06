@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 973c74d8, stand-in 257c878e
+stamp: source 973c74d8, stand-in 85c78d56
 ---
 # module: keymap
 
@@ -21,6 +21,7 @@ Default bindings requested at the start:
 |---|---|
 | Ctrl+S | Save |
 | Ctrl+Home / Ctrl+End | MoveDocStart / MoveDocEnd |
+| Ctrl+Up / Ctrl+Down | ScrollLineUp / ScrollLineDown |
 | Ctrl+Z / Ctrl+Y | Undo / Redo |
 | Ctrl+C / Ctrl+V | Copy / Paste |
 | Shift+arrows | Select… motions |

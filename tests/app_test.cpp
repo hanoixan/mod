@@ -371,6 +371,26 @@ TEST_CASE("another key between the menu keys starts the count again") {
     check_steps(r);
 }
 
+TEST_CASE("Ctrl+Down and Ctrl+Up scroll the view past the cursor; typing brings it back") {
+    std::string text;
+    for (int i = 0; i < 40; ++i) text += "L" + std::to_string(i) + "\n";
+    auto top_shows = [](std::string want) {
+        return [want](const VtScreen& s) {
+            const std::string row = s.row(0);
+            return row.find(" " + want + " ") != std::string::npos || row.ends_with(" " + want);
+        };
+    };
+    const char* const down = "\x1b[1;5B";
+    const char* const up = "\x1b[1;5A";
+    const auto run = run_app("ctrl-scroll", text,
+                             {{"Ctrl+Down three times: L3 at the top, the cursor (on L0) above the view", std::string(down) + down + down, top_shows("L3")},
+                              {"Ctrl+Up once", up, top_shows("L2")},
+                              {"typing goes in at the cursor, and the view comes back to it", "x", top_shows("xL0")},
+                              {"quit without saving", "\x11", [](const VtScreen& s) { return s.contains("Discard"); }},
+                              {"Discard", "\x1b[C\r", nullptr}});
+    check_steps(run);
+}
+
 namespace {
 
 bool row_has(const VtScreen& s, int r, std::string_view text) { return s.row(r).find(text) != std::string::npos; }

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 505c1fd5, stand-in e2d636b6
+stamp: source b121ff29, stand-in ff9cd780
 ---
 # module: editor_view
 
@@ -87,8 +87,22 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 
 - **Inputs:** `area_rows`, `area_cols`.
 - **Returns:** nothing.
-- **State changes:** adjusts `top` by walking line feeds and adjusts `hscroll`, with a 3-row and 8-column margin. With word wrap on, it works in rows instead: `top` is first snapped to a row start (a resize or an edit may have moved the rows), then moved by whole rows with the same 3-row margin, and `hscroll` is 0.
+- **State changes:** adjusts `top` by walking line feeds and adjusts `hscroll`, with a 3-row (`kRowMargin`) and 8-column margin. With word wrap on, it works in rows instead: `top` is first snapped to a row start (a resize or an edit may have moved the rows), then moved by whole rows with the same 3-row margin, and `hscroll` is 0. When the cursor is out of view (however it got there), the view comes back to it with up to 5 rows (`kReturnMargin`, screen rows) on the side it was beyond: above, 5 rows over it where the document has them; below, as many rows of text as there are after it up to 5, but never fewer than the 3-row margin (or the next follow would move the view again); this margin may reach `rows − 1`, since it is on one side only. Nothing happens while the view is scrolled away (`scroll_rows`) and not yet told to `follow_cursor`.
 - **Access:** App, after every command.
+
+### function: scroll_rows
+
+- **Inputs:** `delta`: −1 (Ctrl+Up, the view up a row, so the text and the cursor move down) or +1 (Ctrl+Down); `area_rows`, `area_cols`.
+- **Returns:** whether the view moved: false at the first row on top (up) or with the last row on the bottom row (down), so the text always fills the view.
+- **State changes:** moves `top` one screen row: a line, a wrapped row with word wrap on, a rendered line in a document laid out for reading. The cursor stays on its text, off screen too. Sets the view as scrolled away, so `scroll_to_cursor` leaves it until `follow_cursor`.
+- **Access:** App (`ScrollLineUp`, `ScrollLineDown`), also in the file preview.
+
+### function: follow_cursor
+
+- **Inputs:** none. `scrolled_away()` reads the state back.
+- **Returns:** nothing.
+- **State changes:** ends the scrolled-away state, so the next `scroll_to_cursor` follows the cursor again (with the return margin when it is out of view).
+- **Access:** App, before any command other than the scroll commands, typed text or a paste reaches the document. A resize or other redraw does not, so the view stays where it was scrolled.
 
 
 `scroll_to(pos, rows, cols, row_margin, margin_above)` is the same for any position: `scroll_to_cursor` is `scroll_to(cursor, …, kRowMargin, false)`. With `margin_above`, a position in the top `row_margin` rows also moves the view, so the margin holds on both sides (the history preview uses 2); without it, as for the cursor, only a position above the view brings it in `row_margin` rows down.

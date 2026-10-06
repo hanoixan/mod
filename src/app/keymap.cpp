@@ -63,6 +63,8 @@ constexpr KeyBinding kBindings[] = {
     {k(Key::End, S), C::SelectLineEnd},
     {k(Key::PageUp, S), C::SelectPageUp},
     {k(Key::PageDown, S), C::SelectPageDown},
+    {k(Key::Up, Ct), C::ScrollLineUp},
+    {k(Key::Down, Ct), C::ScrollLineDown},
     {k(Key::Home, Ct | S), C::SelectDocStart},
     {k(Key::End, Ct | S), C::SelectDocEnd},
     {k(Key::Enter), C::Newline},

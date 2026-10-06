@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 8a908a72, stand-in 48a3296e
+stamp: source 268af7f5, stand-in 48a3296e
 ---
 # resource: key-bindings.md
 

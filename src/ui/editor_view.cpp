@@ -183,9 +183,109 @@ int EditorView::gutter_width() const {
     return std::max(3, digits(lines)) + 1;
 }
 
-void EditorView::scroll_to_cursor(int area_rows, int area_cols) { scroll_to(editor_.cursor(), area_rows, area_cols, kRowMargin, false); }
+void EditorView::scroll_to_cursor(int area_rows, int area_cols) {
+    if (scrolled_away_) return;
+    const std::uint64_t cursor = editor_.cursor();
+    const int side = side_of_view(cursor, area_rows, area_cols);
+    if (side == 0) {
+        scroll_to(cursor, area_rows, area_cols, kRowMargin, false);
+        return;
+    }
+    // Back from out of view: up to kReturnMargin rows of text on the side it was beyond, one
+    // side only. Below, only as many as there are near the end, but never fewer than an
+    // ordinary follow keeps, or the next one would move the view again.
+    const int usual = std::min(kRowMargin, (std::max(1, area_rows) - 1) / 2);
+    const int margin = side < 0 ? kReturnMargin : std::max(usual, rows_after(cursor, area_cols, kReturnMargin));
+    scroll_to(cursor, area_rows, area_cols, margin, false, std::max(0, area_rows - 1));
+}
 
-void EditorView::scroll_to(std::uint64_t pos, int area_rows, int area_cols, int row_margin, bool margin_above) {
+int EditorView::side_of_view(std::uint64_t pos, int area_rows, int area_cols) {
+    const int rows = std::max(1, area_rows);
+    const std::uint64_t at = std::min(pos, doc_.text().size());
+    if (const ReadingLayout* r = layout_for(area_cols)) {
+        const std::size_t line = r->locate(at).line;
+        return line < rtop_ ? -1 : line >= rtop_ + static_cast<std::size_t>(rows) ? 1 : 0;
+    }
+    if (wrap_) {
+        const WrapLayout wrap(doc_.text(), wrap_cols(area_cols), tab_width_);
+        const std::uint64_t row = wrap.row_start(at);
+        const std::uint64_t top = wrap.row_start(std::min(top_, doc_.text().size()));
+        if (row < top) return -1;
+        std::uint64_t r = top;
+        for (int n = 0; r != npos && n < rows; ++n, r = wrap.next_row(r))
+            if (r == row) return 0;
+        return 1;
+    }
+    const std::uint64_t line = line_start_of(at);
+    const std::uint64_t top = line_start_of(top_);
+    if (line < top) return -1;
+    std::uint64_t l = top;
+    for (int n = 0; l != npos && n < rows; ++n, l = next_line(l))
+        if (l == line) return 0;
+    return 1;
+}
+
+int EditorView::rows_after(std::uint64_t pos, int area_cols, int limit) {
+    const std::uint64_t at = std::min(pos, doc_.text().size());
+    int n = 0;
+    if (wrap_) {
+        const WrapLayout wrap(doc_.text(), wrap_cols(area_cols), tab_width_);
+        for (std::uint64_t r = wrap.next_row(wrap.row_start(at)); r != npos && n < limit; r = wrap.next_row(r)) ++n;
+        return n;
+    }
+    for (std::uint64_t l = next_line(line_start_of(at)); l != npos && n < limit; l = next_line(l)) ++n;
+    return n;
+}
+
+bool EditorView::scroll_rows(int delta, int area_rows, int area_cols) {
+    const int rows = std::max(1, area_rows);
+    bool moved = false;
+    if (const ReadingLayout* r = layout_for(area_cols)) {
+        const std::size_t n = r->page().lines.size();
+        if (delta < 0 && rtop_ > 0) {
+            --rtop_;
+            moved = true;
+        } else if (delta > 0 && rtop_ + static_cast<std::size_t>(rows) < n) {
+            ++rtop_;
+            moved = true;
+        }
+    } else if (wrap_) {
+        const WrapLayout wrap(doc_.text(), wrap_cols(area_cols), tab_width_);
+        top_ = wrap.row_start(std::min(top_, doc_.text().size()));
+        if (delta < 0) {
+            if (const std::uint64_t prev = wrap.prev_row(top_); prev != npos) {
+                top_ = prev;
+                moved = true;
+            }
+        } else {
+            std::uint64_t below = top_;  // the row just under the bottom one, if there is one
+            for (int i = 0; i < rows && below != npos; ++i) below = wrap.next_row(below);
+            if (below != npos) {
+                top_ = wrap.next_row(top_);
+                moved = true;
+            }
+        }
+    } else {
+        top_ = line_start_of(top_);
+        if (delta < 0) {
+            if (top_ > 0) {
+                top_ = line_start_of(top_ - 1);
+                moved = true;
+            }
+        } else {
+            std::uint64_t below = top_;
+            for (int i = 0; i < rows && below != npos; ++i) below = next_line(below);
+            if (below != npos) {
+                top_ = next_line(top_);
+                moved = true;
+            }
+        }
+    }
+    if (moved) scrolled_away_ = true;
+    return moved;
+}
+
+void EditorView::scroll_to(std::uint64_t pos, int area_rows, int area_cols, int row_margin, bool margin_above, int margin_cap) {
     if (const ReadingLayout* r = layout_for(area_cols)) {
         const std::size_t rows = static_cast<std::size_t>(std::max(1, area_rows));
         reading_rows_ = rows;
@@ -207,14 +307,14 @@ void EditorView::scroll_to(std::uint64_t pos, int area_rows, int area_cols, int 
         return;
     }
     if (wrap_) {
-        scroll_wrapped(pos, area_rows, area_cols, row_margin, margin_above);
+        scroll_wrapped(pos, area_rows, area_cols, row_margin, margin_above, margin_cap);
         return;
     }
     const PieceTree& t = doc_.text();
     const std::uint64_t cursor = std::min(pos, t.size());
     const std::uint64_t cur_line = line_start_of(cursor);
     const int rows = std::max(1, area_rows);
-    const int margin = std::min(row_margin, (rows - 1) / 2);
+    const int margin = std::min(row_margin, margin_cap >= 0 ? margin_cap : (rows - 1) / 2);
 
     top_ = line_start_of(top_);
     // With `margin_above`, a line in the top margin rows also moves the view, down to the margin.
@@ -256,13 +356,13 @@ void EditorView::scroll_to(std::uint64_t pos, int area_rows, int area_cols, int 
 }
 
 // As scroll_to_cursor, in screen rows: `top` is the start of a row, which may lie inside a line.
-void EditorView::scroll_wrapped(std::uint64_t pos, int area_rows, int area_cols, int row_margin, bool margin_above) {
+void EditorView::scroll_wrapped(std::uint64_t pos, int area_rows, int area_cols, int row_margin, bool margin_above, int margin_cap) {
     const PieceTree& t = doc_.text();
     const WrapLayout wrap(t, wrap_cols(area_cols), tab_width_);
     const std::uint64_t cursor = std::min(pos, t.size());
     const std::uint64_t cur_row = wrap.row_start(cursor);
     const int rows = std::max(1, area_rows);
-    const int margin = std::min(row_margin, (rows - 1) / 2);
+    const int margin = std::min(row_margin, margin_cap >= 0 ? margin_cap : (rows - 1) / 2);
     auto back = [&](std::uint64_t row, int n) {
         for (int i = 0; i < n; ++i) {
             const std::uint64_t prev = wrap.prev_row(row);
