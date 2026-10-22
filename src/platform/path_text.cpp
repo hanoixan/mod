@@ -1,5 +1,7 @@
 #include "platform/path_text.hpp"
 
+#include "platform/fs.hpp"
+
 #if defined(__CYGWIN__)
 #include <sys/cygwin.h>
 
@@ -33,8 +35,8 @@ std::string display_path(const std::filesystem::path& path) {
 }
 
 std::filesystem::path path_from_user(std::string_view text) {
-    const std::string s(text);
-    if (!looks_like_windows(text)) return s;
+    const std::string s = expand_home(text);
+    if (!looks_like_windows(s)) return s;
     return convert(CCP_WIN_A_TO_POSIX, s, s);
 }
 
@@ -55,5 +57,17 @@ std::filesystem::path path_from_user(std::string_view text) { return std::filesy
 std::string uri_path(const std::filesystem::path& path) { return path.generic_string(); }
 
 #endif
+
+std::string expand_home(std::string_view text) {
+#if defined(__CYGWIN__)
+    constexpr std::string_view separators = "/\\";
+#else
+    constexpr std::string_view separators = "/";
+#endif
+    if (!text.starts_with('~') || (text.size() > 1 && separators.find(text[1]) == std::string_view::npos)) return std::string(text);
+    const auto home = user_home_dir();
+    if (!home) return std::string(text);
+    return display_path(*home) + std::string(text.substr(1));
+}
 
 }  // namespace mod

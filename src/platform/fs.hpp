@@ -38,7 +38,12 @@ Status write_atomically(const std::filesystem::path& target, const ContentProduc
 // keeping its inode, links, owner, attributes and ACLs. Only after the user chose it.
 Status write_in_place(const std::filesystem::path& target, const ContentProducer& produce);
 
-// $XDG_CONFIG_HOME/mod, else $HOME/.config/mod. Not created.
+// The user's home folder: on Windows %USERPROFILE% in its POSIX form (the MSYS2 runtime's
+// $HOME is a folder of its own, missing when mod was not started from an MSYS2 shell), else
+// $HOME (also the fallback on Windows). `not_found` when neither is set.
+Result<std::filesystem::path> user_home_dir();
+
+// $XDG_CONFIG_HOME/mod, else <user_home_dir>/.config/mod. Not created.
 Result<std::filesystem::path> user_config_dir();
 
 }  // namespace mod

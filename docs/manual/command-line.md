@@ -4,7 +4,7 @@
 mod [OPTION...] [PATH...]
 ```
 
-Each path opens as a document; the first is shown. Without any, mod starts with an untitled buffer. `mod --help` lists every option, and `mod --version` prints the version.
+Each path opens as a document; the first is shown. On Windows a path may be written `C:\…` or `C:/…`, and one that starts with `~/` or `~\` is in your user folder (`%USERPROFILE%`), since PowerShell and cmd do not expand `~` themselves. Without any, mod starts with an untitled buffer. `mod --help` lists every option, and `mod --version` prints the version.
 
 ## Opening files
 

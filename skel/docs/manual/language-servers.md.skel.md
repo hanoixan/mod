@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 88ca46ae, stand-in c3821ab4
+stamp: source 29bd9e5c, stand-in c3821ab4
 ---
 # resource: language-servers.md
 

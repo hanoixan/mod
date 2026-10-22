@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./fs.hpp.skel.md
-stamp: source 8bc91dad, stand-in 8414e717
+stamp: source ba11459f, stand-in 654306ce
 ---
 # module: fs_posix
 
@@ -12,6 +12,8 @@ Implements [fs.hpp](./fs.hpp.skel.md) with `stat`, `realpath`, `mkstemp`-style c
 - **Required:** always. These POSIX backends are the only ones: Linux, macOS and the MSYS2 MSYS environment all build them.
 - **Failure modes:** the macOS `fsync` does not flush the drive cache. Use `fcntl(F_FULLFSYNC)` when it is available, and fall back to `fsync`.
 - **Depends on:** [write_atomically](./fs.hpp.skel.md#function-write_atomically)
+- **Depends on:** [user_home_dir](./fs.hpp.skel.md#function-user_home_dir)
+- **Depends on:** [path_from_user](./path_text.hpp.skel.md#function-path_from_user)
 - **Depends on:** [write_in_place](./fs.hpp.skel.md#function-write_in_place)
 - **Depends on:** [save_temp_file](../../infra/storage.iac.skel.md#resource-save_temp_file)
 - **Depends on:** [in_place_stage_file](../../infra/storage.iac.skel.md#resource-in_place_stage_file)

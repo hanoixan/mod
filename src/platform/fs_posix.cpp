@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+#include "platform/path_text.hpp"
+
 namespace fs = std::filesystem;
 
 namespace mod {
@@ -350,10 +352,18 @@ Status write_in_place(const fs::path& target, const ContentProducer& produce) {
     return {};
 }
 
+Result<fs::path> user_home_dir() {
+#if defined(__CYGWIN__)
+    if (const char* profile = std::getenv("USERPROFILE"); profile != nullptr && *profile != '\0') return path_from_user(profile);
+#endif
+    if (const char* home = std::getenv("HOME"); home != nullptr && *home != '\0') return fs::path(home);
+    return std::unexpected(make_error(ErrorCode::not_found, "HOME is not set"));
+}
+
 Result<fs::path> user_config_dir() {
     if (const char* xdg = std::getenv("XDG_CONFIG_HOME"); xdg != nullptr && *xdg != '\0') return fs::path(xdg) / "mod";
-    if (const char* home = std::getenv("HOME"); home != nullptr && *home != '\0') return fs::path(home) / ".config" / "mod";
-    return std::unexpected(make_error(ErrorCode::not_found, "neither XDG_CONFIG_HOME nor HOME is set"));
+    if (auto home = user_home_dir()) return *home / ".config" / "mod";
+    return std::unexpected(make_error(ErrorCode::not_found, "neither XDG_CONFIG_HOME nor a home folder is set"));
 }
 
 }  // namespace mod

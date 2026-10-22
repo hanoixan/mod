@@ -43,6 +43,8 @@ std::string row_text(const Screen& s, int row) {
 #include <filesystem>
 #include <fstream>
 
+#include "env_var.hpp"
+#include "platform/path_text.hpp"
 #include "ui/file_dialog.hpp"
 #include "ui/theme.hpp"
 
@@ -210,6 +212,34 @@ TEST_CASE("Left and Right move between zones, but not from inside the File field
     f.press(Key::Right);
     CHECK(f.dlg.focus() == FocusZone::cancel);
     CHECK(f.press(Key::Enter).kind == FileDialogResult::Kind::canceled);
+}
+
+TEST_CASE("Home goes to the home folder, and a typed ~ is it, on every system") {
+    Fixture f("home");
+    const test::EnvVar home("HOME", f.dir.string());
+    const test::EnvVar profile("USERPROFILE", display_path(f.dir));  // Windows' home
+    f.press(Key::Down);
+    f.press(Key::Enter);  // into docs
+    REQUIRE(f.dlg.current_dir() == f.dir / "docs");
+    f.focus(FocusZone::home);
+    f.press(Key::Enter);
+    CHECK(f.dlg.current_dir() == f.dir);
+
+    f.press(Key::Down);
+    f.press(Key::Enter);  // into docs again
+    f.focus(FocusZone::filename);
+    f.type("~/src");
+    CHECK(f.press(Key::Enter).kind == FileDialogResult::Kind::pending);
+    CHECK(f.dlg.current_dir() == f.dir / "src");
+
+    Fixture g("home2");
+    g.press(Key::Down);
+    g.press(Key::Enter);  // into docs; home is still f.dir
+    g.focus(FocusZone::filename);
+    g.type("~/new.txt");
+    const auto r = g.press(Key::Enter);
+    REQUIRE(r.kind == FileDialogResult::Kind::chosen);
+    CHECK(r.path == f.dir / "new.txt");
 }
 
 TEST_CASE("the toolbar buttons: Up, hidden files, Submit") {
