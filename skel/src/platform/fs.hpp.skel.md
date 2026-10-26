@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source bdb6d2ac, stand-in f25ffbd7
+stamp: source 0d066ad8, stand-in 0d8dd2c2
 ---
 # module: fs
 
@@ -101,10 +101,24 @@ Overwrites an existing file's content directly, without replacing the file. It k
 - **Referred by:** [fs_posix](./fs_posix.cpp.skel.md)
 
 
+## function: user_home_dir
+
+The user's home folder. On Windows the user decided it is always `%USERPROFILE%` (`C:\Users\me`), even when an MSYS2 shell started mod: the MSYS2 runtime's own `$HOME` is `/home/<user>` under mod's install folder when mod is started from PowerShell or cmd, and that folder does not exist.
+
+- **Inputs:** ambient: `HOME`; on Windows `USERPROFILE` first.
+- **Returns:** `Result<std::filesystem::path>`: on Windows `USERPROFILE` in its POSIX form (through [path_from_user](./path_text.hpp.skel.md#function-path_from_user)), else `$HOME` (also the fallback on Windows); `not_found` when neither is set or both are empty. The folder need not exist.
+- **State changes:** none.
+- **Access:** [user_config_dir](#function-user_config_dir), [expand_home](./path_text.hpp.skel.md#function-expand_home) and the file dialog's `home` button.
+- **Referred by:** [path_text (implementation)](./path_text.cpp.skel.md)
+- **Referred by:** [expand_home](./path_text.hpp.skel.md#function-expand_home)
+- **Referred by:** [file_dialog](../ui/file_dialog.hpp.skel.md)
+- **Referred by:** [path_text_test](../../tests/path_text_test.cpp.skel.md)
+
 ## function: user_config_dir
 
-- **Inputs:** ambient: `XDG_CONFIG_HOME` and `HOME` (macOS and the MSYS2 MSYS environment use the same XDG rule, because this is a terminal tool).
-- **Returns:** `Result<std::filesystem::path>`: `$XDG_CONFIG_HOME/mod`, else `$HOME/.config/mod`; an error when neither variable is set. The directory is not created.
+- **Inputs:** ambient: `XDG_CONFIG_HOME` and [user_home_dir](#function-user_home_dir) (macOS and the MSYS2 MSYS environment use the same XDG rule, because this is a terminal tool; on Windows that puts it in `%USERPROFILE%\.config\mod`).
+- **Returns:** `Result<std::filesystem::path>`: `$XDG_CONFIG_HOME/mod`, else `<user_home_dir>/.config/mod`; an error when neither is set. The directory is not created.
 - **State changes:** none.
 - **Access:** [LanguageConfig.load](../syntax/language_config.hpp.skel.md#function-load) and [Settings](../app/settings.hpp.skel.md#class-settings).
 - **Referred by:** [Settings](../app/settings.hpp.skel.md#class-settings)
+- **Referred by:** [path_text_test](../../tests/path_text_test.cpp.skel.md)

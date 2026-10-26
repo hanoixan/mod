@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 63ab41b9, stand-in f456aadc
+stamp: source 63ab41b9, stand-in 0214e938
 ---
 # module: file_dialog
 
@@ -33,6 +33,8 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 - **Depends on:** [Screen](./screen.hpp.skel.md#class-screen)
 - **Depends on:** [attr_for](./theme.hpp.skel.md#function-attr_for)
 - **Depends on:** [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user)
+- **Depends on:** [expand_home](../platform/path_text.hpp.skel.md#function-expand_home)
+- **Depends on:** [user_home_dir](../platform/fs.hpp.skel.md#function-user_home_dir)
 - **Unknowns:** none. In the filter and new-folder fields Enter applies the field (the filter, or creates the folder) and leaves the mode; Escape leaves the mode without applying it and does not close the dialog; Tab and Shift+Tab leave the mode without applying and move the focus as usual (../modi/'s (after ../modi/) browser inputs let Tab through but leave the mode on, which shows a stale field).
 
 ## symbol: FileDialogMode
@@ -43,7 +45,7 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 
 ## symbol: FileDialogResult
 
-`{ enum class Kind { pending, chosen, canceled } kind; std::filesystem::path path; }`. `chosen` carries the full path the user picked: the current directory joined with the file name (an absolute name is taken as is; on Windows a typed `C:\…` name is taken through [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user)).
+`{ enum class Kind { pending, chosen, canceled } kind; std::filesystem::path path; }`. `chosen` carries the full path the user picked: the current directory joined with the file name (an absolute name is taken as is; a leading `~` is the home folder on every system, through [expand_home](../platform/path_text.hpp.skel.md#function-expand_home); on Windows a typed `C:\…` name is taken through [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user)).
 
 - **Access:** public.
 
@@ -68,7 +70,7 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
   - **Tab** and **Shift+Tab** move to the next or previous zone, wrapping; when the file name field had focus, nothing else changes. **Escape** cancels.
   - **In the list:** Up and Down move the selection (Up from none selects the first), PageUp and PageDown move it by a page, Home and End go to the first and last entry; each of these, when the selected entry is a file, copies its name into the File field, and keeps the selection visible. Left and Right (without Shift) move the focus to the previous or next zone. Shift+Up and Shift+Down select the previous or next entry whose name contains the search text. Enter on a folder enters it; on a file it submits that file's name; with nothing selected it submits the File field when that is not empty. Backspace goes to the parent folder. A printable character without Ctrl adds to the **type-to-search** text (which restarts when 2 s have passed since the last character, by `clock`) and selects the first entry, from the current selection on, whose name contains the text, ignoring case.
   - **File field:** keys go to its [TextField](./text_field.hpp.skel.md#class-textfield); Enter submits the field's text; Left at the field's start and Right at its end move the focus to the previous or next zone.
-  - **Buttons and headers** (any other zone): Left and Right move the focus to the previous or next zone; Enter activates: `up` goes to the parent; `home` to the home directory; `folder` enters new-folder mode; `hidden` toggles hidden files; `filter` enters filter-edit mode; a `sort_…` header sorts by that column, or flips the direction when it already is the sorted column (a new column starts ascending); `submit` submits the File field; `cancel` cancels.
+  - **Buttons and headers** (any other zone): Left and Right move the focus to the previous or next zone; Enter activates: `up` goes to the parent; `home` to [user_home_dir](../platform/fs.hpp.skel.md#function-user_home_dir) (nothing when there is none); `folder` enters new-folder mode; `hidden` toggles hidden files; `filter` enters filter-edit mode; a `sort_…` header sorts by that column, or flips the direction when it already is the sorted column (a new column starts ascending); `submit` submits the File field; `cancel` cancels.
   - **Submit:** an empty name does nothing. A name that is a directory enters it. Otherwise the result is `chosen`. (For Save As, App asks before replacing a file that exists; the dialog does not.)
   - **New-folder mode** (the field is shown in the toolbar, with focus): Enter creates the folder (the text stripped; nothing when empty) under the current directory with [make_directory](../app/file_listing.hpp.skel.md#function-make_directory), refreshes the listing, and leaves the mode; a failure shows its message in the error row.
   - **Filter-edit mode:** Enter sets the filter to the stripped text (a blank text keeps the old filter), leaves the mode and refreshes the listing.

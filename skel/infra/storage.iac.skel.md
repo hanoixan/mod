@@ -61,7 +61,7 @@ A directory that the file dialog lists, and in which its +Folder button creates 
 
 ## resource: user_config
 
-The user configuration directory: `$XDG_CONFIG_HOME/mod/`, or `~/.config/mod/` (also under the MSYS2 MSYS environment, where `$HOME` is set).
+The user configuration directory: `$XDG_CONFIG_HOME/mod/`, or `~/.config/mod/` under [user_home_dir](../src/platform/fs.hpp.skel.md#function-user_home_dir) (on Windows `%USERPROFILE%\.config\mod\`, whatever shell started mod).
 
 - **Data requirements:** `mod` reads `languages.json` (well under 1 MB) and reads and writes only [settings_file](#resource-settings_file); it never writes anything else there. It creates the directory only when it first writes `settings.json`. A missing directory or file is normal.
 - **Referred by:** [LanguageConfig.load](../src/syntax/language_config.hpp.skel.md#function-load)

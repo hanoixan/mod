@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source a6ca2e42, stand-in 9a186197
+stamp: source a6ca2e42, stand-in 570eb787
 ---
 # module: cli_options
 
@@ -38,7 +38,7 @@ The command line, parsed into what [App](./app.hpp.skel.md#class-app) starts wit
 ## function: parse_cli
 
 - **Inputs:** `args`: the arguments after the program name.
-- **Returns:** `std::expected<CliOptions, std::string>`: the options, or the message for the first bad argument. File arguments go through [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user), so on Windows `C:\notes.md` works; `-` stays `-`.
+- **Returns:** `std::expected<CliOptions, std::string>`: the options, or the message for the first bad argument. File arguments go through [path_from_user](../platform/path_text.hpp.skel.md#function-path_from_user), so on Windows `C:\notes.md` and `~/notes.md` (the home folder, which PowerShell and cmd leave unexpanded) work; `-` stays `-`.
 - **State changes:** none.
 - **Access:** main, tests.
 - **Referred by:** [cli_options (implementation)](./cli_options.cpp.skel.md)

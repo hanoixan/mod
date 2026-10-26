@@ -31,4 +31,4 @@ A path that does not exist yet opens as a new, empty file; it is created when yo
 
 mod keeps each file's undo history in memory. If you check Persist History in the Undo History pane, it is also kept in a file beside yours named after it with `.history` added, such as `notes.md.history`, which holds every change you ever made, including deleted text, until you clear or trim it; see [Undo history](undo-history.md).
 
-Your settings live in `~/.config/mod/settings.json` (or `$XDG_CONFIG_HOME/mod/settings.json`); see [Settings](settings.md).
+Your settings live in `~/.config/mod/settings.json` (on Windows `%USERPROFILE%\.config\mod\settings.json`; or `$XDG_CONFIG_HOME/mod/settings.json`); see [Settings](settings.md).

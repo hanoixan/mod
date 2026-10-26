@@ -23,7 +23,7 @@ The View menu's check marks change only the document you are in; `line_numbers`,
 
 ## settings.json
 
-Settings are kept in `settings.json` in your configuration folder: `$XDG_CONFIG_HOME/mod/` if that is set, otherwise `~/.config/mod/`. mod writes it whenever you change a setting, and you can edit it by hand while mod is not running. A value mod does not understand is ignored with a message, and the setting keeps its default.
+Settings are kept in `settings.json` in your configuration folder: `$XDG_CONFIG_HOME/mod/` if that is set, otherwise `~/.config/mod/` (on Windows `%USERPROFILE%\.config\mod\`). mod writes it whenever you change a setting, and you can edit it by hand while mod is not running. A value mod does not understand is ignored with a message, and the setting keeps its default.
 
 A `modified` member records when each setting was last changed; that is how the Options menu knows the recent ones. Members mod does not know are kept as they are.
 

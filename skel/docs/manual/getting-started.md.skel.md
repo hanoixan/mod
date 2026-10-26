@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 7852b2bf, stand-in 7ecba343
+stamp: source 4a0c39a7, stand-in 7ecba343
 ---
 # resource: getting-started.md
 

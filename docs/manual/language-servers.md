@@ -26,7 +26,7 @@ A server must offer semantic tokens for mod to use it; one that does not is stop
 
 ## Your own list
 
-Create `languages.json` in your configuration folder (`~/.config/mod/` or `$XDG_CONFIG_HOME/mod/`). An entry with the same `id` as a built-in one replaces it; new ids add languages. An entry that says nothing about `syntax` keeps the built-in syntax coloring for its language, so to use basedpyright for Python this is enough:
+Create `languages.json` in your configuration folder (`~/.config/mod/`, on Windows `%USERPROFILE%\.config\mod\`, or `$XDG_CONFIG_HOME/mod/`). An entry with the same `id` as a built-in one replaces it; new ids add languages. An entry that says nothing about `syntax` keeps the built-in syntax coloring for its language, so to use basedpyright for Python this is enough:
 
 ```json
 {
