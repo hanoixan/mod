@@ -215,6 +215,28 @@ std::optional<CommandId> MenuBar::handle_key(const KeyEvent& key) {
     }
 }
 
+std::optional<CommandId> MenuBar::click(int row, int col) {
+    if (!visible_ || flashing_) return std::nullopt;
+    if (row == drawn_bar_row_) {
+        for (std::size_t i = 0; i < drawn_titles_.size() && i < menus_.size(); ++i) {
+            if (col < drawn_titles_[i].first || col >= drawn_titles_[i].second) continue;
+            if (!open_ || menu_ != static_cast<int>(i)) open_at(static_cast<int>(i));
+            return std::nullopt;
+        }
+        hide();
+        return std::nullopt;
+    }
+    const int k = row - drawn_bar_row_ - 1;
+    if (open_ && k >= 0 && k < drawn_items_ && col >= drawn_left_ && col < drawn_right_) {
+        const auto& items = menus_[static_cast<std::size_t>(menu_)].items;
+        if (static_cast<std::size_t>(k) >= items.size() || items[static_cast<std::size_t>(k)].label.empty()) return std::nullopt;
+        item_ = k;
+        return handle_key(KeyEvent{Key::Enter, 0, 0});
+    }
+    hide();
+    return std::nullopt;
+}
+
 void MenuBar::render(Screen& screen, int bar_row, const std::function<bool(CommandId)>& checked) const {
     if (!visible_ || bar_row < 0 || bar_row >= screen.rows()) return;  // hidden: the rows are the text's
     const Attr bar = attr_for(Style::menu);
@@ -222,6 +244,9 @@ void MenuBar::render(Screen& screen, int bar_row, const std::function<bool(Comma
     screen.fill(bar_row, 0, screen.cols(), bar);
     int col = 1;
     std::vector<int> starts;
+    drawn_bar_row_ = bar_row;
+    drawn_titles_.clear();
+    drawn_items_ = 0;
     for (std::size_t i = 0; i < menus_.size(); ++i) {
         starts.push_back(col);
         const bool active = static_cast<int>(i) == menu_;  // the open menu, or the armed highlight
@@ -229,6 +254,7 @@ void MenuBar::render(Screen& screen, int bar_row, const std::function<bool(Comma
         col = screen.print(bar_row, col, screen.cols(), " ", a);
         col = draw_label(screen, bar_row, col, screen.cols(), menus_[i].title, menus_[i].accel, a);
         col = screen.print(bar_row, col, screen.cols(), " ", a);
+        drawn_titles_.emplace_back(starts.back(), col);
         col += 1;
     }
     if (!open_) return;
@@ -245,6 +271,9 @@ void MenuBar::render(Screen& screen, int bar_row, const std::function<bool(Comma
     int left = starts[static_cast<std::size_t>(menu_)];
     left = std::max(0, std::min(left, screen.cols() - width));
     const int right = std::min(screen.cols(), left + width);
+    drawn_left_ = left;
+    drawn_right_ = right;
+    drawn_items_ = std::min(static_cast<int>(m.items.size()), std::max(0, screen.rows() - bar_row - 1));
     // The menu opens downward from the bar; rows below the screen are cut.
     int row = bar_row + 1;
     for (std::size_t i = 0; i < m.items.size() && row < screen.rows(); ++i, ++row) {

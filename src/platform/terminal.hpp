@@ -38,6 +38,9 @@ public:
     // Writes the output's `enter()` and remembers it: `restore` writes its `leave()`, and a
     // continued suspended job its `enter()` again. Tests' terminals need not override it.
     virtual void start_screen(const TerminalOutput& /*output*/) {}
+    // Remembers `output` in place of the one start_screen was given, writing nothing: for a
+    // setting that changes what `enter()` asks for (the mouse), once its effect is written.
+    virtual void set_output(const TerminalOutput& /*output*/) {}
     // Idempotent and async-signal-safe.
     virtual void restore() noexcept = 0;
     virtual TerminalSize size() = 0;

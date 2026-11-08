@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 134c097c, stand-in acef1b5d
+stamp: source 3461b18c, stand-in 5fca5355
 ---
 # module: menu
 
@@ -85,6 +85,13 @@ The menus of the bar, left to right: `file`, `edit`, `view`, `documents`, `optio
 - **Returns:** `std::optional<CommandId>`: the command to run, after which the bar is hidden. Otherwise the key is consumed as navigation.
 - **State changes:** navigation and close.
 - **Access:** App.
+
+### function: click
+
+- **Inputs:** `row`, `col`: a screen cell of a mouse press, while the bar is visible.
+- **Returns:** `std::optional<CommandId>`: the command of a clicked item, as Enter on it returns it (the bar hidden). Otherwise nullopt.
+- **State changes:** by what the last `render` drew: a menu's title opens that menu (its own title, already open, does nothing); an item is chosen; a separator does nothing; any other cell hides the bar. Ignored while an item flashes.
+- **Access:** App, for the mouse.
 
 ### function: set_recent_settings
 

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 63ab41b9, stand-in 0214e938
+stamp: source 77558d8a, stand-in b27a2f71
 ---
 # module: file_dialog
 
@@ -89,6 +89,20 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 - **Returns:** nothing.
 - **State changes:** draws the layout in the module. The screen cursor is shown in the text field that has focus, and hidden otherwise.
 - **Access:** App.render.
+
+### function: click
+
+- **Inputs:** `row`, `col`: a screen cell of a mouse press; `double_click`: whether it is the second click of a double; `list_rows`: as for handle_key.
+- **Returns:** a `FileDialogResult`, as handle_key's.
+- **State changes:** by what the last `render` drew at the cell: a list entry is selected (the list takes the focus and the File field follows the selection), and on a double click acts as Enter on it (a folder is entered, a file chosen); a toolbar button, the Hidden toggle, the filter or a column header takes the focus and acts as Enter on it; the File row gives the File field the focus. Any field being edited (a new folder's name, the filter) is left first. Elsewhere, nothing.
+- **Access:** App, for the mouse.
+
+### function: wheel
+
+- **Inputs:** `delta`: entries to move, negative upward; `list_rows`.
+- **Returns:** nothing.
+- **State changes:** the list's selection moves `delta` entries (from the first entry when none is selected), kept in view, the File field following it.
+- **Access:** App, for the mouse wheel.
 
 ### function: list_rows_for
 

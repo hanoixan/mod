@@ -323,7 +323,44 @@ void FileDialog::handle_paste(std::string_view bytes) {
     else if (focus_ == FocusZone::filename) filename_.insert(bytes);
 }
 
+FileDialogResult FileDialog::click(int row, int col, bool double_click, int list_rows) {
+    const int n = static_cast<int>(entries_.size());
+    if (row >= drawn_list_row_ && row < drawn_list_row_ + drawn_list_rows_) {
+        const int idx = scroll_ + (row - drawn_list_row_);
+        if (idx >= n) return {};
+        leave_edit_modes();
+        focus_ = FocusZone::list;
+        select(idx, list_rows);
+        if (double_click) return handle_key(KeyEvent{Key::Enter, 0, 0}, list_rows);
+        return {};
+    }
+    for (const DrawnZone& z : drawn_zones_) {
+        if (row != z.row || col < z.from || col >= z.to) continue;
+        leave_edit_modes();
+        focus_ = z.zone;
+        if (z.zone == FocusZone::filename) return {};
+        return activate(z.zone);
+    }
+    return {};
+}
+
+void FileDialog::wheel(int delta, int list_rows) {
+    for (int i = 0; i < std::abs(delta); ++i) handle_list_step(delta < 0, list_rows);
+}
+
+void FileDialog::handle_list_step(bool up, int list_rows) {
+    const int n = static_cast<int>(entries_.size());
+    if (n == 0) return;
+    if (up) {
+        select(selected_ <= 0 ? 0 : selected_ - 1, list_rows);
+    } else {
+        select(selected_ < 0 ? 0 : std::min(n - 1, selected_ + 1), list_rows);
+    }
+}
+
 void FileDialog::render(Screen& screen, Rect area) {
+    drawn_zones_.clear();
+    drawn_list_rows_ = 0;
     const int W = area.cols;
     const int right = area.col + W;
     const int list_rows = list_rows_for(area.rows);
@@ -362,15 +399,20 @@ void FileDialog::render(Screen& screen, Rect area) {
     if (row_ok()) {
         const int row = begin_row();
         int col = area.col + 1;
+        const int up_col = col;
         col = screen.print(row, col, right, "[↑Up]", zattr(FocusZone::up, attr_for(Style::Default)));
+        drawn_zones_.push_back({row, up_col, col, FocusZone::up});
+        const int home_col = col + 1;
         col = screen.print(row, col + 1, right, "[⌂Home]", zattr(FocusZone::home, attr_for(Style::Default))) + 0;
+        drawn_zones_.push_back({row, home_col, col, FocusZone::home});
         col += 1;
         if (folder_field_) {
             folder_field_->render(screen, row, col, 14, attr_for(Style::status), true);
             if (folder_field_->text().empty()) screen.print(row, col, col + 14, "folder name", attr_for(Style::status));
             cursor_placed = true;
         } else {
-            screen.print(row, col, right, "[+Folder]", zattr(FocusZone::folder, attr_for(Style::Default)));
+            const int end = screen.print(row, col, right, "[+Folder]", zattr(FocusZone::folder, attr_for(Style::Default)));
+            drawn_zones_.push_back({row, col, end, FocusZone::folder});
         }
         // Right side: Hidden and the filter.
         std::string filt = "[" + filter_ + "]";
@@ -380,10 +422,13 @@ void FileDialog::render(Screen& screen, Rect area) {
             filter_field_->render(screen, row, filt_col, filt_w, attr_for(Style::status), true);
             cursor_placed = true;
         } else {
-            screen.print(row, filt_col, right, filt, zattr(FocusZone::filter, attr_for(Style::Default)));
+            const int end = screen.print(row, filt_col, right, filt, zattr(FocusZone::filter, attr_for(Style::Default)));
+            drawn_zones_.push_back({row, filt_col, end, FocusZone::filter});
         }
         const std::string hidden = show_hidden_ ? "◉Hidden" : "○Hidden";
-        screen.print(row, filt_col - 1 - text_cols(hidden), right, hidden, zattr(FocusZone::hidden, attr_for(Style::Default)));
+        const int hidden_col = filt_col - 1 - text_cols(hidden);
+        const int hidden_end = screen.print(row, hidden_col, right, hidden, zattr(FocusZone::hidden, attr_for(Style::Default)));
+        drawn_zones_.push_back({row, hidden_col, hidden_end, FocusZone::hidden});
         ++r;
     }
     // 4. Header
@@ -396,6 +441,9 @@ void FileDialog::render(Screen& screen, Rect area) {
     if (row_ok()) {
         const int row = begin_row();
         screen.print(row, area.col + 1, right, std::string("Name") + arrow(SortColumn::name), zattr(FocusZone::sort_name, attr_for(Style::gutter)));
+        drawn_zones_.push_back({row, area.col, size_end - ws, FocusZone::sort_name});
+        drawn_zones_.push_back({row, size_end - ws, size_end, FocusZone::sort_size});
+        drawn_zones_.push_back({row, size_end, right, FocusZone::sort_modified});
         print_right(screen, row, size_end, std::string("Size") + arrow(SortColumn::size), zattr(FocusZone::sort_size, attr_for(Style::gutter)), ws);
         print_right(screen, row, std::min(mod_end, right), std::string("Modified") + arrow(SortColumn::modified), zattr(FocusZone::sort_modified, attr_for(Style::gutter)), wm);
         ++r;
@@ -407,6 +455,8 @@ void FileDialog::render(Screen& screen, Rect area) {
     }
     // 6. List
     const int n = static_cast<int>(entries_.size());
+    drawn_list_row_ = area.row + r;
+    drawn_list_rows_ = std::max(0, std::min(list_rows, area.rows - r));
     for (int i = 0; i < list_rows && row_ok(); ++i) {
         const int idx = scroll_ + i;
         const bool last_slot = i == list_rows - 1;
@@ -438,6 +488,7 @@ void FileDialog::render(Screen& screen, Rect area) {
     if (row_ok()) {
         const int row = begin_row();
         const int col = screen.print(row, area.col + 1, right, "File: ", attr_for(Style::Default));
+        drawn_zones_.push_back({row, area.col, right, FocusZone::filename});
         const bool focus = focus_ == FocusZone::filename;
         filename_.render(screen, row, col, std::max(1, right - col - 1), focus ? attr_for(Style::list_selected) : attr_for(Style::status), focus && !cursor_placed);
         if (focus && !cursor_placed) cursor_placed = true;
@@ -447,8 +498,11 @@ void FileDialog::render(Screen& screen, Rect area) {
     if (row_ok()) {
         const int row = begin_row();
         int col = area.col + 1;
+        const int submit_col = col;
         col = screen.print(row, col, right, mode_ == FileDialogMode::open ? "[Open]" : "[Save]", zattr(FocusZone::submit, attr_for(Style::gutter_current)));
-        screen.print(row, col + 1, right, "[Cancel]", zattr(FocusZone::cancel, attr_for(Style::Default)));
+        drawn_zones_.push_back({row, submit_col, col, FocusZone::submit});
+        const int cancel_end = screen.print(row, col + 1, right, "[Cancel]", zattr(FocusZone::cancel, attr_for(Style::Default)));
+        drawn_zones_.push_back({row, col + 1, cancel_end, FocusZone::cancel});
         std::string pos;
         if (n > 0 && selected_ >= 0) pos = std::format("{} of {}", selected_ + 1, n);
         else if (n > 0) pos = std::format("{} items", n);

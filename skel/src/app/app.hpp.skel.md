@@ -1,7 +1,7 @@
 ---
 role: product
 untested: needs a real terminal and every component wired together; it is exercised by running mod, and no automated test drives it
-stamp: source c30dd177, stand-in f091bdcd
+stamp: source dae27f73, stand-in a7046f64
 ---
 # module: app
 
@@ -183,6 +183,29 @@ The event loop.
   - `ShowMenu` shows the hidden [MenuBar](../ui/menu.hpp.skel.md#class-menubar), or hides it when it is visible; while the bar is visible every key goes to it, except `ShowMenu`'s own key, which hides it. `OpenMenu…` open one menu directly.
 - **Access:** input dispatch and the menu.
 - **Depends on:** [Document.line_start](../edit/document.hpp.skel.md#function-line_start)
+
+### function: dispatch_mouse
+
+- **Inputs:** a `MouseEvent` from the decoder; nothing happens unless the `mouse` setting is on and the terminal is not a VT100 (then the terminal was told to send reports: `output_for(mode, true)` at start, and `mouse(on)` with [Terminal.set_output](../platform/terminal.hpp.skel.md#function-set_output) when the setting changes).
+- **Returns:** nothing.
+- **State changes:** a left press is counted as the first, second or third click when it comes within `kDoublePress` (400 ms, shared with the keys' double presses) of the one before, on the same row and within a column of it. Then the event goes to what is drawn under it, first match wins:
+  1. the menu bar while shown: [MenuBar.click](../ui/menu.hpp.skel.md#function-click), a returned command run;
+  2. a question, a prompt, the history, a panel or the help: nothing (they take only the keys);
+  3. the file dialog: [FileDialog.click](../ui/file_dialog.hpp.skel.md#function-click) (double on the second click) or [FileDialog.wheel](../ui/file_dialog.hpp.skel.md#function-wheel), the result handled as a key's;
+  4. the folder tree: the keys go to it, [FolderTreeView.click](../ui/folder_tree_view.hpp.skel.md#function-click), the result handled as a key's; the wheel moves its selection;
+  5. a previewed file: the wheel scrolls it;
+  6. the text of a split: the wheel scrolls that split `kWheelRows` (3) rows a notch, as Ctrl+Up/Down, the cursor staying; a left press focuses the split if it is not focused, then places the cursor at [EditorView.offset_at](../ui/editor_view.hpp.skel.md#function-offset_at) with [Editor.place](../edit/editor.hpp.skel.md#function-place) (Shift: extend), or selects [Editor.word_at](../edit/editor.hpp.skel.md#function-word_at) on a double click and [Editor.line_at](../edit/editor.hpp.skel.md#function-line_at) on a triple. The press starts a drag: each drag event while the button is down selects from the press's anchor to the cell (by whole words or lines after a double or triple click), a drag above or below the area scrolling it a row first; the release ends it. The view then scrolls only as far as the cursor needs, never by the keys' margin.
+- **Access:** App's dispatch.
+- **Depends on:** [MouseEvent](../ui/input.hpp.skel.md#symbol-mouseevent)
+- **Depends on:** [Terminal.set_output](../platform/terminal.hpp.skel.md#function-set_output)
+- **Depends on:** [MenuBar.click](../ui/menu.hpp.skel.md#function-click)
+- **Depends on:** [FileDialog.click](../ui/file_dialog.hpp.skel.md#function-click)
+- **Depends on:** [FileDialog.wheel](../ui/file_dialog.hpp.skel.md#function-wheel)
+- **Depends on:** [FolderTreeView.click](../ui/folder_tree_view.hpp.skel.md#function-click)
+- **Depends on:** [EditorView.offset_at](../ui/editor_view.hpp.skel.md#function-offset_at)
+- **Depends on:** [Editor.place](../edit/editor.hpp.skel.md#function-place)
+- **Depends on:** [Editor.word_at](../edit/editor.hpp.skel.md#function-word_at)
+- **Depends on:** [Editor.line_at](../edit/editor.hpp.skel.md#function-line_at)
 
 ### function: offer_prune
 

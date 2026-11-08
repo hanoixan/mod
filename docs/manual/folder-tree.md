@@ -4,6 +4,8 @@ The folder tree is a panel on the left listing the folder mod was started in: ev
 
 The tree comes and goes: it shows while you are in it, and goes when you leave, however you leave. **View > Pin Folder Tree** keeps it shown beside the views; choose it again to unpin it. The [`pin_folder_tree` setting](settings.md#the-settings) pins it when mod starts (`--pin-folder-tree` for one session).
 
+With the [mouse](editing.md#the-mouse) on, clicking a row gives the tree the keys and selects it: a folder opens or closes, a file is previewed, and a double click opens it as a document. The wheel moves the selection.
+
 ## Moving into the tree
 
 Press Esc for the menu bar, then **Shift+Left**: the menu bar closes, the tree appears if it is not pinned, and the keys go to it. The view you were in stays where it was; its status line loses its `>` while the tree has the keys. The tree's own bottom line shows its keys, and any message, such as a folder that cannot be read.

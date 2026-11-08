@@ -8,6 +8,8 @@ With the bar shown, Left and Right also move across the menus and Enter, Up or D
 
 Press Esc three times quickly, each within a quarter of a second of the one before, to quit mod; F10 and Alt+X (or any key you bind to Show Menu) count the same, in any mix; any other key in between starts the count again. If a document has unsaved changes, mod asks about it first, as File > Exit does. The keys shown beside an item are the ones it is bound to now, including any you changed in [Key bindings](key-bindings.md).
 
+With the [mouse](editing.md#the-mouse) on and the bar shown, click a menu's title to open it and an item to run it; a click elsewhere closes the menu.
+
 On macOS Terminal and iTerm2, turn on "Use Option as Meta key" for Alt to reach mod.
 
 ## File

@@ -30,6 +30,9 @@ public:
     Spot locate(std::uint64_t offset) const;
     // Where `motion` takes the cursor from `cursor`; `sticky` is the column Up and Down aim for.
     std::uint64_t move(Motion motion, std::uint64_t cursor, std::size_t page_lines, std::optional<int>& sticky) const;
+    // The position shown at display column `col` of rendered `line`, the nearest at or before
+    // it; a line with none (a blank or a rule) gives the line above's last, else the next one's first.
+    std::optional<std::uint64_t> offset_at(std::size_t line, int col) const;
     // The text shown for the source range [start, end).
     std::string visible_text(std::uint64_t start, std::uint64_t end) const;
 

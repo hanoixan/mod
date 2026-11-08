@@ -518,6 +518,40 @@ void Editor::select_range(std::uint64_t start, std::uint64_t end) {
     if (*anchor_ == cursor_) anchor_.reset();
 }
 
+void Editor::place(std::uint64_t pos, bool extend) {
+    set_cursor(snap(std::min(pos, size())), extend);
+    sticky_column_.reset();
+}
+
+std::pair<std::uint64_t, std::uint64_t> Editor::word_at(std::uint64_t pos) const {
+    const std::uint64_t end = size();
+    pos = std::min(pos, end);
+    if (pos == end || class_at(pos) == CharClass::newline) {
+        if (pos == 0) return {pos, pos};
+        // Past a line's last character: the run that ends there.
+        const std::uint64_t prev = prev_boundary(pos);
+        if (class_at(prev) == CharClass::newline) return {pos, pos};
+        pos = prev;
+    }
+    const CharClass k = class_at(pos);
+    std::uint64_t a = pos;
+    while (a > 0) {
+        const std::uint64_t prev = prev_boundary(a);
+        if (class_at(prev) != k) break;
+        a = prev;
+    }
+    std::uint64_t b = pos;
+    while (b < end && class_at(b) == k) b = next_boundary(b);
+    return {a, b};
+}
+
+std::pair<std::uint64_t, std::uint64_t> Editor::line_at(std::uint64_t pos) const {
+    const PieceTree& t = doc_.text();
+    pos = std::min(pos, t.size());
+    const std::uint64_t lf = t.find_lf_forward(pos, t.size() - pos);
+    return {line_start(pos), lf == PieceTree::npos ? t.size() : lf + 1};
+}
+
 Status Editor::undo() {
     auto r = doc_.undo();
     if (!r) return std::unexpected(r.error());

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 833be9e2, stand-in 07b952c5
+stamp: source f033b0e3, stand-in 67420943
 ---
 # module: input
 
@@ -49,9 +49,20 @@ Decodes the raw terminal byte stream into key, paste and text events. It owns al
 - **Referred by:** [keymap_test](../../tests/keymap_test.cpp.skel.md)
 - **Referred by:** [text_field](./text_field.hpp.skel.md)
 
+## symbol: MouseEvent
+
+`{ MouseButton button; MouseAction action; uint8_t mods; int row; int col; }`, comparable with `==`, decoded from an xterm SGR mouse report (`ESC [ < b ; x ; y M`, `m` for a release).
+
+- `MouseButton` is `left | middle | right | wheel_up | wheel_down | none`; `MouseAction` is `press | release | drag`. A wheel notch is a `press` of `wheel_up` or `wheel_down`; a drag is a motion with a button held (mode 1002).
+- `row` and `col` are 0-based screen cells (the report's are 1-based); `mods` uses KeyEvent's `kShift`, `kAlt` and `kCtrl` bits.
+- Dropped, decoding nothing: plain motion without a button (mode 1003 is never asked for), horizontal wheel notches, a release of the wheel, and a report whose position is 0.
+
+- **Access:** public.
+- **Referred by:** [app](../app/app.hpp.skel.md)
+
 ## symbol: InputEvent
 
-`std::variant<KeyEvent, PasteEvent{std::string bytes, bool more}>`, `more` set when more of the same paste follows. A paste's `bytes` are the terminal's bytes unchanged: most terminals send each newline of a paste as a bare CR. The decoder does not know the document, so line breaks are converted by the receiver ([Editor.paste_text](../edit/editor.hpp.skel.md#function-paste_text)).
+`std::variant<KeyEvent, PasteEvent{std::string bytes, bool more}, MouseEvent>`, `more` set when more of the same paste follows. A paste's `bytes` are the terminal's bytes unchanged: most terminals send each newline of a paste as a bare CR. The decoder does not know the document, so line breaks are converted by the receiver ([Editor.paste_text](../edit/editor.hpp.skel.md#function-paste_text)).
 
 - **Access:** public.
 

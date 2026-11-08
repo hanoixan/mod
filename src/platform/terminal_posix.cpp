@@ -88,6 +88,8 @@ public:
         write_seq(output.enter());
     }
 
+    void set_output(const TerminalOutput& output) override { output_.store(&output); }
+
     void restore() noexcept override {
         if (!raw_.exchange(false)) return;
         if (const TerminalOutput* o = output_.load()) write_seq(o->leave());

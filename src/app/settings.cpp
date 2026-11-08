@@ -43,6 +43,11 @@ constexpr SettingSpec kSpecs[] = {
      "Keep the folder tree, the working folder's files and folders, shown to the left of the views. Unpinned, it shows "
      "only while you are in it (Esc, then Shift+Left) and goes when you leave. Changing it also pins or unpins it now; "
      "View > Pin Folder Tree changes it for this session.", {}},
+    {"mouse", T::boolean, 1, 0, 1, "Mouse",
+     "Let mod take the mouse: a click places the cursor, a drag selects, a double click selects a word and a triple "
+     "click a line, Shift+click extends the selection, the wheel scrolls, and clicks work in the menus, the file "
+     "dialog and the folder tree. Off, the terminal keeps the mouse for its own selection. With it on, most "
+     "terminals still make their own selection with Shift held. No effect in vt100 mode.", {}},
     {"terminal_mode", T::choice, 0, 0, 2, "Terminal mode",
      "How mod writes to the terminal: auto detects it, vt100 uses only VT100 codes (bold, underline and reverse, no "
      "color), xterm uses colors and modern features. Applies the next time mod starts.", kTerminalModes},

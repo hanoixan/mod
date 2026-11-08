@@ -25,6 +25,10 @@ public:
     // Taking over the screen, and giving it back.
     virtual std::string_view enter() const noexcept = 0;
     virtual std::string_view leave() const noexcept = 0;
+    // Turns the terminal's mouse reports (button presses, drags and the wheel, in SGR form) on
+    // or off; empty where there are none. The `enter()` of an output made with mouse reports
+    // turns them on and its `leave()` off; the others leave them alone.
+    virtual std::string_view mouse(bool on) const noexcept = 0;
     // A frame: its prefix, the suffix before the cursor is placed, and its last bytes.
     virtual std::string_view begin_frame() const noexcept = 0;
     virtual std::string_view end_frame() const noexcept = 0;
@@ -49,7 +53,8 @@ public:
     void append_move(std::string& out, int row, int col) const;
 };
 
-const TerminalOutput& output_for(TerminalMode mode);
+// With `mouse`, an xterm output whose `enter()` asks for mouse reports (a VT100 has none).
+const TerminalOutput& output_for(TerminalMode mode, bool mouse = false);
 
 // What the environment says about the terminal, or nullopt when it does not say.
 // `env` returns a variable's value, or null when it is unset.

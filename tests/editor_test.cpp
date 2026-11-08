@@ -808,3 +808,19 @@ TEST_CASE("a paste that arrives in several pieces is undone in one step; two pas
     REQUIRE(f.ed->undo());
     CHECK(f.text() == "start\n");
 }
+
+TEST_CASE("word_at and line_at give a double click's word and a triple click's line") {
+    Fixture f("word-at.txt", "alpha, beta  gamma\nsecond line\n");
+    CHECK(f.ed->word_at(2) == std::pair<std::uint64_t, std::uint64_t>{0, 5});    // in "alpha"
+    CHECK(f.ed->word_at(5) == std::pair<std::uint64_t, std::uint64_t>{5, 6});    // the comma
+    CHECK(f.ed->word_at(12) == std::pair<std::uint64_t, std::uint64_t>{11, 13});  // the run of spaces
+    CHECK(f.ed->word_at(18) == std::pair<std::uint64_t, std::uint64_t>{13, 18});  // past the line's end: its last word
+    CHECK(f.ed->line_at(3) == std::pair<std::uint64_t, std::uint64_t>{0, 19});    // with its line feed
+    CHECK(f.ed->line_at(25) == std::pair<std::uint64_t, std::uint64_t>{19, 31});
+    f.ed->place(3, false);
+    CHECK(f.ed->cursor() == 3);
+    CHECK_FALSE(f.ed->selection());
+    f.ed->place(8, true);
+    REQUIRE(f.ed->selection());
+    CHECK(*f.ed->selection() == std::pair<std::uint64_t, std::uint64_t>{3, 8});
+}

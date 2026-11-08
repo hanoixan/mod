@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <chrono>
 #include <memory>
@@ -484,4 +485,106 @@ TEST_CASE("folder tree: unpinned, it goes whenever the keys leave it; pinned, it
                                  {"quit", "\x11", nullptr}},
                                 settings_setup(R"({"pin_folder_tree":true})"));
     check_steps(pinned);
+}
+
+namespace {
+
+// A mouse report for a 0-based screen cell, as a terminal sends it in SGR form.
+std::string press(int row, int col, int mods = 0) { return std::format("\x1b[<{};{};{}M", mods, col + 1, row + 1); }
+std::string release(int row, int col) { return std::format("\x1b[<0;{};{}m", col + 1, row + 1); }
+std::string drag(int row, int col) { return std::format("\x1b[<32;{};{}M", col + 1, row + 1); }
+std::string wheel(int row, int col, bool down) { return std::format("\x1b[<{};{};{}M", down ? 65 : 64, col + 1, row + 1); }
+std::string click(int row, int col, int mods = 0) { return press(row, col, mods) + release(row, col); }
+
+auto status_has(std::string want) {
+    return [want](const VtScreen& s) { return s.status().find(want) != std::string::npos; };
+}
+auto row_is(int r, std::string want) {
+    return [r, want](const VtScreen& s) { return s.row(r).starts_with(want); };
+}
+
+// The text column of the first character: right of the line-number gutter.
+constexpr int kText = 4;
+
+}  // namespace
+
+TEST_CASE("a click puts the cursor where it lands, the gutter and past a line's end included") {
+    const auto run = run_app("mouse-click", "alpha\nbravo\ncharlie\n",
+                             {{"start", "", status_has("1:1")},
+                              {"click in bravo", click(1, kText + 2), status_has("2:3")},
+                              {"click past charlie's end", click(2, kText + 30), status_has("3:8")},
+                              {"click on the gutter", click(0, 1), status_has("1:1")},
+                              {"click below the text", click(9, kText + 2), status_has("4:1")},
+                              {"quit", "\x11", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("a drag selects, and typing replaces what it selected") {
+    const auto run = run_app("mouse-drag", "alpha\nbravo\n",
+                             {{"start", "", status_has("1:1")},
+                              {"drag over alpha", press(0, kText) + drag(0, kText + 3) + drag(0, kText + 5) + release(0, kText + 5), status_has("1:6")},
+                              {"type over it", "Z", row_is(0, "  1 Z")},
+                              {"quit", "\x11\x1b[C", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("a double click selects a word, a triple click the line, Shift+click extends") {
+    const auto run = run_app("mouse-multi", "one two three\nfour five\n",
+                             {{"start", "", status_has("1:1")},
+                              {"double click on two", click(0, kText + 5) + click(0, kText + 5), status_has("1:8")},
+                              {"type over the word", "X", row_is(0, "  1 one X three")},
+                              {"triple click on line 2", click(1, kText + 1) + click(1, kText + 1) + click(1, kText + 1), status_has("3:1")},
+                              {"type over the line", "Y", row_is(1, "  2 Y")},
+                              {"click at the start, Shift+click further", click(0, kText) + click(0, kText + 3, 4), status_has("1:4")},
+                              {"type over the selection", "W", row_is(0, "  1 W X three")},
+                              {"quit", "\x11\x1b[C", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("the wheel scrolls the view under the pointer, not the cursor") {
+    std::string text;
+    for (int i = 1; i <= 40; ++i) text += std::format("line {}\n", i);
+    const auto run = run_app("mouse-wheel", text,
+                             {{"start", "", row_is(0, "  1 line 1")},
+                              {"wheel down", wheel(3, kText, true), row_is(0, "  4 line 4")},
+                              {"the cursor stays", "", status_has("1:1")},
+                              {"wheel up past the top", wheel(3, kText, false) + wheel(3, kText, false), row_is(0, "  1 line 1")},
+                              {"quit", "\x11", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("a click in another split gives it the focus") {
+    auto marks = [](char top, char bottom) {
+        return [top, bottom](const VtScreen& s) {
+            const auto rows = status_rows(s, "file.txt");
+            return rows.size() == 2 && rows[0].second == top && rows[1].second == bottom;
+        };
+    };
+    const auto run = run_app("mouse-split", "one\ntwo\nthree\n",
+                             {{"View > Split", "\x1bxvp", marks('>', ' ')},
+                              {"click in the lower split", click(7, kText + 1), marks(' ', '>')},
+                              {"and back in the upper", click(1, kText + 2), marks('>', ' ')},
+                              {"the cursor went there", "", [](const VtScreen& s) { return s.row(5).starts_with(">") && s.row(5).find("2:3") != std::string::npos; }},
+                              {"quit", "\x11", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("the menu takes clicks while it is shown") {
+    const auto run = run_app("mouse-menu", "text\n",
+                             {{"Esc shows the bar", "\x1b", [](const VtScreen& s) { return s.row(0).find("File") != std::string::npos; }},
+                              {"click File", click(0, 2), [](const VtScreen& s) { return s.contains("Save As"); }},
+                              {"click Save As…", click(3, 4), [](const VtScreen& s) { return s.contains(" Save As "); }},
+                              {"Esc closes the dialog", "\x1b", [](const VtScreen& s) { return !s.contains(" Save As "); }},
+                              {"quit", "\x11", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("with the mouse setting off, clicks do nothing") {
+    const auto run = run_app("mouse-off", {File{"file.txt", "alpha\nbravo\n"}},
+                             {{"start", "", status_has("1:1")},
+                              {"click in bravo", click(1, kText + 2), nullptr},
+                              {"the cursor stays", "\x1b[C", status_has("1:2")},
+                              {"quit", "\x11", nullptr}},
+                             settings_setup(R"({"mouse": false})"));
+    check_steps(run);
 }

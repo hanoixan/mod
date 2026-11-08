@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 17ba6b03, stand-in 75e09b20
+stamp: source f3a525ed, stand-in ddd68871
 ---
 # module: terminal_output
 
@@ -48,8 +48,8 @@ The sequences for one behavior. Implementations are immutable singletons, so the
 
 ### function: output_for
 
-- **Inputs:** a `TerminalMode`.
-- **Returns:** `const TerminalOutput&` for it.
+- **Inputs:** a `TerminalMode`; `mouse` (default false): an output that asks for mouse reports.
+- **Returns:** `const TerminalOutput&` for it: for xterm with `mouse`, one whose `enter()` ends with `ESC[?1000h ESC[?1002h ESC[?1006h` (buttons, drags, SGR form) and whose `leave()` starts with `ESC[?1006l ESC[?1002l ESC[?1000l`; the other xterm output's sequences are exactly those of earlier versions. A VT100 has no mouse: the same output either way.
 - **State changes:** none.
 - **Access:** App, tests.
 
@@ -66,6 +66,13 @@ The sequences for one behavior. Implementations are immutable singletons, so the
 - **Returns:** the `std::string_view` written when mod takes over the screen (xterm: `ESC[22;0t ESC[?1049h ESC[?2004h ESC[?25l`, the first pushing the terminal's title on its stack; vt100: empty). `leave()` is written when it gives the screen back (xterm: `ESC[?2004l ESC[?1049l ESC[?25h ESC[0m ESC[0 q ESC[23;0t`, the last popping the title, so the terminal's own comes back; terminals without a title stack ignore both; vt100: `ESC[0m ESC[2J ESC[H`).
 - **State changes:** none.
 - **Access:** Terminal.
+
+### function: mouse
+
+- **Inputs:** `on`.
+- **Returns:** the sequence that turns the terminal's mouse reports on (`ESC[?1000h ESC[?1002h ESC[?1006h`) or off (`ESC[?1006l ESC[?1002l ESC[?1000l`); empty on a VT100.
+- **State changes:** none.
+- **Access:** App, when the mouse setting changes.
 
 ### function: begin_frame
 

@@ -58,6 +58,10 @@ public:
 
     static constexpr std::chrono::seconds kStatusTimeout{5};
     static constexpr std::chrono::seconds kExternalCheckInterval{2};
+    // Two presses of a key (End, Home) or clicks of the mouse at most this far apart are a double.
+    static constexpr std::chrono::milliseconds kDoublePress{400};
+    // Rows the mouse wheel scrolls a notch.
+    static constexpr int kWheelRows = 3;
     static constexpr std::int64_t kSlowLoadMs = 5000;
     // How long the terminal has to answer the device attributes query at startup.
     static constexpr std::chrono::milliseconds kDeviceAttributesWait{100};
@@ -184,6 +188,12 @@ private:
     // Input and output.
     void dispatch(const InputEvent& event);
     void dispatch_key(const KeyEvent& key);
+    void dispatch_mouse(const MouseEvent& m);
+    // A press, drag or release of the left button in a text area, `index` being the split's.
+    void mouse_in_text(const MouseEvent& m, std::size_t index, Rect area);
+    void apply_mouse();
+    void handle_file_dialog_result(const FileDialogResult& r);
+    void handle_tree_result(const TreeKeyResult& r);
     void after_command();
 
     // The focused view's slot and read-only state.
@@ -279,6 +289,19 @@ private:
     static constexpr std::size_t kQuitEscapes = 3;
     std::vector<Clock::time_point> escapes_;
     Clock::time_point next_external_check_;
+    // The mouse: whether the terminal sends it, and the left button's state.
+    bool mouse_on_ = false;
+    struct MouseState {
+        bool dragging = false;            // the left button went down in a text area
+        std::size_t view = 0;             // that split's index
+        int clicks = 0;                   // 1, 2 (a word) or 3 (a line), for the press and its drag
+        std::uint64_t anchor_start = 0;   // the word or line first selected, which a drag keeps
+        std::uint64_t anchor_end = 0;
+        Clock::time_point last_press{};
+        int last_row = -1;
+        int last_col = -1;
+    };
+    MouseState mouse_;
     Clock::time_point last_progress_draw_{};
 };
 

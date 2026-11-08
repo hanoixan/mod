@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 9e9a5659, stand-in 029c1713
+stamp: source fccc3d53, stand-in c916a55d
 ---
 # module: terminal
 
@@ -53,6 +53,13 @@ A pure-virtual interface.
 - **Returns:** nothing.
 - **State changes:** writes its `enter()` and remembers it: `restore` writes its `leave()`, and a continued suspended job writes `enter()` again.
 - **Access:** once, from `App` startup, after detection.
+
+### function: set_output
+
+- **Inputs:** a `const TerminalOutput&`.
+- **Returns:** nothing.
+- **State changes:** remembered in place of the one start_screen was given, writing nothing, so `restore` and a continued suspended job use it. For the mouse setting changing live: App writes the change itself, then calls this. The default does nothing (tests' terminals).
+- **Access:** App.
 
 ### function: restore
 

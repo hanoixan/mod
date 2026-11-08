@@ -67,6 +67,10 @@ public:
 
     // The command to run (the menu has closed), or nullopt (navigation, consumed).
     std::optional<CommandId> handle_key(const KeyEvent& key);
+    // A mouse press at screen (`row`, `col`), as the last render drew the bar: on a menu's title
+    // opens that menu; on an item chooses it (its command, as Enter would); on a separator or the
+    // open menu's own title, nothing; anywhere else hides the bar.
+    std::optional<CommandId> click(int row, int col);
     // The bar on `bar_row` (above the status line), its menu opening upward.
     void render(Screen& screen, int bar_row, const std::function<bool(CommandId)>& checked) const;
     // Rebuilds the Options menu: User Settings…, then the settings changed most recently
@@ -91,6 +95,12 @@ private:
     int menu_ = 0;
     int item_ = 0;
     int chosen_arg_ = -1;
+    // Where the last render drew the titles and the open menu, for click.
+    mutable int drawn_bar_row_ = -1;
+    mutable std::vector<std::pair<int, int>> drawn_titles_;  // [start, end) columns per menu
+    mutable int drawn_left_ = 0;
+    mutable int drawn_right_ = 0;
+    mutable int drawn_items_ = 0;  // item rows shown below the bar
 };
 
 }  // namespace mod

@@ -63,6 +63,15 @@ std::uint64_t ReadingLayout::on_line(std::size_t line, int col) const {
     return entries_[pick].offset;
 }
 
+std::optional<std::uint64_t> ReadingLayout::offset_at(std::size_t line, int col) const {
+    if (entries_.empty() || line >= by_line_.size()) return std::nullopt;
+    const auto l = line_with_positions(line, -1);
+    if (!l) return std::nullopt;
+    if (*l == line) return on_line(line, col);
+    const auto& v = by_line_[*l];
+    return entries_[*l < line ? v.back() : v.front()].offset;
+}
+
 std::uint64_t ReadingLayout::move(Motion motion, std::uint64_t cursor, std::size_t page_lines, std::optional<int>& sticky) const {
     if (entries_.empty()) return cursor;
     const std::size_t at = index_at(cursor);

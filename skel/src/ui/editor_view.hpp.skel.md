@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source b121ff29, stand-in ff9cd780
+stamp: source f93e60db, stand-in 9512bf56
 ---
 # module: editor_view
 
@@ -106,6 +106,14 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 
 
 `scroll_to(pos, rows, cols, row_margin, margin_above)` is the same for any position: `scroll_to_cursor` is `scroll_to(cursor, …, kRowMargin, false)`. With `margin_above`, a position in the top `row_margin` rows also moves the view, so the margin holds on both sides (the history preview uses 2); without it, as for the cursor, only a position above the view brings it in `row_margin` rows down.
+### function: offset_at
+
+- **Inputs:** `row`, `col`: a screen cell.
+- **Returns:** `std::optional<uint64_t>`: the document offset under the cell as the last frame drew it, nullopt outside the text area. Within a row's text, the character edge nearer the cell (a click on a character's right half lands after it); on the gutter, the row's start; past a row's text, the line's end, or for a wrapped row that continues below, its last character's start (the end would be drawn at the start of the next row); a row below the text, the text's end. Laid out for reading, the position [ReadingLayout.offset_at](./reading_layout.hpp.skel.md#function-offset_at) gives for that rendered line and column. Sideways scrolling is accounted for.
+- **State changes:** none. Each `render` records, per row of the area, what it drew there: the byte range (lines and wrapped rows) or the rendered line (reading), with the area, the text column and the horizontal scroll.
+- **Access:** App, for the mouse.
+- **Depends on:** [ReadingLayout.offset_at](./reading_layout.hpp.skel.md#function-offset_at)
+
 ### function: set_tab_width
 
 - **Inputs:** `width`: 1 to 16.
