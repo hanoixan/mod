@@ -805,11 +805,12 @@ void App::finish_merge() {
     job->worker.join();
     Document& d = *job->doc;
     const std::string name = d.path().filename().string();
-    if (!job->hunks) {
+    const std::optional<std::vector<MergeHunk>>& result = job->hunks;
+    if (!result) {
         set_status("merge canceled; " + name + " is as it was");
         return;
     }
-    const std::vector<MergeHunk>& hunks = job->hunks.value();  // checked above
+    const std::vector<MergeHunk>& hunks = *result;
     // The base's lines that conflict blocks show, read from the text as last saved.
     std::vector<std::string> base_text(hunks.size());
     std::size_t conflicts = 0;
