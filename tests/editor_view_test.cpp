@@ -666,3 +666,38 @@ TEST_CASE("offset_at maps a cell back to the text: lines, wrapped rows, tabs and
         CHECK(f.view->offset_at(row, col) == 15);
     }
 }
+
+TEST_CASE("merge colors: a diff3 block's banners inverted and its changes colored, until a marker goes or the setting is off") {
+    // Rows: 0 <<<<<<< a, 1 x1 (yours), 2 ||||||| b, 3 x0 (the base), 4 =======, 5 x0 (theirs), 6 >>>>>>> c, 7 plain
+    Fixture f("merge.txt", "<<<<<<< a\nx1\n||||||| b\nx0\n=======\nx0\n>>>>>>> c\nplain\n", 9, 20);
+    f.view->render(f.screen, f.area, std::nullopt, false);
+    const Attr banner = attr_for(Style::merge_banner);
+    for (int r : {0, 2, 4, 6}) {
+        CAPTURE(r);
+        CHECK(f.screen.cell(r, 0).attr == banner);
+        CHECK(f.screen.cell(r, 6).attr == banner);
+    }
+    CHECK(f.screen.cell(0, 8).attr == banner);                               // the label too
+    CHECK(f.screen.cell(0, 9).attr == attr_for(Style::Default));             // not past the line's end
+    CHECK(f.screen.cell(1, 0).attr == attr_for(Style::Default));             // x is the same
+    CHECK(f.screen.cell(1, 1).attr == attr_for(Style::merge_your_insertion));  // 1 differs from base
+    CHECK(f.screen.cell(3, 1).attr == attr_for(Style::merge_your_deletion));   // yours replaced 0
+    CHECK(f.screen.cell(5, 1).attr == attr_for(Style::Default));             // this side kept it
+    CHECK(f.screen.cell(7, 0).attr == attr_for(Style::Default));
+
+    // The ======= line loses a character: the block is no longer whole.
+    f.doc->apply(26, 1, std::string_view(""), EditKind::typing, 26, 26);
+    f.view->render(f.screen, f.area, std::nullopt, false);
+    CHECK(f.row(4) == "======");
+    CHECK(f.screen.cell(0, 0).attr == attr_for(Style::Default));
+    CHECK(f.screen.cell(1, 1).attr == attr_for(Style::Default));
+
+    // Put back, then the setting off.
+    f.doc->apply(26, 0, std::string_view("="), EditKind::typing, 26, 27);
+    f.view->render(f.screen, f.area, std::nullopt, false);
+    CHECK(f.screen.cell(0, 0).attr == banner);
+    f.view->set_merge_colors(false);
+    f.view->render(f.screen, f.area, std::nullopt, false);
+    CHECK(f.screen.cell(0, 0).attr == attr_for(Style::Default));
+    CHECK(f.screen.cell(1, 1).attr == attr_for(Style::Default));
+}

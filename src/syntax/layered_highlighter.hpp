@@ -6,6 +6,10 @@
 
 namespace mod {
 
+// `base` with `over`'s ranges cut out of it, and `over`'s spans put in their place: both
+// sorted and not overlapping, and so is the result.
+std::vector<StyleSpan> overlay_spans(const std::vector<StyleSpan>& base, const std::vector<StyleSpan>& over);
+
 // Two highlighters as one: the overlay's spans are drawn over the base's, which are cut
 // around them. Every document event goes to the base, then the overlay. Main thread.
 class LayeredHighlighter final : public Highlighter {

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 4333aad0, stand-in f537a908
+stamp: source 0dd47a93, stand-in 4cf6341b
 ---
 # module: layered_highlighter
 
@@ -12,6 +12,16 @@ Two highlighters as one: a **base** (the syntax layer) and an **overlay** (a lan
 - **Failure modes:** none of its own; each layer's failures stay that layer's.
 - **Depends on:** [Highlighter](./highlight.hpp.skel.md#class-highlighter)
 - **Unknowns:** none
+
+## function: overlay_spans
+
+The cut that layers two span lists, shared by [LayeredHighlighter.spans_for_line](#function-spans_for_line) and EditorView's merge colors.
+
+- **Inputs:** `base`, `over`: `const std::vector<StyleSpan>&`, each sorted and not overlapping.
+- **Returns:** `base` with `over`'s ranges cut out of it and `over`'s spans put in their place, sorted and not overlapping; either list as it is when the other is empty.
+- **State changes:** none.
+- **Access:** public, any thread.
+- **Referred by:** [EditorView.set_merge_colors](../ui/editor_view.hpp.skel.md#function-set_merge_colors)
 
 ## class: LayeredHighlighter
 
@@ -26,7 +36,7 @@ Two highlighters as one: a **base** (the syntax layer) and an **overlay** (a lan
 ### function: spans_for_line
 
 - **Inputs:** as [Highlighter.spans_for_line](./highlight.hpp.skel.md#function-spans_for_line).
-- **Returns:** the base's spans with every overlay span laid over them, sorted and not overlapping.
+- **Returns:** [overlay_spans](#function-overlay_spans) of the base's spans and the overlay's.
 - **State changes:** whatever the two layers' own calls change.
 - **Access:** EditorView.
 

@@ -65,6 +65,11 @@ public:
     void set_line_numbers(bool on) { line_numbers_ = on; }
     bool line_numbers() const noexcept { return line_numbers_; }
     void set_highlighter(Highlighter* highlighter) { highlighter_ = highlighter; }
+    // Auto-color merges: diff3 conflict blocks near the lines drawn are colored over the
+    // highlighter's spans (merge_color_spans), whether or not there is a highlighter. Not in
+    // preview mode, nor in the reading layout. On by default.
+    void set_merge_colors(bool on) noexcept { merge_colors_ = on; }
+    bool merge_colors() const noexcept { return merge_colors_; }
     // While set, the matches it gives for a line's range (a line start to its end) are drawn
     // in `search_other` behind the current match; App sets it while the find bar is open.
     using MatchFinder = std::function<std::vector<Match>(std::uint64_t start, std::uint64_t end)>;
@@ -168,6 +173,16 @@ private:
     std::string line_buf_;            // per-frame scratch, reused
     std::string row_buf_;             // per-frame scratch, reused
     std::vector<StyleSpan> spans_;    // per-frame scratch, reused
+    bool merge_colors_ = true;
+    // The merge colors of the window [merge_from_, merge_to_) of the text at merge_version_:
+    // a block is found when it lies wholly in the window, which reaches kMergeWindow bytes
+    // before and after the lines asked for.
+    std::vector<StyleSpan> merge_spans_;
+    std::uint64_t merge_from_ = 0;
+    std::uint64_t merge_to_ = 0;
+    std::optional<std::uint64_t> merge_version_;
+    // Puts the merge colors of [line, end) over spans_.
+    void add_merge_spans(std::uint64_t line, std::uint64_t end);
     MatchFinder match_finder_;
     std::vector<Match> line_matches_;  // the matches of the line being drawn, from match_finder_
     // Fills line_matches_ for the line [line, end).

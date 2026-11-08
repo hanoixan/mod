@@ -1,12 +1,12 @@
 ---
 role: product
-stamp: source 0c54a04c, stand-in 93b02b3e
+stamp: source e2d2182d, stand-in 1312e418
 ---
 # resource: colors.md
 
 A page of the user manual, `docs/manual/`, in plain Markdown with relative links only. Installed to `<prefix>/share/mod/doc/` by [CMakeLists.txt](../../CMakeLists.txt.skel.md).
 
-Contents: the Colors editor (keys, samples, `*`), color specs (every word, the 16-color rule and why), a table of **every** color name with what it colors and its default, the modifiers and how they combine, darkness and its defaults per level (normal, night, paper; vt100's fallbacks), the `colors` member of settings.json with an example, and a note that the terminal's own palette decides the actual shades.
+Contents: the Colors editor (keys, samples, `*`), color specs (every word, the 16-color rule and why), a table of **every** color name with what it colors and its default (the merge colors: mergeBanner for a conflict's marker lines, and yours', theirs' and both's insertions and deletions, each a color name), the modifiers and how they combine, darkness and its defaults per level (normal, night, paper; vt100's fallbacks), the `colors` member of settings.json with an example, and a note that the terminal's own palette decides the actual shades.
 
 - **Required:** optional — the editor works without its manual.
 - **Failure modes:** the page drifts from the code; [docs_test](../../tests/docs_test.cpp.skel.md) checks that it names every color name in backticks.

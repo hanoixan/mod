@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1e4046b1, stand-in 31f8f5a7
+stamp: source 1e4046b1, stand-in c505d698
 ---
 # module: settings
 
@@ -15,6 +15,7 @@ The settings today:
 | `syntax_coloring` | boolean | true | "Syntax coloring on open": a document's View > Syntax Coloring, which also styles Markdown, when it is opened. |
 | `pin_folder_tree` | boolean | false | "Pin Folder Tree": whether the folder tree starts pinned (kept shown beside the views; unpinned it shows only while it has the keys); changing it pins or unpins it now. View > Pin Folder Tree changes it for the session. |
 | `word_wrap` | boolean | true | "Word wrap on open": a document's View > Word Wrap when it is opened (on by default, as in ../modi/). |
+| `auto_color_merges` | boolean | true | "Auto-color merges": diff3 conflict blocks are colored ([merge_color_spans](../syntax/merge_colors.hpp.skel.md#function-merge_color_spans)): the marker lines in `mergeBanner`, what each side added to the base and the base's text it deleted or replaced in that side's colors (yours, the first section, `mergeYourInsertion` and `mergeYourDeletion`; theirs, the last, `mergeTheirInsertion` and `mergeTheirDeletion`), and what both made, an insertion in `mergeBothInsertion` and a deletion in `mergeBothDeletion`. Applies at once to every view. |
 | `read_only_copy` | choice: `markdown`, `visible text` | `markdown` | "Copy in read-only Markdown": what Copy takes from a Markdown document laid out for reading — the source, marks and all, or the text as shown. |
 | `tab_inserts` | choice: `spaces`, `tab` | `spaces` | What `InsertTab` (Tab) inserts: spaces up to the next tab stop, or a tab character. |
 | `keymap` | keymap | none changed | The user's key bindings; see [Keymap](./keymap.hpp.skel.md#class-keymap). |

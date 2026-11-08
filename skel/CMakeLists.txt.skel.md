@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source f89a7cf3, stand-in d5013a90
+stamp: source d6f66ffd, stand-in 2f9ce14c
 ---
 # resource: CMakeLists.txt
 
@@ -61,6 +61,7 @@ Contract for the implementer:
 - **Depends on:** [src/ui/colors_view.cpp](./src/ui/colors_view.cpp.skel.md)
 - **Depends on:** [src/syntax/syntax_highlighter.cpp](./src/syntax/syntax_highlighter.cpp.skel.md)
 - **Depends on:** [src/syntax/layered_highlighter.cpp](./src/syntax/layered_highlighter.cpp.skel.md)
+- **Depends on:** [src/syntax/merge_colors.cpp](./src/syntax/merge_colors.cpp.skel.md)
 - **Depends on:** [docs/manual/colors.md](./docs/manual/colors.md.skel.md)
 - **Depends on:** [docs/manual/file-dialog.md](./docs/manual/file-dialog.md.skel.md)
 - **Depends on:** [docs/manual/command-line.md](./docs/manual/command-line.md.skel.md)

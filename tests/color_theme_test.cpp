@@ -74,7 +74,14 @@ constexpr Attr legacy_attr(Style style, std::uint8_t modifiers = 0) {
         case Style::history_read_only: a.flags = kDim; break;
         case Style::page:
         case Style::history_inserted:
-        case Style::history_removed: break;
+        case Style::history_removed:
+        case Style::merge_banner:
+        case Style::merge_your_insertion:
+        case Style::merge_your_deletion:
+        case Style::merge_their_insertion:
+        case Style::merge_their_deletion:
+        case Style::merge_both_insertion:
+        case Style::merge_both_deletion: break;
         case Style::overflow_marker: a = {black, white + bright, 0}; break;
     }
     // Modifiers, in the theme table's order.
@@ -148,7 +155,7 @@ TEST_CASE("the default theme is exactly the old fixed table, apart from the new 
     for (int i = 0; i <= static_cast<int>(Style::overflow_marker); ++i) {
         const Style s = static_cast<Style>(i);
         CAPTURE(i);
-        if (s == Style::history_inserted || s == Style::history_removed) continue;  // new since the fixed table
+        if (s == Style::history_inserted || s == Style::history_removed || (s >= Style::merge_banner && s <= Style::merge_both_deletion)) continue;  // new since the fixed table
         // Dark blue on a dark screen became bright blue.
         if (s == Style::lsp_event || s == Style::lsp_function || s == Style::lsp_method || s == Style::md_link_text || s == Style::md_link_url ||
             s == Style::menu_selected)

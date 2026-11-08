@@ -33,6 +33,7 @@ set(MOD_TESTS
   markdown_test
   menu_test
   merge3_test
+  merge_colors_test
   notices_test
   piece_tree_test
   progress_test

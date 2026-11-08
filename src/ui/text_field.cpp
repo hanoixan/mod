@@ -70,7 +70,7 @@ void TextField::insert(std::string_view bytes) {
     cursor_ += clean.size();
 }
 
-void TextField::render(Screen& screen, int row, int col, int width, Attr attr, bool focused) {
+void TextField::render(Screen& screen, int row, int col, int width, Attr attr, bool focused, std::string_view ghost, Attr ghost_attr) {
     if (width <= 0) return;
     screen.fill(row, col, col + width, attr);
     // The display column of the cursor, to scroll it into view.
@@ -93,6 +93,15 @@ void TextField::render(Screen& screen, int row, int col, int width, Attr attr, b
         const std::size_t len = std::max<std::size_t>(1, d.len);
         const int w = std::max(0, display_width(d, static_cast<std::uint64_t>(c), 1));
         if (c >= scroll_ && c + w <= scroll_ + width && w > 0) screen.put(row, col + c - scroll_, std::string_view(text_).substr(i, len), w, attr);
+        c += w;
+        i += len;
+    }
+    for (std::size_t i = 0; i < ghost.size();) {
+        const Decoded d = decode(bytes_of(ghost.substr(i)));
+        const std::size_t len = std::max<std::size_t>(1, d.len);
+        const int w = std::max(0, display_width(d, static_cast<std::uint64_t>(c), 1));
+        if (c + w > scroll_ + width) break;
+        if (c >= scroll_ && w > 0) screen.put(row, col + c - scroll_, ghost.substr(i, len), w, ghost_attr);
         c += w;
         i += len;
     }

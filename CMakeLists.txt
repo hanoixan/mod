@@ -131,6 +131,7 @@ set(MOD_CORE_SOURCES
   src/syntax/semantic_highlighter.cpp
   src/syntax/syntax_highlighter.cpp
   src/syntax/layered_highlighter.cpp
+  src/syntax/merge_colors.cpp
   src/syntax/markdown_render.cpp
   src/text/line_scanner.cpp
   src/text/piece_tree.cpp

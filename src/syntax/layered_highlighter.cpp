@@ -5,9 +5,7 @@
 
 namespace mod {
 
-std::vector<StyleSpan> LayeredHighlighter::spans_for_line(std::uint64_t line_start, std::string_view line_bytes) {
-    std::vector<StyleSpan> base = base_->spans_for_line(line_start, line_bytes);
-    std::vector<StyleSpan> over = overlay_->spans_for_line(line_start, line_bytes);
+std::vector<StyleSpan> overlay_spans(const std::vector<StyleSpan>& base, const std::vector<StyleSpan>& over) {
     if (over.empty()) return base;
     if (base.empty()) return over;
 
@@ -27,6 +25,10 @@ std::vector<StyleSpan> LayeredHighlighter::spans_for_line(std::uint64_t line_sta
     out.reserve(cut.size() + over.size());
     std::ranges::merge(cut, over, std::back_inserter(out), {}, &StyleSpan::start, &StyleSpan::start);
     return out;
+}
+
+std::vector<StyleSpan> LayeredHighlighter::spans_for_line(std::uint64_t line_start, std::string_view line_bytes) {
+    return overlay_spans(base_->spans_for_line(line_start, line_bytes), overlay_->spans_for_line(line_start, line_bytes));
 }
 
 void LayeredHighlighter::visible_range_changed(std::uint64_t first_offset, std::uint64_t last_offset) {

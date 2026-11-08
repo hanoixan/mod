@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./app.hpp.skel.md
-stamp: source fffe5c64, stand-in 8eeab780
+stamp: source 9735faf3, stand-in dc63b478
 ---
 # module: app (implementation)
 
@@ -18,6 +18,10 @@ Implements [App](./app.hpp.skel.md#class-app). Input routing order for each even
 
 Anything else is ignored.
 
+The file dialog's key hints follow its focus: in the File field "Type to find  Right: complete  Enter: choose  Tab: next part  Esc: cancel", elsewhere "Tab: next part  Enter: choose  Backspace: up a folder  Esc: cancel".
+
+`apply_options` also sets each view's merge colors from the `auto_color_merges` setting ([EditorView.set_merge_colors](../ui/editor_view.hpp.skel.md#function-set_merge_colors)), and a change of that setting applies the options again to every slot, so it takes effect at once.
+
 - **Owns:** the routing logic and the status-message timer (5 s); the timer's deadline is part of `run`'s wait timeout, so a message clears on an idle terminal. Status messages from Document (`take_status_message`), the Sidecar's failures and the highlighter are polled once per loop iteration.
 - **Access:** internal.
 - **Required:** always.
@@ -26,5 +30,7 @@ Anything else is ignored.
 - **Depends on:** [MarkdownHighlighter](../syntax/markdown.hpp.skel.md#class-markdownhighlighter)
 - **Depends on:** [SemanticHighlighter](../syntax/semantic_highlighter.hpp.skel.md#class-semantichighlighter)
 - **Depends on:** [make_terminal](../platform/terminal.hpp.skel.md#function-make_terminal)
+- **Depends on:** [EditorView.set_merge_colors](../ui/editor_view.hpp.skel.md#function-set_merge_colors)
+- **Depends on:** [FileDialog](../ui/file_dialog.hpp.skel.md#class-filedialog)
 - **Unknowns:** none
 - **Referred by:** [CMakeLists.txt](../../CMakeLists.txt.skel.md)

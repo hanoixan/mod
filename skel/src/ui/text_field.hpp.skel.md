@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source 66e2824c, stand-in 29c23855
+stamp: source 8cb78bc2, stand-in e58bff05
 ---
 # module: text_field
 
-A one-line text input: the File name of the file dialog, its filter pattern and the new folder's name. ../modi/ gets these from browser input boxes; in the terminal this class does the editing.
+A one-line text input: the File name of the file dialog (which draws its completion as the field's ghost text), its filter pattern and the new folder's name. ../modi/ gets these from browser input boxes; in the terminal this class does the editing.
 
 - **Owns:** the text and the cursor.
 - **Access:** public. Owned by the dialogs. Main thread.
@@ -49,7 +49,7 @@ A one-line text input: the File name of the file dialog, its filter pattern and 
 
 ### function: render
 
-- **Inputs:** a `Screen&`; `row`, `col`, `width`: the cells the field may fill; `attr`; `focused`.
+- **Inputs:** a `Screen&`; `row`, `col`, `width`: the cells the field may fill; `attr`; `focused`; `ghost` (default empty): a suggestion that is not part of the text, and `ghost_attr`, its look.
 - **Returns:** nothing.
-- **State changes:** draws the visible window of the text from a scroll offset that keeps the cursor inside it, and fills the rest of the width with `attr`. With `focused`, sets the screen cursor at the field's cursor.
+- **State changes:** draws the visible window of the text from a scroll offset that keeps the cursor inside it, and fills the rest of the width with `attr`; `ghost` is drawn in `ghost_attr` just after the text, as far as the width allows. With `focused`, sets the screen cursor at the field's cursor.
 - **Access:** dialogs.

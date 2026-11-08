@@ -75,6 +75,13 @@ constexpr ColorEntry kEntries[] = {
     {"page", page, 0, "plain", "Interface"},
     {"historyInserted", history_inserted, 0, "black on-green", "Interface"},
     {"historyRemoved", history_removed, 0, "strike red", "Interface"},
+    {"mergeBanner", merge_banner, 0, "reverse", "Interface"},
+    {"mergeYourInsertion", merge_your_insertion, 0, "black on-cyan", "Interface"},
+    {"mergeYourDeletion", merge_your_deletion, 0, "strike cyan", "Interface"},
+    {"mergeTheirInsertion", merge_their_insertion, 0, "black on-yellow", "Interface"},
+    {"mergeTheirDeletion", merge_their_deletion, 0, "strike yellow", "Interface"},
+    {"mergeBothInsertion", merge_both_insertion, 0, "black on-bright-magenta", "Interface"},
+    {"mergeBothDeletion", merge_both_deletion, 0, "strike bright-magenta", "Interface"},
 };
 
 constexpr std::string_view kColors[] = {"black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"};
@@ -156,6 +163,13 @@ std::uint8_t vt100_flags(Style s) {
         case history_inserted:
         case search_other: return kUnderline;
         case error: return kBold | kReverse;
+        case merge_banner: return kReverse;
+        case merge_your_insertion:
+        case merge_their_insertion:
+        case merge_both_insertion: return kUnderline;
+        case merge_your_deletion:
+        case merge_their_deletion:
+        case merge_both_deletion: return kReverse;
         default: return 0;
     }
 }

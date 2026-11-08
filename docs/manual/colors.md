@@ -122,6 +122,13 @@ The editor shows a modifier's sample as a variable with the modifier on.
 | `page` | The background the text is drawn on, in the editor and the help | `plain` |
 | `historyInserted` | In the Undo History preview, the text the selected step inserted | `black on-green` |
 | `historyRemoved` | In the Undo History preview, the text the selected step removed | `strike red` |
+| `mergeBanner` | The four marker lines of a merge conflict (`<<<<<<<`, `\|\|\|\|\|\|\|`, `=======`, `>>>>>>>`) | `reverse` |
+| `mergeYourInsertion` | In a merge conflict, the characters of your side (the first) that the base has not | `black on-cyan` |
+| `mergeYourDeletion` | ...the base's characters that your side deleted or replaced | `strike cyan` |
+| `mergeTheirInsertion` | ...the characters of their side (the last) that the base has not | `black on-yellow` |
+| `mergeTheirDeletion` | ...the base's characters that their side deleted or replaced | `strike yellow` |
+| `mergeBothInsertion` | ...the characters both sides inserted, in each side | `black on-bright-magenta` |
+| `mergeBothDeletion` | ...the base's characters that both sides deleted or replaced | `strike bright-magenta` |
 
 ## Darkness
 

@@ -1,7 +1,6 @@
 #include "ui/file_dialog.hpp"
 
 #include <algorithm>
-#include <chrono>
 #include <cstdlib>
 #include <format>
 #include <span>
@@ -20,7 +19,6 @@ constexpr FocusZone kZones[] = {FocusZone::up,        FocusZone::home,      Focu
                                 FocusZone::filter,    FocusZone::sort_name, FocusZone::sort_size,     FocusZone::sort_modified,
                                 FocusZone::list,      FocusZone::filename,  FocusZone::submit,        FocusZone::cancel};
 constexpr int kZoneCount = static_cast<int>(sizeof kZones / sizeof kZones[0]);
-constexpr double kSearchTimeout = 2.0;
 
 int zone_index(FocusZone z) {
     for (int i = 0; i < kZoneCount; ++i)
@@ -69,14 +67,16 @@ void print_right(Screen& screen, int row, int end_col, std::string_view text, At
     screen.print(row, end_col - w, end_col, t, attr);
 }
 
+// The look of the File field's completion: its text's, dim instead of bold.
+Attr lighter(Attr a) {
+    a.flags = static_cast<std::uint8_t>((a.flags & ~kBold) | kDim);
+    return a;
+}
+
 }  // namespace
 
-FileDialog::FileDialog(FileDialogMode mode, fs::path initial_dir, std::string initial_filename, std::function<double()> clock,
-                       bool show_hidden)
-    : mode_(mode), clock_(std::move(clock)), dir_(std::move(initial_dir)), show_hidden_(show_hidden), filename_(std::move(initial_filename)) {
-    if (!clock_) {
-        clock_ = [] { return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count(); };
-    }
+FileDialog::FileDialog(FileDialogMode mode, fs::path initial_dir, std::string initial_filename, bool show_hidden)
+    : mode_(mode), dir_(std::move(initial_dir)), show_hidden_(show_hidden), filename_(std::move(initial_filename)) {
     dir_ = fs::absolute(dir_).lexically_normal();
     refresh();
 }
@@ -93,6 +93,7 @@ void FileDialog::refresh() {
     }
     selected_ = -1;
     scroll_ = 0;
+    match_name_.clear();
     folder_field_.reset();
 }
 
@@ -106,6 +107,7 @@ void FileDialog::navigate_to(const fs::path& path) {
 }
 
 void FileDialog::update_filename_from_selection() {
+    match_name_.clear();
     if (selected_ >= 0 && selected_ < static_cast<int>(entries_.size()) && !entries_[static_cast<std::size_t>(selected_)].is_dir)
         filename_.set_text(entries_[static_cast<std::size_t>(selected_)].name);
 }
@@ -125,26 +127,50 @@ void FileDialog::select(int index, int list_rows) {
 
 void FileDialog::jump_to_match(bool forward, bool from_current, int list_rows) {
     const int n = static_cast<int>(entries_.size());
-    if (search_text_.empty() || n == 0) return;
+    const std::string text = lower(filename_.text());
+    if (text.empty() || n == 0) return;
     int start;
     if (from_current) start = selected_ >= 0 ? ((selected_ + (forward ? 1 : -1)) % n + n) % n : 0;
     else start = selected_ >= 0 ? selected_ : 0;
     const int step = forward ? 1 : -1;
     for (int k = 0; k < n; ++k) {
         const int idx = (((start + k * step) % n) + n) % n;
-        if (lower(entries_[static_cast<std::size_t>(idx)].name).find(search_text_) != std::string::npos) {
-            select(idx, list_rows);
+        if (lower(entries_[static_cast<std::size_t>(idx)].name).find(text) != std::string::npos) {
+            selected_ = idx;  // the field keeps its text
+            ensure_visible(list_rows);
             return;
         }
     }
 }
 
-void FileDialog::search_char(char32_t ch, int list_rows) {
-    const double now = clock_();
-    if (now - search_time_ > kSearchTimeout) search_text_.clear();
-    search_text_ += lower(to_utf8(ch));
-    search_time_ = now;
-    jump_to_match(true, false, list_rows);
+void FileDialog::search_field(int list_rows) {
+    match_name_.clear();
+    const std::string& text = filename_.text();
+    if (text.empty() || text.find_first_of("/\\") != std::string::npos) return;
+    const std::string want = lower(text);
+    int found = -1;
+    bool prefix = false;
+    for (int i = 0; i < static_cast<int>(entries_.size()); ++i) {
+        const std::string name = lower(entries_[static_cast<std::size_t>(i)].name);
+        if (name.starts_with(want)) {
+            found = i;
+            prefix = true;
+            break;
+        }
+        if (found < 0 && name.find(want) != std::string::npos) found = i;
+    }
+    if (found < 0) return;
+    selected_ = found;
+    ensure_visible(list_rows);
+    match_name_ = entries_[static_cast<std::size_t>(found)].name;
+    match_prefix_ = prefix;
+}
+
+std::string FileDialog::completion() const {
+    if (match_name_.empty() || focus_ != FocusZone::filename || !filename_.at_end()) return {};
+    const std::string& text = filename_.text();
+    if (match_prefix_) return text.size() < match_name_.size() ? match_name_.substr(text.size()) : std::string();
+    return " → " + match_name_;
 }
 
 void FileDialog::move_focus(int delta) {
@@ -163,6 +189,7 @@ FileDialogResult FileDialog::submit(const std::string& name) {
     std::error_code ec;
     if (fs::is_directory(full, ec)) {
         navigate_to(full);
+        filename_.set_text({});  // ready for a name in the new folder
         return {};
     }
     return {FileDialogResult::Kind::chosen, full};
@@ -292,7 +319,11 @@ FileDialogResult FileDialog::handle_key(const KeyEvent& key, int list_rows) {
                 return {};
             case Key::Backspace: navigate_to(dir_.parent_path()); return {};
             case Key::Char:
-                if (!(key.mods & kCtrl)) search_char(key.ch, list_rows);
+                // Typing goes to the File field, which looks it up.
+                if (!(key.mods & kCtrl)) {
+                    focus_ = FocusZone::filename;
+                    return handle_key(key, list_rows);
+                }
                 return {};
             default: return {};
         }
@@ -304,10 +335,17 @@ FileDialogResult FileDialog::handle_key(const KeyEvent& key, int list_rows) {
             return {};
         }
         if (key.key == Key::Right && filename_.at_end()) {
-            move_focus(1);
+            if (!completion().empty()) {
+                filename_.set_text(match_name_);
+                search_field(list_rows);
+            } else {
+                move_focus(1);
+            }
             return {};
         }
+        const std::string before = filename_.text();
         filename_.handle_key(key);
+        if (filename_.text() != before) search_field(list_rows);
         return {};
     }
     // A button or a header.
@@ -320,7 +358,10 @@ FileDialogResult FileDialog::handle_key(const KeyEvent& key, int list_rows) {
 void FileDialog::handle_paste(std::string_view bytes) {
     if (folder_field_) folder_field_->insert(bytes);
     else if (filter_field_) filter_field_->insert(bytes);
-    else if (focus_ == FocusZone::filename) filename_.insert(bytes);
+    else if (focus_ == FocusZone::filename) {
+        filename_.insert(bytes);
+        search_field(drawn_list_rows_ > 0 ? drawn_list_rows_ : 1);
+    }
 }
 
 FileDialogResult FileDialog::click(int row, int col, bool double_click, int list_rows) {
@@ -332,6 +373,14 @@ FileDialogResult FileDialog::click(int row, int col, bool double_click, int list
         focus_ = FocusZone::list;
         select(idx, list_rows);
         if (double_click) return handle_key(KeyEvent{Key::Enter, 0, 0}, list_rows);
+        return {};
+    }
+    for (const DrawnCrumb& c : drawn_crumbs_) {
+        if (row != c.row || col < c.from || col >= c.to) continue;
+        leave_edit_modes();
+        fs::path p = dir_;
+        for (int k = 0; k < c.up; ++k) p = p.parent_path();
+        if (p != dir_) navigate_to(p);
         return {};
     }
     for (const DrawnZone& z : drawn_zones_) {
@@ -360,6 +409,7 @@ void FileDialog::handle_list_step(bool up, int list_rows) {
 
 void FileDialog::render(Screen& screen, Rect area) {
     drawn_zones_.clear();
+    drawn_crumbs_.clear();
     drawn_list_rows_ = 0;
     const int W = area.cols;
     const int right = area.col + W;
@@ -391,7 +441,9 @@ void FileDialog::render(Screen& screen, Rect area) {
         const auto parts = path_parts(dir_);
         for (std::size_t i = 0; i < parts.size(); ++i) {
             if (i > 0) col = screen.print(row, col, right, " > ", attr_for(Style::gutter));
+            const int from = col;
             col = screen.print(row, col, right, parts[i], attr_for(Style::md_link_text));
+            drawn_crumbs_.push_back({row, from, col, static_cast<int>(parts.size() - 1 - i)});
         }
         ++r;
     }
@@ -490,7 +542,8 @@ void FileDialog::render(Screen& screen, Rect area) {
         const int col = screen.print(row, area.col + 1, right, "File: ", attr_for(Style::Default));
         drawn_zones_.push_back({row, area.col, right, FocusZone::filename});
         const bool focus = focus_ == FocusZone::filename;
-        filename_.render(screen, row, col, std::max(1, right - col - 1), focus ? attr_for(Style::list_selected) : attr_for(Style::status), focus && !cursor_placed);
+        filename_.render(screen, row, col, std::max(1, right - col - 1), focus ? attr_for(Style::list_selected) : attr_for(Style::status), focus && !cursor_placed,
+                         completion(), focus ? lighter(attr_for(Style::list_selected)) : attr_for(Style::status));
         if (focus && !cursor_placed) cursor_placed = true;
         ++r;
     }
@@ -506,12 +559,7 @@ void FileDialog::render(Screen& screen, Rect area) {
         std::string pos;
         if (n > 0 && selected_ >= 0) pos = std::format("{} of {}", selected_ + 1, n);
         else if (n > 0) pos = std::format("{} items", n);
-        int end = right - 1;
-        if (!pos.empty()) {
-            print_right(screen, row, end, pos, attr_for(Style::gutter), W);
-            end -= text_cols(pos) + 2;
-        }
-        if (!search_text_.empty()) print_right(screen, row, end, "⌕ " + search_text_, attr_for(Style::gutter_current), W);
+        if (!pos.empty()) print_right(screen, row, right - 1, pos, attr_for(Style::gutter), W);
         ++r;
     }
     if (!cursor_placed) screen.set_cursor(0, 0, false);

@@ -36,14 +36,16 @@ mod checks every open document against its file every two seconds, and when you 
   - **Merge in place** (M) merges the two: what the other program changed since you last saved or loaded the file, and what you changed since then. Changes in different places are simply both taken. Where both of you changed the same lines, mod puts both versions in the text, with the text as you last saved it between them, for you to edit:
 
     ```
-    <<<<<<< theirs
-    the file's new lines
+    <<<<<<< yours
+    your lines
     ||||||| base
     the lines as you last saved them
     =======
-    your lines
-    >>>>>>> yours
+    the file's new lines
+    >>>>>>> theirs
     ```
+
+    With the `auto_color_merges` [setting](settings.md) on (the default), a conflict block is colored while you work on it: the four marker lines are inverted; what your side (the first) added to the base has a cyan background, and the base's characters it deleted or replaced are struck through in cyan; their side (the last) is the same in yellow; what both sides inserted has a magenta background in each, and the base's characters both sides deleted are struck through in magenta ([Colors](colors.md): `mergeYourInsertion` and the rest). Any block in this diff3 style is colored, git's too, whatever its labels: the first section is yours, as git writes it; as soon as one of its markers is gone or out of order it is plain text again.
 
     The status line says how many conflicts there are. The merge is one step: Undo takes it all back. A large file merges in the background with a progress bar on the status line, the document waiting meanwhile; Esc cancels the merge and leaves the text as it was.
 - While a document you are not in waits for its question, its status line says it changed on disk.
