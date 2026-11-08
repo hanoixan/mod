@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source c6202ad8, stand-in 860ff00f
+stamp: source c6202ad8, stand-in fe78d75a
 ---
 # module: reading_layout
 
@@ -46,7 +46,7 @@ A **position** is a place the cursor can be shown: the start of each code point 
 
 - **Inputs:** `motion`: a [Motion](../edit/editor.hpp.skel.md#symbol-motion); `cursor`: the source offset it starts from; `page_lines`: rendered lines per page; `sticky`: the column Up and Down aim for, kept by the caller.
 - **Returns:** the source offset of the position the motion reaches. Left and Right (and the word motions) go to the previous or next position in source order; Up and Down to the nearest position at or before the aimed column on the previous or next line that has positions; PageUp and PageDown `page_lines` lines at once, then on to the nearest line with positions; LineStart and LineEnd to the first and last position of the cursor's line; DocStart and DocEnd to the first and last position.
-- **State changes:** `sticky` is set to the column a vertical motion aimed for and cleared by any other motion.
+- **State changes:** `sticky` is set to the column a vertical motion aimed for and cleared by any other motion. `VisualLineStart` and `VisualLineEnd` are `LineStart` and `LineEnd` here: a rendered line is what is shown.
 - **Access:** App, for the motion commands while the view draws this way.
 
 ### function: offset_at

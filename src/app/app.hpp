@@ -314,6 +314,14 @@ private:
         int last_col = -1;
     };
     MouseState mouse_;
+    // The last Home or End (a visual line motion), for its double press.
+    struct LastVisual {
+        CommandId id;
+        Clock::time_point at;
+        std::uint64_t cursor;  // where it left the cursor
+        const Document* doc;
+    };
+    std::optional<LastVisual> last_visual_;
     Clock::time_point last_progress_draw_{};
 };
 

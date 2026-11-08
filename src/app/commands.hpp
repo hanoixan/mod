@@ -72,6 +72,8 @@ enum class CommandId {
     MovePageDown,
     MoveDocStart,
     MoveDocEnd,
+    MoveVisualLineStart,
+    MoveVisualLineEnd,
     SelectLeft,
     SelectRight,
     SelectWordLeft,
@@ -84,6 +86,8 @@ enum class CommandId {
     SelectPageDown,
     SelectDocStart,
     SelectDocEnd,
+    SelectVisualLineStart,
+    SelectVisualLineEnd,
     // The view, without moving the cursor (Ctrl+Up, Ctrl+Down).
     ScrollLineUp,
     ScrollLineDown,

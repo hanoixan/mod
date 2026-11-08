@@ -116,7 +116,7 @@ TEST_CASE("unbind removes one key; a freed key can go to another command") {
     Keymap km;
     CHECK_FALSE(km.unbind(C::Save, K(Key::F5)));  // not one of its keys
     CHECK(km.unbind(C::MoveLineStart, ctrl('a')));
-    CHECK(labels(km, C::MoveLineStart) == std::vector<std::string>{"Home"});
+    CHECK(labels(km, C::MoveLineStart).empty());
     CHECK_FALSE(km.lookup(ctrl('a')).has_value());
     CHECK(km.bind(C::Find, ctrl('a')).kind == BindOutcome::bound);
     CHECK(km.lookup(ctrl('a')) == C::Find);
@@ -132,11 +132,12 @@ TEST_CASE("reset gives a command its default keys again, except those another co
     const std::vector<KeyEvent> kept_elsewhere = km.reset(C::MoveLineStart);
     REQUIRE(kept_elsewhere.size() == 1);
     CHECK(kept_elsewhere[0] == ctrl('a'));
-    CHECK(labels(km, C::MoveLineStart) == std::vector<std::string>{"Home"});
+    CHECK(labels(km, C::MoveLineStart).empty());
     CHECK_FALSE(km.lookup(K(Key::F5)).has_value());
     CHECK(km.reset(C::Find).empty());
     CHECK(km.reset(C::MoveLineStart).empty());
-    CHECK(labels(km, C::MoveLineStart) == std::vector<std::string>{"Ctrl+A", "Home"});
+    CHECK(labels(km, C::MoveLineStart) == std::vector<std::string>{"Ctrl+A"});
+    CHECK(labels(km, C::MoveVisualLineStart) == std::vector<std::string>{"Home"});
     REQUIRE(km.bind(C::SaveAs, K(Key::F12)).kind == BindOutcome::bound);
     km.reset_all();
     CHECK(km.overrides().size() == 0);

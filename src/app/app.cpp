@@ -76,7 +76,7 @@ std::optional<Motion> motion_of(CommandId id, bool& extend) {
     const auto v = std::to_underlying(id);
     const auto first_move = std::to_underlying(CommandId::MoveLeft);
     const auto first_select = std::to_underlying(CommandId::SelectLeft);
-    constexpr int kMotions = 12;
+    constexpr int kMotions = 14;
     if (v >= first_move && v < first_move + kMotions) {
         extend = false;
         return static_cast<Motion>(v - first_move);
@@ -1102,7 +1102,17 @@ void App::run_command(CommandId id) {
     if (shown().view) shown().view->follow_cursor();
     const auto page = static_cast<std::uint64_t>(std::max(1, l.text.rows - 1));
     bool extend = false;
-    if (const auto m = motion_of(id, extend)) {
+    if (auto m = motion_of(id, extend)) {
+        // Home or End again within kDoublePress, the cursor where the first left it: the line's
+        // start or end instead of the row's.
+        const bool visual = *m == Motion::VisualLineStart || *m == Motion::VisualLineEnd;
+        const auto now = Clock::now();
+        if (visual) {
+            const bool again = last_visual_ && last_visual_->id == id && now - last_visual_->at <= kDoublePress &&
+                               last_visual_->cursor == shown().editor->cursor() && last_visual_->doc == shown().doc.get();
+            if (again) m = *m == Motion::VisualLineStart ? Motion::LineStart : Motion::LineEnd;
+        }
+        last_visual_.reset();
         if (const ReadingLayout* r = shown().view->reading_layout()) {
             // Laid out for reading: the cursor moves by what is shown.
             const std::uint64_t from = shown().editor->cursor();
@@ -1112,9 +1122,13 @@ void App::run_command(CommandId id) {
             return;
         }
         shown().editor->move(*m, extend, page);
+        // A first press is remembered for a second; a second (now a line motion) is not.
+        if (visual && (*m == Motion::VisualLineStart || *m == Motion::VisualLineEnd))
+            last_visual_ = LastVisual{id, now, shown().editor->cursor(), shown().doc.get()};
         after_command();
         return;
     }
+    last_visual_.reset();
     switch (id) {
         case CommandId::Open:
             open_file_dialog(FileDialogMode::open, [this](const fs::path& p) {
