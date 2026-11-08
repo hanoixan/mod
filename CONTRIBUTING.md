@@ -38,6 +38,10 @@ If a run fails after its tag was pushed, delete the tag (`git push origin :refs/
 
 `python3 tools/screenshot.py` runs the release build in a pseudo-terminal and draws `docs/images/screenshot.png` and `docs/images/undo-history.png` (it needs `pip install pyte pillow` and the DejaVu Sans Mono font). Run it again when the look changes.
 
+## Installing a release on your machines
+
+`tools/release_install/install_release_targets.sh VERSION TARGET...` installs a published release (`1.2.0`, or a candidate, `1.2.0-rc.1`) on each target in turn: `wsl` (this WSL instance), `windows` (the Windows host it runs on, through `powershell.exe`) and `ssh:<dest>` (a Linux or macOS machine, any destination ssh takes). By default each installs for its user, into `~/.local` or `%LOCALAPPDATA%\Programs\mod`, with no sudo; `--system` installs the Linux package with sudo instead, asking for each password, so it runs only from a terminal and refuses macOS and Windows targets. It runs `install_release.sh` (Linux, macOS; `--prefix DIR` for another folder) or `install_release.ps1` (Windows; `-Prefix DIR`) on each machine, and those run on their own too. Unlike `install.sh` and `install.ps1`, the one-liners for users, they never choose the version or the kind of install.
+
 ## Building the packages locally
 
 `tools/ci/package.sh` is what CI runs. On Ubuntu 22.04 or later it needs `g++-13`, `cmake` 3.25 or later, `ninja-build`, `rpm` and Docker; it leaves the packages and the tarball in `dist/`. `MOD_SKIP_PACKAGE_TESTS=1` skips the install checks.
