@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 7d0e146d, stand-in 7e43b608
+stamp: source a3e7daf1, stand-in 7e43b608
 ---
 # module: input_test
 

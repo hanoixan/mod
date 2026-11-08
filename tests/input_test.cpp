@@ -504,4 +504,7 @@ TEST_CASE("the kitty keyboard protocol's reports decode as the legacy keys do, S
     CHECK(one("\x1b[127;5u") == K(Key::Backspace, Ct));
     CHECK(one("\x1b[32;5u") == KeyEvent{Key::CtrlLetter, U' ', Ct});   // as NUL
     CHECK(one("\x1b[92;5u") == KeyEvent{Key::CtrlLetter, U'\\', Ct});  // as 0x1C
+    CHECK(one("\x1b[57414u") == K(Key::Enter));  // keypad Enter
+    CHECK(feed_all(d, "\x1b[57376u").empty());   // F13: no character, never typed
+    CHECK(feed_all(d, "\x1b[57428u").empty());   // a media key
 }

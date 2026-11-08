@@ -94,6 +94,9 @@ std::optional<KeyEvent> code_key(int code, std::uint8_t mods) {
         default: break;
     }
     if (code < 0x20 || (code >= 0x7F && code <= 0x9F)) return std::nullopt;
+    // The kitty protocol's codes for keys with no character, in the Private Use Area (F13 and
+    // up, the keypad, media keys): never typed. Keypad Enter is Enter.
+    if (code >= 57344 && code <= 63743) return code == 57414 ? std::optional(key(Key::Enter, mods)) : std::nullopt;
     if (mods & kCtrl) {
         if (code >= 'a' && code <= 'z') return key(Key::CtrlLetter, mods, static_cast<char32_t>(code));
         if (code >= 'A' && code <= 'Z') return key(Key::CtrlLetter, mods, static_cast<char32_t>(code - 'A' + 'a'));

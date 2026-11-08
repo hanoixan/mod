@@ -154,6 +154,8 @@ std::optional<CommandId> Keymap::lookup(const KeyEvent& key) const {
     // they do everywhere else.
     if (key.mods == kShift && (key.key == Key::Enter || key.key == Key::Backspace || key.key == Key::Delete))
         return owner(KeyEvent{key.key, key.ch, 0});
+    // Ctrl+Shift+letter likewise: elsewhere it arrives as Ctrl+letter.
+    if (key.key == Key::CtrlLetter && (key.mods & kShift)) return owner(KeyEvent{key.key, key.ch, static_cast<std::uint8_t>(key.mods & ~kShift)});
     return std::nullopt;
 }
 

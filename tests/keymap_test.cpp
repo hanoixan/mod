@@ -244,4 +244,6 @@ TEST_CASE("an unbound Shift+Enter, Shift+Backspace or Shift+Delete does what the
     REQUIRE(km.bind(C::Save, K(Key::Enter, kShift)).kind == BindOutcome::bound);
     CHECK(km.lookup(K(Key::Enter, kShift)) == C::Save);  // bound, it is its own
     CHECK_FALSE(km.lookup(K(Key::Up, kShift)) == km.lookup(K(Key::Up)));  // other keys keep Shift's meaning
+    // Ctrl+Shift+S (kitty's report) is Ctrl+S when unbound.
+    CHECK(km.lookup(KeyEvent{Key::CtrlLetter, U's', static_cast<std::uint8_t>(kCtrl | kShift)}) == C::Save);
 }

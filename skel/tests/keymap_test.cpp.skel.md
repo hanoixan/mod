@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 618e7a81, stand-in e11b0296
+stamp: source 469db8ae, stand-in e11b0296
 ---
 # module: keymap_test
 
