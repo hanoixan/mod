@@ -51,8 +51,25 @@ TreeKeyResult FolderTreeView::handle_key(const KeyEvent& key) {
     return {TreeKey::moved, {}};
 }
 
+TreeKeyResult FolderTreeView::click(int row, int col, bool double_click) {
+    message_.clear();
+    const Rect& a = drawn_area_;
+    if (tree_ == nullptr || row < a.row || row >= a.row + list_rows_ || col < a.col || col >= a.col + a.cols) return {};
+    const std::size_t index = top_ + static_cast<std::size_t>(row - a.row);
+    if (index >= tree_->rows().size()) return {};
+    tree_->select(index);
+    const TreeRow* r = tree_->selected_row();
+    if (r == nullptr) return {};
+    if (r->dir) {
+        tree_->toggle();
+        return {TreeKey::moved, {}};
+    }
+    return {double_click ? TreeKey::open : TreeKey::preview, r->path};
+}
+
 void FolderTreeView::render(Screen& screen, Rect area, bool focused) {
     if (tree_ == nullptr || area.rows <= 0 || area.cols <= 0) return;
+    drawn_area_ = area;
     const Attr plain = attr_for(Style::Default);
     const Attr selected = attr_for(focused ? Style::list_selected : Style::list_selected_unfocused);
     list_rows_ = std::max(1, area.rows - 1);

@@ -7,6 +7,8 @@ File > Open… and File > Save As… (and the first save of an untitled document
 - The **list**: folders first, then files, with their size and when they were last changed. The headers **Name**, **Size** and **Modified** sort the list; choose one again to reverse the order.
 - The **File** field, and the `[Open]` or `[Save]` and `[Cancel]` buttons.
 
+With the [mouse](editing.md#the-mouse) on, click an entry to select it and double-click it to open it (a folder, to go into it); click a button, a header or the filter to use it as Enter would; the wheel moves the selection.
+
 | Key | Action |
 |---|---|
 | Tab, Shift+Tab | Move between the parts of the dialog |

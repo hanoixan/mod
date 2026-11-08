@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 6ea0da02, stand-in c4f25e66
+stamp: source 590db860, stand-in 6fa362a7
 ---
 # module: editor
 
@@ -162,6 +162,27 @@ Cursor, selection and editing commands over a [Document](./document.hpp.skel.md#
 - **Returns:** nothing.
 - **State changes:** sets the anchor to `start` and the cursor to `end`.
 - **Access:** Searcher, to highlight a match.
+
+### function: place
+
+- **Inputs:** `pos`: a byte offset (clamped to the text, snapped back to a character start); `extend`: keep or start a selection from where the cursor was.
+- **Returns:** nothing.
+- **State changes:** the cursor goes to `pos`, as a motion with or without Shift would leave it; the sticky column is forgotten.
+- **Access:** App, for a mouse click (Shift+click with `extend`).
+
+### function: word_at
+
+- **Inputs:** `pos`: a byte offset.
+- **Returns:** `[start, end)` of the run of one character class around `pos` (a word, a run of spaces, a run of punctuation), the classes being those Ctrl+Left and Ctrl+Right stop at. At a line break, or past a line's last character, the run that ends there; empty on an empty line.
+- **State changes:** none.
+- **Access:** App, for a double click and its drag.
+
+### function: line_at
+
+- **Inputs:** `pos`: a byte offset.
+- **Returns:** `[start, end)` of the line holding `pos`, its line break included (the text's end for the last line).
+- **State changes:** none.
+- **Access:** App, for a triple click and its drag.
 
 ### function: undo
 

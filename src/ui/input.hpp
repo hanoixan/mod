@@ -65,13 +65,29 @@ struct PasteEvent {
     friend bool operator==(const PasteEvent&, const PasteEvent&) = default;
 };
 
-using InputEvent = std::variant<KeyEvent, PasteEvent>;
+// A mouse report (xterm SGR, mode 1006). `row` and `col` are 0-based screen cells; `mods`
+// uses the KeyEvent bits. A wheel notch is a press of wheel_up or wheel_down; a drag is a
+// motion with a button held.
+enum class MouseButton : std::uint8_t { left, middle, right, wheel_up, wheel_down, none };
+enum class MouseAction : std::uint8_t { press, release, drag };
+
+struct MouseEvent {
+    MouseButton button = MouseButton::left;
+    MouseAction action = MouseAction::press;
+    std::uint8_t mods = 0;
+    int row = 0;
+    int col = 0;
+
+    friend bool operator==(const MouseEvent&, const MouseEvent&) = default;
+};
+
+using InputEvent = std::variant<KeyEvent, PasteEvent, MouseEvent>;
 
 // The UTF-8 bytes of a code point (U+FFFD for one that cannot be encoded).
 std::string to_utf8(char32_t cp);
 
 // Decodes the terminal byte stream: xterm CSI and SS3 with modifiers, ESC-prefix Alt,
-// control characters, UTF-8 text and bracketed paste. Main thread.
+// control characters, UTF-8 text, bracketed paste and SGR mouse reports. Main thread.
 class InputDecoder {
 public:
     static constexpr std::chrono::milliseconds kEscTimeout{25};

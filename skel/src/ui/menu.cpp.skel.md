@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./menu.hpp.skel.md
-stamp: source 38fcd092, stand-in 810087f7
+stamp: source 4cd47bc4, stand-in 810087f7
 ---
 # module: menu (implementation)
 

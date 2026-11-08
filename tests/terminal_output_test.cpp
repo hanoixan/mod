@@ -58,6 +58,19 @@ TEST_CASE("xterm: the sequences of earlier versions, byte for byte") {
     CHECK(sgr(x, Attr{9, 12, 0}) == "\x1b[0;91;104m");
 }
 
+TEST_CASE("xterm with the mouse: its reports asked for on entering and turned off on leaving") {
+    const TerminalOutput& m = output_for(TerminalMode::xterm, true);
+    const TerminalOutput& x = output_for(TerminalMode::xterm);
+    CHECK(m.enter() == std::string(x.enter()) + "\x1b[?1000h\x1b[?1002h\x1b[?1006h");
+    CHECK(m.leave() == "\x1b[?1006l\x1b[?1002l\x1b[?1000l" + std::string(x.leave()));
+    CHECK(m.mouse(true) == "\x1b[?1000h\x1b[?1002h\x1b[?1006h");
+    CHECK(m.mouse(false) == "\x1b[?1006l\x1b[?1002l\x1b[?1000l");
+    CHECK(x.mouse(true) == m.mouse(true));
+    // A VT100 has no mouse, asked for or not.
+    CHECK(&output_for(TerminalMode::vt100, true) == &output_for(TerminalMode::vt100));
+    CHECK(output_for(TerminalMode::vt100).mouse(true).empty());
+}
+
 TEST_CASE("vt100: no color, no dim, italic or strike, and no private modes beyond autowrap") {
     const TerminalOutput& v = output_for(TerminalMode::vt100);
     CHECK(v.mode() == TerminalMode::vt100);

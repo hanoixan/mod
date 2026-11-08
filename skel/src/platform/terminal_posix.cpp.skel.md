@@ -1,11 +1,11 @@
 ---
 role: product
 unit: ./terminal.hpp.skel.md
-stamp: source 4a714780, stand-in 63e054f9
+stamp: source 894af8a3, stand-in 8bd9c5d3
 ---
 # module: terminal_posix
 
-The POSIX backend for [Terminal](./terminal.hpp.skel.md#class-terminal), using termios, `poll`, and a self-pipe for wake and SIGWINCH.
+The POSIX backend for [Terminal](./terminal.hpp.skel.md#class-terminal), using termios, `poll`, and a self-pipe for wake and SIGWINCH. The output given to `start_screen` (or later to `set_output`) is held in an atomic pointer, so the signal handlers and a continued suspended job write the sequences of the one in use now, the mouse's included.
 
 - **Owns:** the saved `struct termios`, the self-pipe file descriptors, and the SIGWINCH handler installation.
 - **Access:** internal. Constructed only by `make_terminal`.

@@ -89,6 +89,10 @@ public:
     // one less than the text columns, so the cursor at a row's end has a cell.
     int wrap_cols(int area_cols) const;
 
+    // The document offset under screen cell (`row`, `col`) as the last frame drew it: the
+    // nearest character boundary, the row's start for the gutter, the row's end past its text;
+    // nullopt outside the text area. A row past the end of the text gives the text's end.
+    std::optional<std::uint64_t> offset_at(int row, int col) const;
     std::uint64_t top() const noexcept { return top_; }
     std::uint64_t hscroll() const noexcept { return hscroll_; }
 
@@ -168,6 +172,20 @@ private:
     int rhscroll_ = 0;      // the first display column shown, panned for wide lines
     std::size_t reading_rows_ = 1;
     std::optional<int> reading_sticky_;
+    // What the last frame drew on each row of the text area, for offset_at.
+    struct DrawnRow {
+        std::uint64_t from = 0;     // the row's first byte (lines and wrapped rows)
+        std::uint64_t to = 0;       // just past its last byte, before any line break
+        bool line_end = true;       // `to` is the end of the line, not a wrap point
+        std::size_t reading_line = 0;  // the rendered line, while reading
+        bool past_end = false;      // below the text's last row
+    };
+    Rect drawn_area_{};
+    int drawn_text_col_ = 0;
+    std::uint64_t drawn_hscroll_ = 0;
+    bool drawn_reading_ = false;
+    std::vector<DrawnRow> drawn_rows_;
+    void begin_drawn(Rect area, int text_col, std::uint64_t hscroll, bool reading);
 };
 
 }  // namespace mod

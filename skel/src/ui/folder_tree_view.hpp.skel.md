@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 6221a102, stand-in d3f78ecf
+stamp: source a9bcc7c7, stand-in ceb9f47f
 ---
 # module: folder_tree_view
 
@@ -36,6 +36,13 @@ What a key asks App to do: `kind` of `enum class TreeKey { none, moved, preview,
 - **Returns:** Shift+Right: `back`; Esc: `leave`; Up, Down, PageUp, PageDown (a page is the rows shown, less the panel's own line), Home, End: the selection moves (`moved`); Right and Left: the tree's `expand` and `collapse`; Enter: on a file `open` with its path, on a folder the tree's `toggle`; Space on a file: `preview` with its path; anything else (Space on a folder, other modified keys) `none`. Any key clears App's message.
 - **State changes:** the tree's selection and open folders.
 - **Access:** App.
+
+### function: click
+
+- **Inputs:** `row`, `col`: a screen cell of a mouse press; `double_click`.
+- **Returns:** a `TreeKeyResult`: for a file row, `preview` (`open` on a double click) with its path; for a folder row, `moved` after the folder is opened or closed; `none` for a cell off the rows the last `render` drew.
+- **State changes:** the row under the cell is selected; a folder row toggles; the message is cleared.
+- **Access:** App, for the mouse.
 
 ### function: render
 

@@ -33,6 +33,9 @@ public:
     // A message for the panel's own line until the next key (a file that cannot be opened).
     void set_message(std::string message) { message_ = std::move(message); }
     TreeKeyResult handle_key(const KeyEvent& key);
+    // A mouse press at screen (`row`, `col`), as the last render drew the tree: the row under it
+    // is selected; a folder opens or closes, a file is previewed, and opened on a double click.
+    TreeKeyResult click(int row, int col, bool double_click);
     // Draws the tree in `area`, its last row being the panel's own line; the selection is
     // highlighted while `focused`.
     void render(Screen& screen, Rect area, bool focused);
@@ -43,6 +46,7 @@ private:
     int hscroll_ = 0;         // columns panned
     int list_rows_ = 1;       // the rows shown at the last render, a page
     std::string message_;     // App's, shown before the tree's own
+    Rect drawn_area_{};       // where the last render drew the rows
 };
 
 }  // namespace mod

@@ -24,7 +24,7 @@ struct FileDialogResult {
 // The focus zones, in Tab order.
 enum class FocusZone { up, home, folder, hidden, filter, sort_name, sort_size, sort_modified, list, filename, submit, cancel };
 
-// edit.py's Open and Save As dialog. Keyboard only. Main thread.
+// edit.py's Open and Save As dialog: the keyboard, and the mouse through click and scroll. Main thread.
 class FileDialog {
 public:
     // `clock` returns seconds; it is the test seam for the type-to-search timeout.
@@ -35,6 +35,12 @@ public:
     FileDialogResult handle_key(const KeyEvent& key, int list_rows);
     void handle_paste(std::string_view bytes);
     void render(Screen& screen, Rect area);
+    // A mouse press at screen (`row`, `col`), as the last render drew the dialog: an entry is
+    // selected, and opened (as Enter) on a double click; a button or header acts as Enter on it;
+    // the File field takes the focus.
+    FileDialogResult click(int row, int col, bool double_click, int list_rows);
+    // The mouse wheel: the selection `delta` entries down (up when negative).
+    void wheel(int delta, int list_rows);
 
     static int list_rows_for(int body_rows) { return body_rows - 8 < 1 ? 1 : body_rows - 8; }
 
@@ -63,6 +69,16 @@ private:
     FileDialogResult submit(const std::string& name);
     FileDialogResult activate(FocusZone zone);
     void leave_edit_modes();
+    void handle_list_step(bool up, int list_rows);
+    struct DrawnZone {
+        int row = 0;
+        int from = 0;  // [from, to) columns
+        int to = 0;
+        FocusZone zone = FocusZone::list;
+    };
+    std::vector<DrawnZone> drawn_zones_;
+    int drawn_list_row_ = 0;
+    int drawn_list_rows_ = 0;
 
     FileDialogMode mode_;
     std::function<double()> clock_;

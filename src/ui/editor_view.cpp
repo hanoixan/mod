@@ -1,6 +1,7 @@
 #include "ui/editor_view.hpp"
 
 #include <algorithm>
+#include <climits>
 #include <format>
 #include <span>
 #include <tuple>
@@ -527,16 +528,19 @@ void EditorView::render(Screen& screen, Rect area, const std::optional<Match>& s
 
     std::uint64_t line = top_;
     bool past_end = false;
+    begin_drawn(area, text_col, hscroll_, false);
     for (int r = 0; r < area.rows; ++r) {
         const int row = area.row + r;
         screen.fill(row, area.col, right, plain);
         if (past_end) {
             draw_past_end(screen, row, area.col, gutter);
+            drawn_rows_.push_back(DrawnRow{size, size, true, 0, true});
             continue;
         }
         const std::uint64_t lf = line < size ? t.find_lf_forward(line, size - line) : npos;
         std::uint64_t end = lf == npos ? size : lf;
         if (lf != npos && lf > line && t.byte_at(lf - 1) == std::byte{'\r'}) end = lf - 1;  // CR before LF is hidden
+        drawn_rows_.push_back(DrawnRow{line, end, true, 0, false});
 
         if (gutter > 0) {
             const bool is_current = line == cursor_line_start;
@@ -596,14 +600,17 @@ void EditorView::render_reading(Screen& screen, Rect area, const std::optional<M
     const std::uint32_t cursor_source_line = at.line < lines.size() ? lines[at.line].source_line : 0;
     reading_rows_ = static_cast<std::size_t>(std::max(1, area.rows));
     rtop_ = std::min(rtop_, lines.empty() ? 0 : lines.size() - 1);
+    begin_drawn(area, text_col, static_cast<std::uint64_t>(rhscroll_), true);
     for (int n = 0; n < area.rows; ++n) {
         const int row = area.row + n;
         screen.fill(row, area.col, right, plain);
         const std::size_t i = rtop_ + static_cast<std::size_t>(n);
         if (i >= lines.size()) {
             draw_past_end(screen, row, area.col, gutter);
+            drawn_rows_.push_back(DrawnRow{size, size, true, 0, true});
             continue;
         }
+        drawn_rows_.push_back(DrawnRow{0, 0, true, i, false});
         const RenderedLine& line = lines[i];
         // A source line's number on the first rendered line that comes from it.
         if (gutter > 0 && (i == 0 || lines[i - 1].source_line != line.source_line)) {
@@ -684,15 +691,18 @@ void EditorView::render_wrapped(Screen& screen, Rect area, const std::optional<M
 
     std::uint64_t r = top_;
     bool past_end = false;
+    begin_drawn(area, text_col, 0, false);
     for (int n = 0; n < area.rows; ++n) {
         const int row = area.row + n;
         screen.fill(row, area.col, right, plain);
         if (past_end) {
             draw_past_end(screen, row, area.col, gutter);
+            drawn_rows_.push_back(DrawnRow{size, size, true, 0, true});
             continue;
         }
         const std::uint64_t end = wrap.row_end(r);
         const bool last_row = end >= line_end;
+        drawn_rows_.push_back(DrawnRow{r, std::min(end, line_end), last_row, 0, false});
 
         // Only a line's first row carries its number.
         if (gutter > 0 && r == line) {
@@ -802,6 +812,59 @@ void EditorView::after_change(const ChangeEvent& ev) {
     }
     // With wrap on, `top` is a row inside a line; the next scroll or frame snaps it to a row.
     if (!wrap_) top_ = line_start_of(top_);
+}
+
+void EditorView::begin_drawn(Rect area, int text_col, std::uint64_t hscroll, bool reading) {
+    drawn_area_ = area;
+    drawn_text_col_ = text_col;
+    drawn_hscroll_ = hscroll;
+    drawn_reading_ = reading;
+    drawn_rows_.clear();
+}
+
+std::optional<std::uint64_t> EditorView::offset_at(int row, int col) const {
+    const Rect& a = drawn_area_;
+    if (row < a.row || row >= a.row + a.rows || col < a.col || col >= a.col + a.cols) return std::nullopt;
+    const auto n = static_cast<std::size_t>(row - a.row);
+    if (n >= drawn_rows_.size()) return std::nullopt;
+    const DrawnRow& d = drawn_rows_[n];
+    const PieceTree& t = doc_.text();
+    if (d.past_end) return t.size();
+    // The display column clicked within the row; the gutter is column 0.
+    const std::uint64_t target = static_cast<std::uint64_t>(std::max(0, col - drawn_text_col_)) + drawn_hscroll_;
+    if (drawn_reading_) {
+        if (!layout_) return std::nullopt;
+        return layout_->offset_at(d.reading_line, static_cast<int>(std::min<std::uint64_t>(target, INT_MAX)));
+    }
+    std::uint64_t from = d.from;
+    std::uint64_t c = 0;
+    if (drawn_hscroll_ > 0) std::tie(from, c) = column_start(d.from, std::min(target, drawn_hscroll_));
+    std::uint64_t last = from;  // the start of the last character seen, for a wrapped row's end
+    std::string buf;
+    std::size_t i = 0;
+    std::uint64_t base = from;
+    while (base + i < d.to) {
+        if (i + 4 > buf.size() && base + buf.size() < d.to) {
+            buf.erase(0, i);
+            base += i;
+            i = 0;
+            const std::uint64_t have = base + buf.size();
+            buf += t.read(have, std::min(kReadSlice, d.to - have));
+        }
+        if (i >= buf.size()) break;
+        const Decoded dec = decode(std::as_bytes(std::span(buf.data() + i, buf.size() - i)));
+        const std::size_t len = std::max<std::size_t>(1, dec.len);
+        const auto w = static_cast<std::uint64_t>(std::max(0, display_width(dec, c, tab_width_)));
+        const std::uint64_t off = base + i;
+        // The nearer edge of the character under the column.
+        if (w > 0 && target < c + w) return (target - c) * 2 + 1 > w ? std::min(off + len, d.to) : off;
+        last = off;
+        c += w;
+        i += len;
+    }
+    // Past the row's text: its end, or for a row that wraps on, its last character's start
+    // (the end would be drawn at the start of the next row).
+    return d.line_end ? d.to : last;
 }
 
 void EditorView::reloaded() {

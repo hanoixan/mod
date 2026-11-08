@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 3f3fa674, stand-in 4955111b
+stamp: source ea62c087, stand-in fde95baf
 ---
 # module: reading_layout
 
@@ -48,6 +48,13 @@ A **position** is a place the cursor can be shown: the start of each code point 
 - **Returns:** the source offset of the position the motion reaches. Left and Right (and the word motions) go to the previous or next position in source order; Up and Down to the nearest position at or before the aimed column on the previous or next line that has positions; PageUp and PageDown `page_lines` lines at once, then on to the nearest line with positions; LineStart and LineEnd to the first and last position of the cursor's line; DocStart and DocEnd to the first and last position.
 - **State changes:** `sticky` is set to the column a vertical motion aimed for and cleared by any other motion.
 - **Access:** App, for the motion commands while the view draws this way.
+
+### function: offset_at
+
+- **Inputs:** `line`: a rendered line; `col`: a display column on it.
+- **Returns:** `std::optional<uint64_t>`: the source position shown at `col`, the nearest at or before it (the line's first when `col` is before it). A line with no positions (a blank line, a rule) gives the last position of the nearest line above with any, else the first of the nearest below; nullopt for a line past the page or an empty page.
+- **State changes:** none.
+- **Access:** EditorView, for a mouse click on text laid out for reading.
 
 ### function: visible_text
 

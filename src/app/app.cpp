@@ -774,12 +774,26 @@ void App::apply_to_session(const SettingSpec& spec) {
             v.options->word_wrap = settings_.flag(spec.key);
             apply_options(v);
         });
+    } else if (spec.key == "mouse") {
+        apply_mouse();
     } else if (spec.key == "cursor_style") {
         screen_.set_cursor_style(settings_.cursor_style());
     } else if (spec.key == "darkness") {
         active_theme().set_darkness(settings_.darkness());
         screen_.invalidate();
     }
+}
+
+// The mouse setting changed: the terminal is told at once, and remembers it for a suspend.
+void App::apply_mouse() {
+    const bool on = settings_.flag("mouse") && terminal_mode_ != TerminalMode::vt100;
+    if (on == mouse_on_) return;
+    mouse_on_ = on;
+    mouse_ = {};
+    const TerminalOutput& output = output_for(terminal_mode_, on);
+    const std::string_view seq = output.mouse(on);
+    (void)terminal_->write(std::as_bytes(std::span(seq.data(), seq.size())));
+    terminal_->set_output(output);
 }
 
 void App::edit_setting_prompt(const SettingSpec& spec) {
@@ -887,7 +901,10 @@ void App::handle_file_dialog_key(const KeyEvent& key) {
     if (!file_dialog_) return;
     const Layout l = layout();
     // The dialog covers the text area, so its own rows set the page size.
-    const FileDialogResult r = file_dialog_->handle_key(key, FileDialog::list_rows_for(l.dialog ? l.dialog->rows : 0));
+    handle_file_dialog_result(file_dialog_->handle_key(key, FileDialog::list_rows_for(l.dialog ? l.dialog->rows : 0)));
+}
+
+void App::handle_file_dialog_result(const FileDialogResult& r) {
     if (r.kind == FileDialogResult::Kind::canceled) {
         file_dialog_.reset();
         after_command();
@@ -1220,6 +1237,10 @@ void App::dispatch(const InputEvent& event) {
         dispatch_key(*key);
         return;
     }
+    if (const auto* mouse = std::get_if<MouseEvent>(&event)) {
+        dispatch_mouse(*mouse);
+        return;
+    }
     const auto& paste = std::get<PasteEvent>(event);
     if (menu_.is_visible() || confirm_.is_open()) return;  // dropped
     if (file_dialog_) {
@@ -1245,6 +1266,151 @@ void App::dispatch(const InputEvent& event) {
     shown().view->follow_cursor();
     shown().editor->paste_text(paste.bytes, paste.more);
     after_command();
+}
+
+// The mouse goes to what is drawn under it: the menu while it is shown, the file dialog, the
+// folder tree, and the text of each split. The bars (a question, a prompt) and the full-screen
+// panels and history take only the keys.
+void App::dispatch_mouse(const MouseEvent& m) {
+    if (!mouse_on_) return;
+    const Layout l = layout();
+    const bool left = m.button == MouseButton::left;
+    const bool wheel = m.button == MouseButton::wheel_up || m.button == MouseButton::wheel_down;
+    const int notch = m.button == MouseButton::wheel_up ? -kWheelRows : kWheelRows;
+    if (m.action == MouseAction::release || (m.action == MouseAction::drag && left)) {
+        if (mouse_.dragging) {
+            if (m.action == MouseAction::release) {
+                mouse_.dragging = false;
+            } else if (mouse_.view == ws_.focus()) {
+                mouse_in_text(m, mouse_.view, l.text);
+            }
+        }
+        return;
+    }
+    if (m.action != MouseAction::press) return;
+    // Click counting: a press near the last one, soon after it, is its double or triple.
+    const auto now = Clock::now();
+    if (left) {
+        const bool again = now - mouse_.last_press <= kDoublePress && m.row == mouse_.last_row && std::abs(m.col - mouse_.last_col) <= 1;
+        mouse_.clicks = again ? mouse_.clicks % 3 + 1 : 1;
+        mouse_.last_press = now;
+        mouse_.last_row = m.row;
+        mouse_.last_col = m.col;
+    }
+    auto inside = [&](const Rect& r) { return m.row >= r.row && m.row < r.row + r.rows && m.col >= r.col && m.col < r.col + r.cols; };
+    if (menu_.is_visible()) {
+        if (!left) return;
+        if (const auto cmd = menu_.click(m.row, m.col)) run_command(*cmd);
+        return;
+    }
+    if (confirm_.is_open() || prompt_.is_open() || history_view_.is_open() || panel_open() || help_viewer_.is_open()) return;
+    if (file_dialog_) {
+        if (!l.dialog || !inside(*l.dialog)) return;
+        const int list_rows = FileDialog::list_rows_for(l.dialog->rows);
+        if (wheel) {
+            file_dialog_->wheel(notch, list_rows);
+        } else if (left) {
+            handle_file_dialog_result(file_dialog_->click(m.row, m.col, mouse_.clicks >= 2, list_rows));
+        }
+        return;
+    }
+    if (l.tree && inside(*l.tree)) {
+        if (wheel) {
+            for (int i = 0; i < std::abs(notch); ++i) (void)tree_view_.handle_key(KeyEvent{notch < 0 ? Key::Up : Key::Down, 0, 0});
+            return;
+        }
+        if (!left) return;
+        tree_focus_ = true;
+        handle_tree_result(tree_view_.click(m.row, m.col, mouse_.clicks >= 2));
+        return;
+    }
+    if (preview_) {
+        if (wheel && inside(l.text)) {
+            for (int i = 0; i < std::abs(notch); ++i) preview_->view->scroll_rows(notch < 0 ? -1 : 1, l.text.rows, l.text.cols);
+        }
+        return;
+    }
+    // The text of a split: the focused one, or another that a click focuses.
+    std::optional<std::size_t> index;
+    Rect area{};
+    if (l.text.rows > 0 && inside(l.text)) {
+        index = ws_.focus();
+        area = l.text;
+    } else {
+        for (const Layout::Other& o : l.others) {
+            if (o.text.rows > 0 && inside(o.text)) {
+                index = o.index;
+                area = o.text;
+            }
+        }
+    }
+    if (!index) return;
+    if (wheel) {
+        DocumentSlot& s = ws_.at(*index).slot;
+        if (!s.view) return;
+        if (*index == ws_.focus()) sync_wrap();
+        for (int i = 0; i < std::abs(notch); ++i) s.view->scroll_rows(notch < 0 ? -1 : 1, area.rows, area.cols);
+        return;
+    }
+    if (!left) return;
+    if (tree_focus_) tree_focus_ = false;  // the keys come back to the views
+    if (*index != ws_.focus()) {
+        focus_split(*index);
+        // The focused split's rows may differ from what it had as another split.
+        const Layout after = layout();
+        area = after.text;
+        if (!inside(area)) return;
+    }
+    mouse_.dragging = true;
+    mouse_.view = ws_.focus();
+    mouse_in_text(m, mouse_.view, area);
+}
+
+void App::mouse_in_text(const MouseEvent& m, std::size_t index, Rect area) {
+    DocumentSlot& s = ws_.at(index).slot;
+    if (!s.view || !s.editor || area.rows <= 0) return;
+    int row = m.row;
+    // A drag past the top or bottom scrolls a row that way.
+    if (m.action == MouseAction::drag) {
+        if (row < area.row) {
+            s.view->scroll_rows(-1, area.rows, area.cols);
+            row = area.row;
+        } else if (row >= area.row + area.rows) {
+            s.view->scroll_rows(1, area.rows, area.cols);
+            row = area.row + area.rows - 1;
+        }
+        // Drawn again so the rows that offset_at reads are the scrolled ones.
+        render();
+    }
+    const int col = std::clamp(m.col, area.col, area.col + area.cols - 1);
+    const auto pos = s.view->offset_at(row, col);
+    if (!pos) return;
+    Editor& e = *s.editor;
+    if (m.action == MouseAction::press) {
+        if (mouse_.clicks == 2 || mouse_.clicks == 3) {
+            const auto [a, b] = mouse_.clicks == 2 ? e.word_at(*pos) : e.line_at(*pos);
+            mouse_.anchor_start = a;
+            mouse_.anchor_end = b;
+            e.select_range(a, b);
+        } else {
+            e.place(*pos, (m.mods & kShift) != 0);
+            mouse_.anchor_start = mouse_.anchor_end = e.anchor().value_or(e.cursor());
+        }
+    } else if (mouse_.clicks >= 2) {
+        // Dragging after a double or triple click selects whole words or lines.
+        const auto [a, b] = mouse_.clicks == 2 ? e.word_at(*pos) : e.line_at(*pos);
+        if (*pos < mouse_.anchor_start) {
+            e.select_range(mouse_.anchor_end, a);
+        } else {
+            e.select_range(mouse_.anchor_start, std::max(b, mouse_.anchor_end));
+        }
+    } else {
+        e.select_range(mouse_.anchor_start, *pos);
+    }
+    s.view->follow_cursor();
+    if (index == ws_.focus()) sync_wrap();
+    // The view moves only as far as needed for the cursor, never by the keys' margin.
+    s.view->scroll_to(e.cursor(), area.rows, area.cols, 0, false);
 }
 
 void App::dispatch_key(const KeyEvent& key) {
@@ -1902,6 +2068,10 @@ void App::handle_tree_key(const KeyEvent& key) {
             return;
         }
     }
+    handle_tree_result(r);
+}
+
+void App::handle_tree_result(const TreeKeyResult& r) {
     switch (r.kind) {
         case TreeKey::open:
             if (auto s = open_new_document(r.path); !s) {
@@ -2111,7 +2281,8 @@ int App::run() {
     }
     std::string typed;
     terminal_mode_ = resolve_terminal_mode(typed);
-    const TerminalOutput& output = output_for(terminal_mode_);
+    const TerminalOutput& output = output_for(terminal_mode_, settings_.flag("mouse"));
+    mouse_on_ = settings_.flag("mouse") && terminal_mode_ != TerminalMode::vt100;
     terminal_->start_screen(output);
     screen_.set_output(output);
     active_theme().set_vt100(terminal_mode_ == TerminalMode::vt100);

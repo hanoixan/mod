@@ -12,12 +12,23 @@
 namespace mod {
 namespace {
 
+// Mouse reports: buttons (1000), drags (1002), in SGR form (1006).
+constexpr std::string_view kMouseOn = "\x1b[?1000h\x1b[?1002h\x1b[?1006h";
+constexpr std::string_view kMouseOff = "\x1b[?1006l\x1b[?1002l\x1b[?1000l";
+
 class XtermOutput final : public TerminalOutput {
 public:
+    explicit constexpr XtermOutput(bool mouse) : mouse_(mouse) {}
     TerminalMode mode() const noexcept override { return TerminalMode::xterm; }
     // The terminal's title is pushed on its stack first and popped last (CSI 22/23 t).
-    std::string_view enter() const noexcept override { return "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l"; }
-    std::string_view leave() const noexcept override { return "\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t"; }
+    std::string_view enter() const noexcept override {
+        return mouse_ ? "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l\x1b[?1000h\x1b[?1002h\x1b[?1006h" : "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l";
+    }
+    std::string_view leave() const noexcept override {
+        return mouse_ ? "\x1b[?1006l\x1b[?1002l\x1b[?1000l\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t"
+                      : "\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t";
+    }
+    std::string_view mouse(bool on) const noexcept override { return on ? kMouseOn : kMouseOff; }
     std::string_view begin_frame() const noexcept override { return "\x1b[?2026h\x1b[?25l\x1b[?7l"; }
     std::string_view end_frame() const noexcept override { return "\x1b[0m\x1b[?7h"; }
     std::string_view end_sync() const noexcept override { return "\x1b[?2026l"; }
@@ -60,6 +71,9 @@ public:
         }
         out += '\a';
     }
+
+private:
+    bool mouse_;
 };
 
 // Strict VT100: cursor positioning, erase, autowrap and SGR 0/1/4/7 only.
@@ -68,6 +82,7 @@ public:
     TerminalMode mode() const noexcept override { return TerminalMode::vt100; }
     std::string_view enter() const noexcept override { return {}; }
     std::string_view leave() const noexcept override { return "\x1b(B\x1b[0m\x1b[2J\x1b[H"; }
+    std::string_view mouse(bool) const noexcept override { return {}; }
     std::string_view begin_frame() const noexcept override { return "\x1b[?7l"; }
     std::string_view end_frame() const noexcept override { return "\x1b(B\x1b[0m\x1b[?7h"; }
     std::string_view end_sync() const noexcept override { return {}; }
@@ -122,11 +137,12 @@ void TerminalOutput::append_cell(std::string& out, std::string_view utf8, bool& 
 
 void TerminalOutput::append_move(std::string& out, int row, int col) const { out += std::format("\x1b[{};{}H", row + 1, col + 1); }
 
-const TerminalOutput& output_for(TerminalMode mode) {
-    static const XtermOutput xterm;
+const TerminalOutput& output_for(TerminalMode mode, bool mouse) {
+    static const XtermOutput xterm(false);
+    static const XtermOutput xterm_mouse(true);
     static const Vt100Output vt100;
     if (mode == TerminalMode::vt100) return vt100;
-    return xterm;
+    return mouse ? xterm_mouse : xterm;
 }
 
 std::optional<TerminalMode> mode_from_environment(const std::function<const char*(const char*)>& env) {

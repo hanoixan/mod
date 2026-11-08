@@ -455,3 +455,35 @@ TEST_CASE("a paste handed on in pieces marks every piece but the last, which may
     REQUIRE(one.size() == 1);
     CHECK(std::get<PasteEvent>(one[0]) == PasteEvent{"short", false});
 }
+
+TEST_CASE("SGR mouse reports decode to mouse events, 0-based, with their modifiers") {
+    InputDecoder d;
+    auto one = [&](std::string_view seq) {
+        const auto ev = feed_all(d, seq);
+        REQUIRE(ev.size() == 1);
+        return std::get<MouseEvent>(ev[0]);
+    };
+    CHECK(one("\x1b[<0;5;3M") == MouseEvent{MouseButton::left, MouseAction::press, 0, 2, 4});
+    CHECK(one("\x1b[<0;5;3m") == MouseEvent{MouseButton::left, MouseAction::release, 0, 2, 4});
+    CHECK(one("\x1b[<32;9;3M") == MouseEvent{MouseButton::left, MouseAction::drag, 0, 2, 8});
+    CHECK(one("\x1b[<4;1;1M") == MouseEvent{MouseButton::left, MouseAction::press, kShift, 0, 0});
+    CHECK(one("\x1b[<18;1;1M") == MouseEvent{MouseButton::right, MouseAction::press, kCtrl, 0, 0});
+    CHECK(one("\x1b[<64;10;20M") == MouseEvent{MouseButton::wheel_up, MouseAction::press, 0, 19, 9});
+    CHECK(one("\x1b[<65;10;20M") == MouseEvent{MouseButton::wheel_down, MouseAction::press, 0, 19, 9});
+    // Plain motion, horizontal wheel and a report without a position are dropped; keys go on.
+    CHECK(feed_all(d, "\x1b[<35;1;1M").empty());
+    CHECK(feed_all(d, "\x1b[<66;1;1M").empty());
+    CHECK(feed_all(d, "\x1b[<0;0;0M").empty());
+    const auto ev = feed_all(d, "\x1b[<0;2;2M" "a");
+    REQUIRE(ev.size() == 2);
+    CHECK(std::holds_alternative<MouseEvent>(ev[0]));
+    CHECK(std::get<KeyEvent>(ev[1]) == K(Key::Char, 0, U'a'));
+}
+
+TEST_CASE("a mouse report split across reads is decoded once it is whole") {
+    InputDecoder d;
+    CHECK(feed_all(d, "\x1b[<0;1").empty());
+    const auto ev = feed_all(d, "2;7M");
+    REQUIRE(ev.size() == 1);
+    CHECK(std::get<MouseEvent>(ev[0]) == MouseEvent{MouseButton::left, MouseAction::press, 0, 6, 11});
+}

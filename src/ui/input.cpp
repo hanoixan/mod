@@ -119,6 +119,32 @@ std::vector<int> params_of(std::string_view s) {
     return out;
 }
 
+// An SGR mouse report's button code: the button in bits 0-1 (3: none), Shift 4, Meta 8,
+// Ctrl 16, motion 32, wheel 64. Horizontal wheel notches (66, 67) are dropped.
+std::optional<MouseEvent> mouse_event(int code, int col, int row, bool release) {
+    MouseEvent e;
+    e.row = row;
+    e.col = col;
+    if (code & 4) e.mods |= kShift;
+    if (code & 8) e.mods |= kAlt;
+    if (code & 16) e.mods |= kCtrl;
+    const int button = code & 3;
+    if (code & 64) {
+        if (button > 1 || release) return std::nullopt;
+        e.button = button == 0 ? MouseButton::wheel_up : MouseButton::wheel_down;
+        e.action = MouseAction::press;
+        return e;
+    }
+    e.button = button == 0 ? MouseButton::left : button == 1 ? MouseButton::middle : button == 2 ? MouseButton::right : MouseButton::none;
+    if (code & 32) {
+        if (e.button == MouseButton::none) return std::nullopt;  // plain motion (mode 1003) is not asked for
+        e.action = MouseAction::drag;
+    } else {
+        e.action = release ? MouseAction::release : MouseAction::press;
+    }
+    return e;
+}
+
 }  // namespace
 
 std::string to_utf8(char32_t cp) {
@@ -331,6 +357,15 @@ InputDecoder::Parse InputDecoder::parse_csi(std::vector<InputEvent>& out) {
     const std::uint8_t mods = p.size() >= 2 ? mods_from_param(p[1]) : 0;
     std::optional<KeyEvent> ev;
     bool paste = false;
+    if (body.starts_with('<') && (final_byte == 'M' || final_byte == 'm')) {
+        // SGR mouse: ESC [ < button ; col ; row M (press or motion) or m (release).
+        const std::vector<int> m = params_of(body.substr(1));
+        buf_.erase(0, i + 1);
+        if (m.size() >= 3 && m[1] >= 1 && m[2] >= 1) {
+            if (const auto e = mouse_event(m[0], m[1] - 1, m[2] - 1, final_byte == 'm')) out.emplace_back(*e);
+        }
+        return Parse::done;
+    }
     if (!private_marker) {
         if (final_byte == '$' || final_byte == '^' || final_byte == '@') {
             // rxvt: `$` Shift, `^` Ctrl, `@` Ctrl+Shift on the `~` keys.

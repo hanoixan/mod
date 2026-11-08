@@ -48,6 +48,14 @@ public:
     // `more` says another piece of the same paste follows; the pieces are one undo step.
     void paste_text(std::string_view bytes, bool more = false);
     void select_range(std::uint64_t start, std::uint64_t end);
+    // A mouse click or drag: the cursor to `pos` (snapped to a character start), extending the
+    // selection from where it was with `extend`.
+    void place(std::uint64_t pos, bool extend);
+    // The run of one character class (a word, a run of spaces, punctuation) around `pos`, as
+    // [start, end); empty at a line break. For a double click.
+    std::pair<std::uint64_t, std::uint64_t> word_at(std::uint64_t pos) const;
+    // The line around `pos` with its line break, as [start, end). For a triple click.
+    std::pair<std::uint64_t, std::uint64_t> line_at(std::uint64_t pos) const;
     Status undo();
     Status redo();
 

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./folder_tree_view.hpp.skel.md
-stamp: source 252a0c27, stand-in 5881be49
+stamp: source 0c5cb028, stand-in 5881be49
 ---
 # module: folder_tree_view (implementation)
 

@@ -623,3 +623,46 @@ TEST_CASE("with word wrap, scroll_rows moves one wrapped row") {
     CHECK(longline.find(f.row(0)) != std::string::npos);  // still the long line: its second row
     CHECK(f.ed->cursor() == 0);
 }
+
+TEST_CASE("offset_at maps a cell back to the text: lines, wrapped rows, tabs and the reading layout") {
+    SUBCASE("lines, scrolled sideways too") {
+        Fixture f("hit-lines.txt", "abc\n\tx\nlong line here\n", 5, 10);
+        f.draw();
+        CHECK(f.view->offset_at(0, 1) == 1);
+        CHECK(f.view->offset_at(0, 9) == 3);   // past the line's end: its end
+        CHECK(f.view->offset_at(1, 1) == 4);   // inside the tab's cells: the nearer edge, its start
+        CHECK(f.view->offset_at(1, 3) == 5);   // ... its end
+        CHECK(f.view->offset_at(1, 4) == 5);   // the x
+        CHECK(f.view->offset_at(4, 2) == f.doc->text().size());  // below the text
+        CHECK_FALSE(f.view->offset_at(5, 0));  // outside the area
+        f.at(21);  // far right along "long line here": the view pans
+        f.draw();
+        REQUIRE(f.view->hscroll() > 0);
+        CHECK(f.view->offset_at(2, 0) == 7 + f.view->hscroll());
+    }
+    SUBCASE("wrapped rows: past a row that wraps on, its last character") {
+        Fixture f("hit-wrap.txt", "one two three four\nend\n", 6, 10);
+        f.view->set_word_wrap(true);
+        f.draw();
+        // Rows of 9 columns: "one two " / "three " / "four".
+        CHECK(f.view->offset_at(0, 0) == 0);
+        CHECK(f.view->offset_at(1, 0) == 8);
+        const auto past = f.view->offset_at(1, 9);
+        REQUIRE(past);
+        CHECK(*past < 14);  // still on the row "three ", not the next row's start
+        CHECK(f.view->offset_at(2, 9) == 18);  // the line's last row: its end
+    }
+    SUBCASE("the reading layout: rendered text maps to its source") {
+        Fixture f("hit-read.md", "# Title\n\nSome *styled* text.\n", 6, 40);
+        f.view->set_reading(true);
+        f.draw();
+        REQUIRE(f.view->reading_layout());
+        // "Some styled text." is drawn without the asterisks; its 's' of "styled" is source offset 15.
+        int row = -1;
+        for (int r = 0; r < 6; ++r)
+            if (f.row(r).find("Some styled") != std::string::npos) row = r;
+        REQUIRE(row >= 0);
+        const int col = static_cast<int>(f.row(row).find("styled"));
+        CHECK(f.view->offset_at(row, col) == 15);
+    }
+}
