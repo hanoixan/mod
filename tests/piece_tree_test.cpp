@@ -446,5 +446,17 @@ TEST_CASE("a file read in holds its bytes after the file is closed, rewritten or
     REQUIRE(e);
     CHECK((*e)->size() == 0);
     CHECK_FALSE(MappedFile::open(p.parent_path(), FileLoad::read_in));
+    // A large one, whose buffer the allocator maps on its own: freed, never unmapped as a mapping.
+    {
+        std::ofstream out(p, std::ios::binary | std::ios::trunc);
+        out << std::string(std::size_t{4} << 20, 'z');
+    }
+    {
+        auto big = MappedFile::open(p, FileLoad::read_in);
+        REQUIRE(big);
+        CHECK((*big)->size() == (std::uint64_t{4} << 20));
+    }
+    std::vector<std::string> after(64, std::string(std::size_t{1} << 16, 'q'));  // the heap still works
+    CHECK(after.back().size() == (std::size_t{1} << 16));
     fs::remove(p);
 }

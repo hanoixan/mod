@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 90b4b152, stand-in b9f20105
+stamp: source eb10750f, stand-in b9f20105
 ---
 # module: piece_tree_test
 
