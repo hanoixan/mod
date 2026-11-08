@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source 79ed2cc0, stand-in dbd3e50f
+stamp: source cae2ecf7, stand-in 3b45072f
 ---
 # resource: tests/CMakeLists.txt
 
@@ -55,6 +55,7 @@ Defines one test executable per `*_test.cpp`, linked against an internal `mod_co
 - **Depends on:** [file_dialog_test](./file_dialog_test.cpp.skel.md)
 - **Depends on:** [split_layout_test](./split_layout_test.cpp.skel.md)
 - **Depends on:** [notices_test](./notices_test.cpp.skel.md)
+- **Depends on:** [merge3_test](./merge3_test.cpp.skel.md)
 - **Depends on:** [startup_test](./startup_test.cpp.skel.md)
 - **Depends on:** [reading_layout_test](./reading_layout_test.cpp.skel.md)
 - **Depends on:** [cli_options_test](./cli_options_test.cpp.skel.md)

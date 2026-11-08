@@ -1,7 +1,7 @@
 ---
 role: product
 untested: needs a real terminal and every component wired together; it is exercised by running mod, and no automated test drives it
-stamp: source 70c3ffeb, stand-in 34db1b80
+stamp: source cd683c22, stand-in b1000e6f
 ---
 # module: app
 
@@ -260,13 +260,29 @@ Every open document against its file, without asking anything: the general [Noti
   - `deleted`: [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory) (so it is not reported again) and a lasting notice "<file> was deleted on disk; saving recreates it".
   - `modified` with `replaced` false while files are mapped ([maps_files](../platform/file_map.hpp.skel.md#class-mappedfile)): the bytes in memory are already the new ones, so it is reloaded whatever the setting and whether or not it has unsaved changes, with a lasting notice "reloaded <file>: rewritten in place, mod's copy could not be kept".
   - otherwise, with `auto_reload` on and no unsaved changes: reloaded (`reload_slot`: [Document.reload](../edit/document.hpp.skel.md#function-reload), the highlighter rebuilt so the language server gets a fresh `didOpen`), with the notice "reloaded <file>: it changed on disk" lasting `kReloadedNotice` (5 s) once shown.
-  - otherwise (the setting off, or unsaved changes): a lasting notice "<file> changed on disk: File > Reload to load it", posted again only when its text changes.
+  - otherwise (the setting off, or unsaved changes): the document waits for [ask_disk_change](#function-ask_disk_change)'s question, with the notice "<file> changed on disk" meanwhile.
 
   The focused view's document is reloaded only when `shown_free`; otherwise it is tried again on the next check. Notices of documents no longer open are dropped. The render shows the shown document's notice in the status line's message, unless a status message was set after the notice was posted.
 - **Access:** `run`, every `kExternalCheckInterval` (2 s) and as soon as a document is shown, whatever is open on screen.
 - **Depends on:** [Notices](./notices.hpp.skel.md#class-notices)
 - **Depends on:** [Document.check_external_change](../edit/document.hpp.skel.md#function-check_external_change)
 - **Depends on:** [Document.reload](../edit/document.hpp.skel.md#function-reload)
+
+### function: ask_disk_change
+
+- **Inputs:** `on_ignore`: what to run after Ignore (a save that was waiting).
+- **Returns:** nothing.
+- **State changes:** asks on the confirm bar "<file> changed on disk, and you have unsaved changes." ("<file> changed on disk." for a clean one with auto_reload off), choices Load from disk / Ignore / Merge in place, Ignore focused and on Esc (a stray Enter never replaces unsaved changes):
+  - Load from disk: reload_document.
+  - Ignore: [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory), the notice cleared, then `on_ignore`.
+  - Merge in place: `start_merge`: the file opened ([MappedFile.open](../platform/file_map.hpp.skel.md#class-mappedfile)), the text as last saved ([Document.read_saved](../edit/document.hpp.skel.md#function-read_saved)), the text being edited and the file each hashed by line ([LineIndexer](../edit/merge3.hpp.skel.md#class-lineindexer)) with the progress meter, then [merge3](../edit/merge3.hpp.skel.md#function-merge3) on a `std::jthread` with a stop source. While it runs the document is frozen: every key, paste and click says "merging from disk; Esc cancels" except Esc, which stops and joins the worker and leaves the text as it was; the status line's message is a progress bar ("merging <file> from disk ████░░░░ 45%  Esc: cancel") and the wait timeout is 50 ms. When the worker is done (`poll_merge`, each loop turn), `finish_merge` reads the base lines of the conflicts with read_saved once, then applies the hunks from the last to the first in one group (one undo step, `EditKind::other`): a `take_theirs` hunk puts in the file's lines; a conflict replaces ours' lines with `<<<<<<< theirs` / the file's lines / `||||||| base` / the saved lines / `=======` / ours' lines / `>>>>>>> yours`, each section ending in the document's line ending. Then [Document.adopt_disk_identity](../edit/document.hpp.skel.md#function-adopt_disk_identity) with the merged file's identity, and a notice: "merged the changes on disk into <file>" for 5 s, or a lasting "merged <file> from disk: N conflicts marked <<<<<<< theirs".
+
+  `check_external_changes` marks a document with unsaved changes (or any, with auto_reload off) as waiting, with the notice "<file> changed on disk"; the question opens once that document is the focused one and nothing is open over it. A file rewritten in place under a mapping is still reloaded, not asked about: its saved text is gone. Saving over a changed file asks this same question (handle_external_change), Ignore going on with the save. Saving with conflict blocks left (lines starting `<<<<<<< `, `conflict_count`) asks "<file> still has N conflicts. Save anyway?" once per save; opening a file with conflict blocks posts "<file> has N merge conflicts".
+- **Access:** the run loop, handle_external_change.
+- **Depends on:** [merge3](../edit/merge3.hpp.skel.md#function-merge3)
+- **Depends on:** [LineIndexer](../edit/merge3.hpp.skel.md#class-lineindexer)
+- **Depends on:** [Document.read_saved](../edit/document.hpp.skel.md#function-read_saved)
+- **Depends on:** [Document.adopt_disk_identity](../edit/document.hpp.skel.md#function-adopt_disk_identity)
 
 ### function: reload_command
 
@@ -287,7 +303,7 @@ Asks the user what to do when the file changed on disk, before a save.
   - `modified` with `replaced` true (the other program wrote a new file over this one): opens a `confirm` prompt: "<file> changed on disk. Reload (starts a new history; unsaved changes leave the undo path) / Keep my version". Reload calls [Document.reload](../edit/document.hpp.skel.md#function-reload), then rebuilds the highlighter (the LSP client receives a fresh `didOpen`). Keep calls [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory). The prompt has no Cancel: Esc means Keep, so the question is never silently re-asked for the same change.
   - `modified` with `replaced` false (the other program wrote into the same file, so the in-memory version no longer exists): opens a `confirm` prompt with a single choice: "<file> was modified in place on disk; your version cannot be kept. Reload". Reload proceeds as above. Esc also means Reload, because there is nothing else to do; the prompt cannot be dismissed without reloading.
   - `deleted`: no prompt. Shows "<file> deleted on disk; saving will recreate it" on the status line and calls [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory).
-- **Access:** `save_document` only: the timer's checks go through [check_external_changes](#function-check_external_changes), which never asks.
+- **Access:** `save_document` only: a replaced file (or any change where files are read in) asks [ask_disk_change](#function-ask_disk_change)'s question, Ignore going on with the save; a file rewritten in place under a mapping keeps the forced Reload. The timer's checks go through [check_external_changes](#function-check_external_changes).
 - **Depends on:** [Document.check_external_change](../edit/document.hpp.skel.md#function-check_external_change)
 - **Depends on:** [Document.reload](../edit/document.hpp.skel.md#function-reload)
 - **Depends on:** [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory)

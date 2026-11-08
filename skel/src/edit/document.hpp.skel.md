@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 3cbaefb4, stand-in 3b8a526d
+stamp: source 93c2cef6, stand-in 1835d56d
 ---
 # module: document
 
@@ -322,6 +322,20 @@ Discards the in-memory document state and reopens the file from disk, starting a
 - **Referred by:** [App.handle_external_change](../app/app.hpp.skel.md#function-handle_external_change)
 - **Depends on:** [MappedFile.open](../platform/file_map.hpp.skel.md#function-open)
 - **Failure modes:** a reload while the previous scan is still verifying history: that scan's result is discarded by generation number, and the verification is abandoned, because the new root replaces it.
+
+### function: read_saved
+
+- **Inputs:** `there`: a function of the `PieceTree`.
+- **Returns:** `Status`: `unsupported` when the history has no saved node; an error from reading a payload.
+- **State changes:** none in the end: the tree is walked silently (as for a prune's anchor, `visit_text_at`) to the saved node's text, `there` runs on it, and the tree is walked back; no listener hears of it, the version does not change. An open preview is ended and the coalescing group closed first. `saved_node()` gives that node.
+- **Access:** App's Merge in place: the merge's base, hashed, and its conflict blocks' base lines.
+
+### function: adopt_disk_identity
+
+- **Inputs:** a `FileIdentity`: the file on disk as just merged in.
+- **Returns:** nothing.
+- **State changes:** the known identity becomes it, so the next check compares against that version, and the document counts as changed (as after keep_in_memory) until it is saved.
+- **Access:** App, after a merge.
 
 ### function: keep_in_memory
 

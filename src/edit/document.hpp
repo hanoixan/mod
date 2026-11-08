@@ -128,6 +128,14 @@ public:
 
     ExternalChange check_external_change() const;
     Status reload();
+    // The file on disk as of `id` is known (the version just merged in): the next check of
+    // the file compares against it, and the document counts as changed until it is saved.
+    void adopt_disk_identity(const FileIdentity& id);
+    // The node of the last save or load, when the history has one.
+    std::optional<NodeId> saved_node() const;
+    // Runs `there` on the text as it was at the last save or load (the base of a merge with the
+    // file on disk), then puts the text back: nothing changes, no listener hears of it.
+    Status read_saved(const std::function<void(const PieceTree&)>& there);
     void keep_in_memory();
 
     bool is_dirty() const;
@@ -187,6 +195,7 @@ private:
     Status prune_refusal() const;
     NodeId current_node() const;
     Result<FileState> silent_walk_content(NodeId anchor);
+    Status visit_text_at(NodeId anchor, const std::function<void(const PieceTree&)>& there);
     // One silent step of a preview, recorded so that end_preview can undo it.
     Status preview_step(std::uint64_t offset, std::uint64_t remove_len, const Payload& insert);
     SidecarSeams sidecar_seams() const;

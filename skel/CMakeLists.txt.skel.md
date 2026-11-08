@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source 74171f59, stand-in e7efdb6d
+stamp: source 241190d4, stand-in def57d6d
 ---
 # resource: CMakeLists.txt
 
@@ -51,6 +51,7 @@ Contract for the implementer:
 - **Depends on:** [src/ui/file_dialog.cpp](./src/ui/file_dialog.cpp.skel.md)
 - **Depends on:** [src/app/split_layout.cpp](./src/app/split_layout.cpp.skel.md)
 - **Depends on:** [src/app/notices.cpp](./src/app/notices.cpp.skel.md)
+- **Depends on:** [src/edit/merge3.cpp](./src/edit/merge3.cpp.skel.md)
 - **Depends on:** [src/app/startup.cpp](./src/app/startup.cpp.skel.md)
 - **Depends on:** [src/ui/reading_layout.cpp](./src/ui/reading_layout.cpp.skel.md)
 - **Depends on:** [src/app/cli_options.cpp](./src/app/cli_options.cpp.skel.md)

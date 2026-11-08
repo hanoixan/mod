@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 4ff19f0c, stand-in 182ed99d
+stamp: source 992b6fe5, stand-in 632106e8
 ---
 # module: confirm_bar
 
@@ -30,7 +30,7 @@ The questions: Save / Discard / Cancel ("Save changes before closing?"), Reload 
 
 ### function: open
 
-- **Inputs:** `question`; `choices`: one to three labels; `esc_choice`: the index Esc chooses; `on_choice`: `void(int)`, called with the chosen index.
+- **Inputs:** `question`; `choices`: one to three labels; `esc_choice`: the index Esc chooses; `on_choice`: `void(int)`, called with the chosen index; `focus` (default 0): the choice that has the focus at first, which Enter takes.
 - **Returns:** nothing.
 - **State changes:** opens with the first button focused; opening while open replaces the question. `is_open()` says whether it is open.
 - **Access:** App.
