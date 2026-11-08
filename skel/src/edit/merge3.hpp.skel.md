@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 943a3dc8, stand-in 61244a43
+stamp: source 8ffb7471, stand-in 61244a43
 ---
 # module: merge3
 

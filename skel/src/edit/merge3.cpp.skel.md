@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./merge3.hpp.skel.md
-stamp: source 3f6d3abb, stand-in 09434f6c
+stamp: source a5685de5, stand-in 09434f6c
 ---
 # module: merge3 (implementation)
 
