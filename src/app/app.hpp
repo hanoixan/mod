@@ -237,6 +237,7 @@ private:
     void ask(std::string question, std::string yes, std::function<void()> on_yes, std::string no = "Cancel");
     void poll_status();
     void step_search();
+    void step_count();
     int wait_timeout_ms();
     void handle_events(WaitEvents ev, std::span<std::byte> buf);
 

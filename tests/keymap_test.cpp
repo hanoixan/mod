@@ -235,3 +235,13 @@ TEST_CASE("F1 opens the help") {
     CHECK(km.binding_label(C::ShowHelp) == "F1");
     CHECK_FALSE(command_edits(C::ShowHelp));
 }
+
+TEST_CASE("an unbound Shift+Enter, Shift+Backspace or Shift+Delete does what the plain key does") {
+    Keymap km;
+    CHECK(km.lookup(K(Key::Enter, kShift)) == C::Newline);
+    CHECK(km.lookup(K(Key::Backspace, kShift)) == C::DeleteBack);
+    CHECK(km.lookup(K(Key::Delete, kShift)) == C::DeleteForward);
+    REQUIRE(km.bind(C::Save, K(Key::Enter, kShift)).kind == BindOutcome::bound);
+    CHECK(km.lookup(K(Key::Enter, kShift)) == C::Save);  // bound, it is its own
+    CHECK_FALSE(km.lookup(K(Key::Up, kShift)) == km.lookup(K(Key::Up)));  // other keys keep Shift's meaning
+}

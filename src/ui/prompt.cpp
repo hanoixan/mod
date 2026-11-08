@@ -230,11 +230,18 @@ Prompt::Outcome Prompt::handle_find_key(const KeyEvent& key) {
         }
         return Outcome::consumed;
     }
+    // Down and F3 the next match, Up and Shift+F3 the previous, without leaving the field.
+    if ((key.key == Key::Down || key.key == Key::Up || key.key == Key::F3) && (key.mods & (kAlt | kCtrl)) == 0) {
+        if (searcher_ == nullptr || !searcher_->has_query()) return Outcome::consumed;
+        const bool back = key.key == Key::Up || (key.key == Key::F3 && (key.mods & kShift));
+        searcher_->find_next(cursor_ ? cursor_() : origin_, back ? Direction::backward : Direction::forward);
+        return Outcome::consumed;
+    }
     if (key.key == Key::Char && (key.mods & kAlt) && !(key.mods & kCtrl)) {
         switch (std::tolower(static_cast<int>(key.ch < 0x80 ? key.ch : 0))) {
-            case 'r': options_.regex = !options_.regex; search_changed(); break;
-            case 'c': options_.case_insensitive = !options_.case_insensitive; search_changed(); break;
-            case 'w': options_.whole_word = !options_.whole_word; search_changed(); break;
+            case 'r':
+            case 'c':
+            case 'w': toggle(static_cast<char>(std::tolower(static_cast<int>(key.ch)))); break;
             case 'a':
                 if (kind_ == PromptKind::replace && searcher_ && searcher_->has_query()) {
                     if (auto s = searcher_->replace_all(fields_[1].text); !s) error_ = s.error().message;
@@ -265,6 +272,27 @@ Prompt::Outcome Prompt::handle_find_key(const KeyEvent& key) {
     const std::string before = f.text;
     if (edit_field(f, key) && active_ == 0 && f.text != before) search_changed();
     return Outcome::consumed;
+}
+
+void Prompt::toggle(char letter) {
+    switch (letter) {
+        case 'r': options_.regex = !options_.regex; break;
+        case 'c': options_.case_insensitive = !options_.case_insensitive; break;
+        case 'w': options_.whole_word = !options_.whole_word; break;
+        default: return;
+    }
+    search_changed();
+}
+
+bool Prompt::click(int row, int col) {
+    if (!open_ || (kind_ != PromptKind::find && kind_ != PromptKind::replace)) return false;
+    for (const DrawnToggle& t : drawn_toggles_) {
+        if (row == t.row && col >= t.from && col < t.to) {
+            toggle(t.letter);
+            return true;
+        }
+    }
+    return false;
 }
 
 int Prompt::rows_wanted(int screen_rows, int /*screen_cols*/) const {
@@ -314,14 +342,61 @@ void Prompt::render(Screen& screen, Rect area) const {
     };
 
     if (kind_ == PromptKind::find || kind_ == PromptKind::replace) {
-        const std::string flags = std::format("[{}regex {}case {}word]", options_.regex ? "x" : " ",
-                                              options_.case_insensitive ? "i" : " ", options_.whole_word ? "w" : " ");
+        // The toggles, each with its key: "[x] Regex Alt+R"; "[x]R" when the bar is narrow.
+        // Case is on when the search matches case (the default).
+        struct T {
+            bool on;
+            std::string_view name;
+            char letter;
+        };
+        const T toggles[] = {{options_.regex, "Regex", 'r'}, {!options_.case_insensitive, "Case", 'c'}, {options_.whole_word, "Word", 'w'}};
+        auto text_of = [&](const T& t, bool wide) {
+            const char up = static_cast<char>(std::toupper(static_cast<unsigned char>(t.letter)));
+            return wide ? std::format("[{}] {} Alt+{}", t.on ? "x" : " ", t.name, up) : std::format("[{}]{}", t.on ? "x" : " ", up);
+        };
+        // The match count: "3 of 17", "17 matches", "…" while counting, "10000+" past the cap.
+        std::string count;
+        if (searcher_ != nullptr && !fields_[0].text.empty()) {
+            if (const auto c = searcher_->count()) {
+                const std::string total = c->capped ? std::format("{}+", c->total) : std::to_string(c->total);
+                const std::string more = c->done ? "" : "…";
+                if (c->total == 0 && c->done) {
+                    count = "no matches";
+                } else if (c->current) {
+                    count = std::format("{} of {}{}", *c->current, total, more);
+                } else {
+                    count = std::format("{}{} {}", total, more, c->total == 1 && c->done ? "match" : "matches");
+                }
+            }
+        }
         int col = draw_field(area.row, "Find:", fields_[0], active_ == 0);
-        const int flags_col = right - static_cast<int>(flags.size()) - 1;
+        drawn_toggles_.clear();
+        int wide_w = 0;
+        int narrow_w = 0;
+        for (const T& t : toggles) {
+            wide_w += text_columns(text_of(t, true)) + 2;
+            narrow_w += text_columns(text_of(t, false)) + 1;
+        }
+        const int count_w = count.empty() ? 0 : text_columns(count) + 2;
+        const int room = right - col - 2;
+        const bool wide = wide_w + count_w <= room - 10;  // the field keeps some room to type in
+        const int toggles_w = wide ? wide_w : narrow_w;
+        const int flags_col = right - toggles_w;
         if (!error_.empty()) {
             screen.print(area.row, std::min(col + 2, flags_col), flags_col, error_, err);
+        } else if (!count.empty() && flags_col - count_w > col) {
+            screen.print(area.row, flags_col - count_w, flags_col, count, bar);
         }
-        if (flags_col > col) screen.print(area.row, flags_col, right, flags, bar);
+        if (flags_col > col) {
+            const Attr on = Attr{bar.fg, bar.bg, static_cast<std::uint8_t>(bar.flags | kBold)};
+            int c = flags_col;
+            for (const T& t : toggles) {
+                const std::string text = text_of(t, wide);
+                const int end = screen.print(area.row, c, right, text, t.on ? on : bar);
+                drawn_toggles_.push_back({area.row, c, end, t.letter});
+                c = end + (wide ? 2 : 1);
+            }
+        }
         if (kind_ == PromptKind::replace && area.rows >= 2) {
             draw_field(area.row + 1, "Replace:", fields_[1], active_ == 1);
             screen.print(area.row + 1, std::max(area.col, right - 28), right, "Enter: replace  Alt+A: all", bar);

@@ -2,11 +2,13 @@
 
 ## Find
 
-Ctrl+F opens the find bar at the bottom, filled with the selection or the last search. mod searches as you type and selects the match.
+Ctrl+F opens the find bar at the bottom, filled with the selection or the last search. mod searches as you type and selects the match; every other match on screen is highlighted too (the `searchOther` [color](colors.md)), and the bar counts them: `3 of 17` (`17…` while it is still counting a large file, `10000+` past ten thousand).
 
-- Enter finds the next match, Shift+Enter the previous one. F3 and Shift+F3 do the same with the bar closed.
-- Alt+R switches regular expressions on and off, Alt+C ignores case, and Alt+W matches whole words only. The bar shows which are on.
+- Down or F3 goes to the next match and Up or Shift+F3 to the previous one, without leaving the field, so you can keep typing. Enter and Shift+Enter do the same. F3 and Shift+F3 also work with the bar closed.
+- The bar's right side shows the three switches, each with its key: `[ ] Regex Alt+R` searches with a regular expression, `[x] Case Alt+C` matches upper and lower case exactly, `[ ] Word Alt+W` matches whole words only. `[x]` is on. A search starts as plain text that matches case; the switches stay as you leave them for the next search. On a narrow screen they shorten to `[ ]R [x]C [ ]W`. With the [mouse](editing.md#the-mouse) on, click one to flip it.
 - Esc closes the bar.
+
+Shift+Enter reaches mod apart from Enter only in terminals that have the kitty keyboard protocol (kitty, WezTerm, foot, Ghostty, Alacritty and others), which mod turns on where it is there. In other terminals Shift+Enter is just Enter: use Up or Shift+F3 to go back.
 
 Search works on files of any size: it reads the file in pieces and never copies it whole.
 

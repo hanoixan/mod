@@ -97,6 +97,10 @@ std::optional<KeyEvent> code_key(int code, std::uint8_t mods) {
     if (mods & kCtrl) {
         if (code >= 'a' && code <= 'z') return key(Key::CtrlLetter, mods, static_cast<char32_t>(code));
         if (code >= 'A' && code <= 'Z') return key(Key::CtrlLetter, mods, static_cast<char32_t>(code - 'A' + 'a'));
+        // As the control bytes they stand for in the legacy encoding: Ctrl+Space and Ctrl+@
+        // are NUL, Ctrl+\ ] ^ _ are 0x1C to 0x1F.
+        if (code == ' ' || code == '@') return key(Key::CtrlLetter, mods, U' ');
+        if (code == '\\' || code == ']' || code == '^' || code == '_') return key(Key::CtrlLetter, mods, static_cast<char32_t>(code));
     }
     return key(Key::Char, mods, code > 0 ? static_cast<char32_t>(code) : kReplacement);
 }

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 973c74d8, stand-in 4587810e
+stamp: source 973c74d8, stand-in be41c3da
 ---
 # module: keymap
 
@@ -90,7 +90,7 @@ Note: Ctrl+A here is *line start* (Emacs-style), as requested, not "select all".
 ### function: lookup
 
 - **Inputs:** a `KeyEvent`.
-- **Returns:** `std::optional<CommandId>`. Plain text characters (a `Char` without Alt or Ctrl, with or without Shift) return `nullopt` and are inserted. Letters compare case-insensitively, so Alt+Shift+X shows the menu like Alt+F.
+- **Returns:** `std::optional<CommandId>`. An unbound Shift+Enter, Shift+Backspace or Shift+Delete gives the plain key's command: only terminals with the kitty keyboard protocol tell them apart, and elsewhere they always did what the plain keys do. Plain text characters (a `Char` without Alt or Ctrl, with or without Shift) return `nullopt` and are inserted. Letters compare case-insensitively, so Alt+Shift+X shows the menu like Alt+F.
 - **State changes:** none.
 - **Access:** App.
 

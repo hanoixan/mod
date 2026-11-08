@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -64,6 +65,10 @@ public:
     void set_line_numbers(bool on) { line_numbers_ = on; }
     bool line_numbers() const noexcept { return line_numbers_; }
     void set_highlighter(Highlighter* highlighter) { highlighter_ = highlighter; }
+    // While set, the matches it gives for a line's range (a line start to its end) are drawn
+    // in `search_other` behind the current match; App sets it while the find bar is open.
+    using MatchFinder = std::function<std::vector<Match>(std::uint64_t start, std::uint64_t end)>;
+    void set_match_finder(MatchFinder finder) { match_finder_ = std::move(finder); }
     // Preview mode, for the Undo History pane: the (previewed) text is drawn read-only with
     // these marks instead of the highlighter's spans, and no selection; nullopt ends it.
     void set_preview(std::optional<std::vector<PreviewMark>> marks) { preview_ = std::move(marks); }
@@ -163,6 +168,11 @@ private:
     std::string line_buf_;            // per-frame scratch, reused
     std::string row_buf_;             // per-frame scratch, reused
     std::vector<StyleSpan> spans_;    // per-frame scratch, reused
+    MatchFinder match_finder_;
+    std::vector<Match> line_matches_;  // the matches of the line being drawn, from match_finder_
+    // Fills line_matches_ for the line [line, end).
+    void load_matches(std::uint64_t line, std::uint64_t end);
+    bool in_other_match(std::uint64_t off) const;
     std::optional<std::vector<PreviewMark>> preview_;
     bool reading_ = false;
     std::unique_ptr<ReadingLayout> layout_;

@@ -60,6 +60,27 @@ public:
     std::optional<Match> last_match() const;
     bool active() const noexcept { return job_.has_value(); }
 
+    // Every match starting in [start, end), `start` being a line start, at most `max`: for
+    // drawing them all on screen. Lines are searched one window at a time, at most kRangeCap
+    // bytes in all; nothing without a query.
+    static constexpr std::uint64_t kRangeCap = 1ull << 20;
+    std::vector<Match> matches_in(std::uint64_t start, std::uint64_t end, std::size_t max = 2000) const;
+
+    // Counting the query's matches over the whole document, a window per call of
+    // step_count, from set_query on; started again when the document changes. At most
+    // kCountCap are counted.
+    static constexpr std::size_t kCountCap = 10000;
+    struct Count {
+        std::size_t total = 0;  // counted so far
+        bool done = false;      // the whole document is counted (or the cap reached)
+        bool capped = false;    // there are more than kCountCap
+        std::optional<std::size_t> current;  // the last match's 1-based number, once counted
+    };
+    bool counting() const noexcept;
+    void step_count();
+    // nullopt without a query, or after a pattern error while counting.
+    std::optional<Count> count() const;
+
 private:
     struct Job {
         enum Kind { find, replace_all } kind = find;
@@ -98,6 +119,16 @@ private:
     std::optional<Regex> regex_;
     SearchOptions options_;
     std::optional<Job> job_;
+    struct Counter {
+        std::uint64_t pos = 0;
+        bool mid_line = false;
+        std::uint64_t version = 0;
+        std::vector<std::uint64_t> starts;  // the counted matches' starts, ascending
+        bool done = false;
+        bool capped = false;
+        bool failed = false;
+    };
+    Counter counter_;
     std::optional<Match> last_match_;
     std::uint64_t last_version_ = 0;
     std::string window_;  // reused window buffer, copied out of the pieces

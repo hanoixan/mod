@@ -59,6 +59,7 @@ constexpr Attr legacy_attr(Style style, std::uint8_t modifiers = 0) {
         case Style::lsp_decorator: a.fg = yellow; break;
         case Style::constant: a.fg = yellow; break;
         case Style::search_match: a = {black, yellow, 0}; break;
+        case Style::search_other: a.bg = black + bright; break;
         case Style::selection: a.flags = kReverse; break;
         case Style::gutter: a.flags = kDim; break;
         case Style::gutter_current: a.flags = kBold; break;

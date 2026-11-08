@@ -25,7 +25,80 @@ Status Searcher::set_query(std::string_view find_text, const SearchOptions& opti
         return std::unexpected(compiled.error());
     }
     regex_ = std::move(*compiled);
+    counter_ = Counter{};
+    counter_.version = doc_.version();
     return {};
+}
+
+std::vector<Match> Searcher::matches_in(std::uint64_t start, std::uint64_t end, std::size_t max) const {
+    std::vector<Match> out;
+    if (!regex_) return out;
+    const PieceTree& t = doc_.text();
+    end = std::min({end, t.size(), start + kRangeCap});
+    if (start >= end) return out;
+    const std::string text = t.read(start, end - start);
+    const auto bytes = std::as_bytes(std::span(text.data(), text.size()));
+    LineCursor cursor;
+    std::uint64_t f = start;
+    while (out.size() < max) {
+        auto r = regex_->search_window(bytes, start, f, true, &cursor);
+        if (!r || r->kind != WindowResult::found) break;
+        const Match& m = r->match;
+        if (m.start >= end) break;
+        out.push_back(m);
+        if (m.end > m.start) {
+            f = m.end;
+        } else {
+            const std::size_t i = static_cast<std::size_t>(m.start - start);
+            const Decoded d = i < text.size() ? decode(bytes.subspan(i)) : Decoded{};
+            f = m.start + std::max<std::uint64_t>(1, d.len);
+        }
+        if (f > end) break;
+    }
+    return out;
+}
+
+bool Searcher::counting() const noexcept { return regex_.has_value() && !counter_.failed && (!counter_.done || counter_.version != doc_.version()); }
+
+void Searcher::step_count() {
+    if (!regex_ || counter_.failed) return;
+    if (counter_.version != doc_.version()) {
+        counter_ = Counter{};
+        counter_.version = doc_.version();
+    }
+    if (counter_.done) return;
+    const std::uint64_t size = doc_.text().size();
+    bool too_long = false;
+    auto scan = scan_forward(counter_.pos, counter_.mid_line, size, true, true, std::nullopt, too_long);
+    if (!scan) {
+        counter_.failed = true;
+        return;
+    }
+    for (const Match& m : scan->all) {
+        if (!counter_.starts.empty() && m.start <= counter_.starts.back() && m.start != 0) continue;  // seen at a window's edge
+        if (counter_.starts.size() >= kCountCap) {
+            counter_.capped = true;
+            counter_.done = true;
+            return;
+        }
+        counter_.starts.push_back(m.start);
+    }
+    counter_.pos = scan->next;
+    counter_.mid_line = scan->truncated;
+    if (scan->segment_done || scan->next >= size) counter_.done = true;
+}
+
+std::optional<Searcher::Count> Searcher::count() const {
+    if (!regex_ || counter_.failed) return std::nullopt;
+    Count c;
+    c.total = counter_.starts.size();
+    c.done = counter_.done && counter_.version == doc_.version();
+    c.capped = counter_.capped;
+    if (const auto m = last_match(); m && counter_.version == doc_.version()) {
+        const auto it = std::ranges::lower_bound(counter_.starts, m->start);
+        if (it != counter_.starts.end() && *it == m->start) c.current = static_cast<std::size_t>(it - counter_.starts.begin()) + 1;
+    }
+    return c;
 }
 
 std::optional<Match> Searcher::last_match() const {

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1a669e53, stand-in e61ac6c7
+stamp: source 1a669e53, stand-in 885643fa
 ---
 # module: theme
 
@@ -52,6 +52,7 @@ Each style and each modifier has a **name** (camelCase, the LSP's own names wher
 | `operator` | `lsp_operator` | `plain` |
 | `decorator` | `lsp_decorator` | `yellow` |
 | `searchMatch` | `search_match` | `black on-yellow` |
+| `searchOther` | `search_other` | `on-bright-black` (vt100: underline) |
 | `selection` | `selection` | `reverse` |
 | `gutter` | `gutter` | `dim` |
 | `gutterCurrent` | `gutter_current` | `bold` |
@@ -92,7 +93,7 @@ Modifiers are applied on top of the style's look in this order, each adding its 
 
 `page` is the background the text area is drawn on: EditorView and the help viewer lay each of their looks over it with `on_page` (its colors fill in a look's default colors, and its reverse inverts the look, so a selection still shows). The overflow marker is not laid over it, so in paper it stands out as the terminal's own colors. In vt100 mode the page is plain whatever the darkness.
 
-`selection` and `searchMatch` are overlays: EditorView combines them with the text's own look as before (the selection adds its attributes; a search match replaces the look). Apart from `variable`, `property`, `parameter`, the new `constant` and the two new modifiers, every default is the look the fixed table gave before.
+`selection`, `searchMatch` and `searchOther` are overlays: EditorView combines them with the text's own look as before (the selection adds its attributes; a search match replaces the look). Apart from `variable`, `property`, `parameter`, the new `constant` and the two new modifiers, every default is the look the fixed table gave before.
 
 - **Owns:** the default table, the active theme's overrides.
 - **Access:** public. The active theme is one instance for the process, main thread only.

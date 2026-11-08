@@ -1,7 +1,7 @@
 ---
 role: product
 untested: no test has been written for it yet
-stamp: source 04bd8956, stand-in fa34f30a
+stamp: source 8dd85eb3, stand-in 475ff9a9
 ---
 # module: prompt
 
@@ -77,14 +77,21 @@ The bottom-of-screen input bar and its modal overlays. It is a single reusable l
 
 ### function: handle_event
 
-- **Inputs:** an `InputEvent`.
+- **Inputs:** an `InputEvent`. In the find bar, Down and F3 find the next match and Up and Shift+F3 the previous, from the cursor, while the field keeps the keys; Enter and Shift+Enter (told apart only with the kitty keyboard protocol) as before; Alt+R, Alt+C and Alt+W flip the toggles.
 - **Returns:** `consumed` or `closed`. Pasted text goes into the field, truncated at the first newline.
 - **State changes:** edits fields and invokes Searcher or `on_submit`.
 - **Access:** App.
+
+### function: click
+
+- **Inputs:** `row`, `col`: a screen cell of a mouse press.
+- **Returns:** whether it hit one of the find bar's toggles as the last `render` drew them.
+- **State changes:** flips the toggle hit, as its Alt key does (the search runs again).
+- **Access:** App, for the mouse.
 
 ### function: render
 
 - **Inputs:** a `Screen&`; `area`: the rows App gives it (one row, two for `replace`, at the screen's bottom below the status lines; most of the screen for `info`, drawn over what is above the bottom band). `rows_wanted(screen_rows, screen_cols)` tells App how many rows the open prompt needs. The `info` overlay is drawn over the text area without shrinking it, so opening and closing it never scrolls the text.
 - **Returns:** nothing.
-- **State changes:** draws the prompt and places the cursor.
+- **State changes:** draws the prompt and places the cursor. The find bar's right side holds its toggles, each with its key and `[x]` when on: `[ ] Regex Alt+R  [x] Case Alt+C  [ ] Word Alt+W` (Case is on when the search matches case), shortened to `[ ]R [x]C [ ]W` when the bar cannot hold them with ten columns to spare for the field; before them the match count from [Searcher.count](../search/search.hpp.skel.md#function-step_count): `3 of 17`, `17 matches` before the current one is reached, `…` after the total while counting, `+` past the cap, `no matches`; an error message replaces the count. Toggles are drawn bold when on, and their cells recorded for `click`.
 - **Access:** App.render.

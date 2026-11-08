@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./keymap.hpp.skel.md
-stamp: source d2deff40, stand-in e02b6711
+stamp: source 1bba9ea9, stand-in e02b6711
 ---
 # module: keymap (implementation)
 

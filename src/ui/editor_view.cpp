@@ -399,6 +399,19 @@ void EditorView::scroll_wrapped(std::uint64_t pos, int area_rows, int area_cols,
     }
 }
 
+void EditorView::load_matches(std::uint64_t line, std::uint64_t end) {
+    line_matches_.clear();
+    if (!match_finder_ || preview_) return;
+    line_matches_ = match_finder_(line, end);
+}
+
+bool EditorView::in_other_match(std::uint64_t off) const {
+    const auto it = std::ranges::upper_bound(line_matches_, off, {}, &Match::start);
+    if (it == line_matches_.begin()) return false;
+    const Match& m = *std::prev(it);
+    return off >= m.start && off < m.end;
+}
+
 void EditorView::load_spans(std::uint64_t line, std::uint64_t end) {
     spans_.clear();
     if (preview_) {
@@ -469,7 +482,11 @@ EditorView::Drawn EditorView::draw_text(Screen& screen, int row, int text_col, i
             escape = true;
         }
         if (escape && d.cp != '\t') a = dim;
-        if (search && off >= search->start && off < search->end) a = overlay(a, Style::search_match);
+        if (search && off >= search->start && off < search->end) {
+            a = overlay(a, Style::search_match);
+        } else if (in_other_match(off)) {
+            a = overlay(a, Style::search_other);
+        }
         if (sel && off >= sel->first && off < sel->second) a = overlay(a, Style::selection);
         a = on_page(a);  // last, so the page's reverse inverts the selection too
 
@@ -552,6 +569,7 @@ void EditorView::render(Screen& screen, Rect area, const std::optional<Match>& s
         }
 
         load_spans(line, end);
+        load_matches(line, end);
         const Drawn drawn = draw_text(screen, row, text_col, right, line, end, hscroll_, search);
         // The selection covers the line feed: show one selected cell after the text.
         if (sel && lf != npos && lf >= sel->first && lf < sel->second && drawn.col >= hscroll_ && drawn.col < limit_col)
@@ -715,6 +733,7 @@ void EditorView::render_wrapped(Screen& screen, Rect area, const std::optional<M
         }
         if (!spans_loaded) {
             load_spans(line, line_end);
+            load_matches(line, line_end);
             spans_loaded = true;
         }
         const Drawn drawn = draw_text(screen, row, text_col, right, r, end, 0, search);

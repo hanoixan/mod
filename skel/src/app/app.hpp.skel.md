@@ -1,7 +1,7 @@
 ---
 role: product
 untested: needs a real terminal and every component wired together; it is exercised by running mod, and no automated test drives it
-stamp: source 1e6568d1, stand-in fdbfc88e
+stamp: source 70c3ffeb, stand-in 34db1b80
 ---
 # module: app
 
@@ -184,13 +184,23 @@ The event loop.
 - **Access:** input dispatch and the menu.
 - **Depends on:** [Document.line_start](../edit/document.hpp.skel.md#function-line_start)
 
+### function: step_count
+
+- **Inputs:** none.
+- **Returns:** nothing.
+- **State changes:** while the find bar is open, advances the shown document's match count one window ([Searcher.step_count](../search/search.hpp.skel.md#function-step_count)); the wait timeout is 0 while it has more to count. Each frame with the bar open and a query, the shown view is given [Searcher.matches_in](../search/search.hpp.skel.md#function-matches_in) as its match finder, so every match on screen is drawn.
+- **Access:** `run`, after each search step.
+- **Depends on:** [Searcher.step_count](../search/search.hpp.skel.md#function-step_count)
+- **Depends on:** [Searcher.matches_in](../search/search.hpp.skel.md#function-matches_in)
+- **Depends on:** [EditorView.set_match_finder](../ui/editor_view.hpp.skel.md#function-set_match_finder)
+
 ### function: dispatch_mouse
 
 - **Inputs:** a `MouseEvent` from the decoder; nothing happens unless the `mouse` setting is on and the terminal is not a VT100 (then the terminal was told to send reports: `output_for(mode, true)` at start, and `mouse(on)` with [Terminal.set_output](../platform/terminal.hpp.skel.md#function-set_output) when the setting changes).
 - **Returns:** nothing.
 - **State changes:** a left press is counted as the first, second or third click when it comes within `kDoublePress` (400 ms, shared with the keys' double presses) of the one before, on the same row and within a column of it. Then the event goes to what is drawn under it, first match wins:
   1. the menu bar while shown: [MenuBar.click](../ui/menu.hpp.skel.md#function-click), a returned command run;
-  2. a question, a prompt, the history, a panel or the help: nothing (they take only the keys);
+  2. the find bar's toggles: [Prompt.click](../ui/prompt.hpp.skel.md#function-click); any other cell of a question, a prompt, the history, a panel or the help: nothing (they take only the keys);
   3. the file dialog: [FileDialog.click](../ui/file_dialog.hpp.skel.md#function-click) (double on the second click) or [FileDialog.wheel](../ui/file_dialog.hpp.skel.md#function-wheel), the result handled as a key's;
   4. the folder tree: the keys go to it, [FolderTreeView.click](../ui/folder_tree_view.hpp.skel.md#function-click), the result handled as a key's; the wheel moves its selection;
   5. a previewed file: the wheel scrolls it;
