@@ -1,7 +1,7 @@
 ---
 role: product
 untested: needs a real terminal and every component wired together; it is exercised by running mod, and no automated test drives it
-stamp: source dae27f73, stand-in a9b1285e
+stamp: source cb5fbc24, stand-in 5c0ccba6
 ---
 # module: app
 
@@ -239,9 +239,37 @@ The one save flow, used by File > Save, File > Save As, Ctrl+S, and the save bra
 - **Depends on:** [Document.save](../edit/document.hpp.skel.md#function-save)
 - **Depends on:** [Document.save_as](../edit/document.hpp.skel.md#function-save_as)
 
+### function: check_external_changes
+
+Every open document against its file, without asking anything: the general [Notices](./notices.hpp.skel.md#class-notices) carry the outcome.
+
+- **Inputs:** `shown_free`: whether the focused view may be reloaded now (no menu, prompt, question, dialog, history or panel open over it).
+- **Returns:** nothing.
+- **State changes:** for each open document with a file (the base document behind a followed link), [Document.check_external_change](../edit/document.hpp.skel.md#function-check_external_change):
+  - `unchanged`: nothing.
+  - `deleted`: [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory) (so it is not reported again) and a lasting notice "<file> was deleted on disk; saving recreates it".
+  - `modified` with `replaced` false while files are mapped ([maps_files](../platform/file_map.hpp.skel.md#class-mappedfile)): the bytes in memory are already the new ones, so it is reloaded whatever the setting and whether or not it has unsaved changes, with a lasting notice "reloaded <file>: rewritten in place, mod's copy could not be kept".
+  - otherwise, with `auto_reload` on and no unsaved changes: reloaded (`reload_slot`: [Document.reload](../edit/document.hpp.skel.md#function-reload), the highlighter rebuilt so the language server gets a fresh `didOpen`), with the notice "reloaded <file>: it changed on disk" lasting `kReloadedNotice` (5 s) once shown.
+  - otherwise (the setting off, or unsaved changes): a lasting notice "<file> changed on disk: File > Reload to load it", posted again only when its text changes.
+
+  The focused view's document is reloaded only when `shown_free`; otherwise it is tried again on the next check. Notices of documents no longer open are dropped. The render shows the shown document's notice in the status line's message, unless a status message was set after the notice was posted.
+- **Access:** `run`, every `kExternalCheckInterval` (2 s) and as soon as a document is shown, whatever is open on screen.
+- **Depends on:** [Notices](./notices.hpp.skel.md#class-notices)
+- **Depends on:** [Document.check_external_change](../edit/document.hpp.skel.md#function-check_external_change)
+- **Depends on:** [Document.reload](../edit/document.hpp.skel.md#function-reload)
+
+### function: reload_command
+
+File > Reload (`Reload`, accelerator `r`, after Close; no default key).
+
+- **Inputs:** none.
+- **Returns:** nothing.
+- **State changes:** an untitled document says it has no file. Otherwise (the document itself, leaving a followed link) it is reloaded at once when it has no unsaved changes; with unsaved changes the confirm bar asks "Reload <file> from disk? Your unsaved changes leave the undo path. Reload / Cancel". A reload clears the document's notice and says "reloaded <file>".
+- **Access:** `run_command`.
+
 ### function: handle_external_change
 
-Asks the user what to do when the file changed on disk.
+Asks the user what to do when the file changed on disk, before a save.
 
 - **Inputs:** none.
 - **Returns:** nothing.
@@ -249,7 +277,7 @@ Asks the user what to do when the file changed on disk.
   - `modified` with `replaced` true (the other program wrote a new file over this one): opens a `confirm` prompt: "<file> changed on disk. Reload (starts a new history; unsaved changes leave the undo path) / Keep my version". Reload calls [Document.reload](../edit/document.hpp.skel.md#function-reload), then rebuilds the highlighter (the LSP client receives a fresh `didOpen`). Keep calls [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory). The prompt has no Cancel: Esc means Keep, so the question is never silently re-asked for the same change.
   - `modified` with `replaced` false (the other program wrote into the same file, so the in-memory version no longer exists): opens a `confirm` prompt with a single choice: "<file> was modified in place on disk; your version cannot be kept. Reload". Reload proceeds as above. Esc also means Reload, because there is nothing else to do; the prompt cannot be dismissed without reloading.
   - `deleted`: no prompt. Shows "<file> deleted on disk; saving will recreate it" on the status line and calls [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory).
-- **Access:** `run`, every 2 s while no menu or prompt is open (a check that falls due while one is open is deferred until it closes), and `save_document`.
+- **Access:** `save_document` only: the timer's checks go through [check_external_changes](#function-check_external_changes), which never asks.
 - **Depends on:** [Document.check_external_change](../edit/document.hpp.skel.md#function-check_external_change)
 - **Depends on:** [Document.reload](../edit/document.hpp.skel.md#function-reload)
 - **Depends on:** [Document.keep_in_memory](../edit/document.hpp.skel.md#function-keep_in_memory)

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1e4046b1, stand-in 414fe768
+stamp: source 1e4046b1, stand-in e48bd198
 ---
 # module: settings
 
@@ -20,6 +20,7 @@ The settings today:
 | `keymap` | keymap | none changed | The user's key bindings; see [Keymap](./keymap.hpp.skel.md#class-keymap). |
 | `darkness` | choice: `night`, `normal`, `paper` | `normal` | How dark the screen is; see the [theme](../ui/theme.hpp.skel.md). Applies at once. |
 | `cursor_style` | choice: `bar`, `bar-blink`, `block`, `block-blink`, `underline`, `underline-blink` | `bar` | The text cursor's shape, sent by the [terminal output](../platform/terminal_output.hpp.skel.md#function-cursor_shape). Applies at once. |
+| `auto_reload` | boolean | on | A file changed on disk by another program is reloaded at once when it has no unsaved changes ([App.check_external_changes](./app.hpp.skel.md#function-check_external_changes)); off, a notice waits for File > Reload. |
 | `mouse` | boolean | on | mod takes the mouse ([App.dispatch_mouse](./app.hpp.skel.md#function-dispatch_mouse)): clicks, drags, the wheel; off, the terminal keeps it. Applies at once; nothing in vt100 mode. |
 | `terminal_mode` | choice: `auto`, `vt100`, `xterm` | `auto` | How mod writes to the terminal; see [terminal_output](../platform/terminal_output.hpp.skel.md). Applies when mod next starts. |
 | `colors` | colors | none changed | The user's color overrides, name → [color spec](../ui/theme.hpp.skel.md); edited in Options > Colors…. |

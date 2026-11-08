@@ -14,6 +14,7 @@ enum class CommandId {
     Save,
     SaveAs,
     CloseDocument,
+    Reload,
     Suspend,
     ClearHistory,
     TrimHistory,

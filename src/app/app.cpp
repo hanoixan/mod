@@ -1,4 +1,6 @@
 #include "app/app.hpp"
+
+#include "platform/file_map.hpp"
 #include "app/split_layout.hpp"
 #include "app/startup.hpp"
 
@@ -561,6 +563,7 @@ void App::save_now(std::optional<fs::path> target, SaveMode mode, std::function<
         set_status("save failed: " + s.error().message);
         return;
     }
+    notices_.clear(shown().doc.get());
     set_status("saved " + file_name());
     if (save_as) pick_highlighter();
     if (then) then();
@@ -604,13 +607,86 @@ void App::handle_external_change(std::function<void()> proceed) {
 }
 
 void App::reload_document() {
-    history_view_.close();
-    if (auto s = shown().doc->reload(); !s) {
+    if (auto s = reload_slot(shown()); !s) {
         set_status("reload failed: " + s.error().message);
         return;
     }
-    pick_highlighter();  // the language server gets a fresh didOpen
     set_status("reloaded " + file_name());
+}
+
+Status App::reload_slot(DocumentSlot& slot) {
+    if (&slot == &shown()) history_view_.close();
+    if (auto s = slot.doc->reload(); !s) return s;
+    notices_.clear(slot.doc.get());
+    pick_highlighter(slot);  // the language server gets a fresh didOpen
+    return {};
+}
+
+void App::reload_command() {
+    if (shown().doc->is_untitled()) {
+        set_status("an untitled document has no file to reload");
+        return;
+    }
+    if (ro().away) leave_read_only();  // the document itself is what reloads
+    if (!shown().doc->is_dirty()) {
+        reload_document();
+        return;
+    }
+    ask(std::format("Reload {} from disk? Your unsaved changes leave the undo path.", file_name()), "Reload", [this] { reload_document(); });
+}
+
+// The timer's check of every open document against its file. Nothing here asks: a change
+// either reloads the document (auto_reload on, no unsaved changes) with a notice that it did, or
+// leaves a notice that stays until File > Reload, a save, or the file coming back as it was.
+void App::check_external_changes(bool shown_free) {
+    const bool auto_reload = settings_.flag("auto_reload");
+    const Document* focused_doc = ws_.entry_of(ws_.focused().id) ? ws_.entry_of(ws_.focused().id)->slot.doc.get() : nullptr;
+    for (const DocumentList::Id id : ws_.documents().order()) {
+        View* v = ws_.entry_of(id);
+        if (v == nullptr || !v->slot.doc || v->slot.doc->is_untitled()) continue;
+        DocumentSlot& slot = v->slot;
+        Document& d = *slot.doc;
+        const std::string name = d.path().filename().string();
+        const ExternalChange change = d.check_external_change();
+        if (change.kind == ExternalChange::unchanged) continue;
+        if (change.kind == ExternalChange::deleted) {
+            d.keep_in_memory();  // saving recreates it; not reported again
+            notices_.post(&d, name + " was deleted on disk; saving recreates it");
+            continue;
+        }
+        // Reloaded now only if nothing is open over it on screen.
+        const bool free = &d != focused_doc || shown_free;
+        // Rewritten in place under a mapping: the bytes in memory are already the new ones, so
+        // mod's version cannot be kept whatever the setting says.
+        if (!change.replaced && maps_files()) {
+            if (!free) continue;
+            if (auto s = reload_slot(slot); !s) {
+                notices_.post(&d, "cannot reload " + name + ": " + s.error().message);
+            } else {
+                notices_.post(&d, "reloaded " + name + ": rewritten in place, mod's copy could not be kept");
+            }
+            continue;
+        }
+        if (auto_reload && !d.is_dirty() && free) {
+            if (auto s = reload_slot(slot); !s) {
+                notices_.post(&d, "cannot reload " + name + ": " + s.error().message);
+            } else {
+                notices_.post(&d, "reloaded " + name + ": it changed on disk", kReloadedNotice);
+            }
+            continue;
+        }
+        if (auto_reload && !d.is_dirty()) continue;  // tried again on the next check
+        const std::string text = name + " changed on disk: File > Reload to load it";
+        if (!notices_.has(&d) || notices_.show(&d, Clock::now()) != text) notices_.post(&d, text);
+    }
+    // Notices for documents that closed go with them.
+    notices_.retain([this](const void* key) {
+        for (const DocumentList::Id id : ws_.documents().order()) {
+            const View* v = ws_.entry_of(id);
+            if (v != nullptr && v->slot.doc.get() == key) return true;
+        }
+        return false;
+    });
 }
 
 void App::dirty_check(std::string question, std::function<void()> proceed) {
@@ -1049,6 +1125,7 @@ void App::run_command(CommandId id) {
                 }
             });
             break;
+        case CommandId::Reload: reload_command(); break;
         case CommandId::CloseDocument:
             if (ro().away) leave_read_only();  // the document itself is what closes
             dirty_check(std::format("Save changes to {} before closing it?", file_name()), [this] { close_shown(); });
@@ -1970,6 +2047,13 @@ void App::render() {
     if (prompt_.is_open() && !menu_.is_visible()) prompt_.render(screen_, l.prompt);
     if (l.confirm) confirm_.render(screen_, *l.confirm);
     std::string_view message = status_;
+    // The shown document's notice, unless a status message came after it was posted.
+    std::optional<std::string> notice;
+    if (!l.own_line && !preview_ && shown().doc) {
+        const auto posted = notices_.posted(shown().doc.get());
+        if (posted && (status_.empty() || status_set_ < *posted)) notice = notices_.show(shown().doc.get(), Clock::now());
+    }
+    if (notice) message = *notice;
     if (message.empty() && history_view_.is_open()) message = kHistoryHints;
     if (message.empty()) {
         switch (panel()) {
@@ -2173,6 +2257,7 @@ void App::set_status(std::string message) {
     if (message.empty()) return;
     log(LogLevel::info, "status: {}", message);
     status_ = std::move(message);
+    status_set_ = Clock::now();
     status_deadline_ = Clock::now() + kStatusTimeout;
 }
 
@@ -2217,7 +2302,8 @@ int App::wait_timeout_ms() {
     for (std::size_t i = 0; i < ws_.size(); ++i) {
         if (const auto d = ws_.at(i).slot.highlighter_deadline; d && i != ws_.focus()) until(*d);
     }
-    if (!shown().doc->is_untitled()) until(next_external_check_);
+    until(next_external_check_);
+    if (const auto d = notices_.next_deadline()) until(*d);
     if (status_deadline_) until(*status_deadline_);
     if (flash_deadline_) until(*flash_deadline_);
     if (shown().searcher->active()) consider(milliseconds(0));
@@ -2286,9 +2372,9 @@ void App::handle_events(WaitEvents ev, std::span<std::byte> buf) {
     }
     const bool focus_free = !menu_.is_visible() && !prompt_.is_open() && !confirm_.is_open() && !file_dialog_ && !history_view_.is_open() && !panel_open();
     if (prune_offer_pending_ && focus_free) offer_prune();
-    if (!shown().doc->is_untitled() && Clock::now() >= next_external_check_ && focus_free && !external_prompt_open_) {
+    if (Clock::now() >= next_external_check_ && !external_prompt_open_) {
         next_external_check_ = Clock::now() + kExternalCheckInterval;
-        handle_external_change();
+        check_external_changes(focus_free);
     }
 }
 

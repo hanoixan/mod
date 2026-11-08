@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 85ab0437, stand-in 1607fc7a
+stamp: source ac7ec7a5, stand-in c6687c59
 ---
 # module: commands
 
@@ -17,7 +17,7 @@ The closed set of user-level commands. Keys (through [Keymap](./keymap.hpp.skel.
 
 `enum class CommandId`. The values are:
 
-- **Files:** `Open` (a new document, or a switch to one already open), `Save`, `SaveAs`, `CloseDocument` (File > Close), `Suspend` (stops mod as a shell job), `ClearHistory`, `TrimHistory`, `Exit`. `ClearHistory` and `TrimHistory` have no menu item: they are run from the Undo History pane (C and P), and can be given keys in the Key Bindings editor.
+- **Files:** `Open` (a new document, or a switch to one already open), `Save`, `SaveAs`, `CloseDocument` (File > Close), `Reload` (File > Reload: the document from its file again, asking first if it has unsaved changes), `Suspend` (stops mod as a shell job), `ClearHistory`, `TrimHistory`, `Exit`. `ClearHistory` and `TrimHistory` have no menu item: they are run from the Undo History pane (C and P), and can be given keys in the Key Bindings editor.
 - **History:** `Undo`, `Redo`, `UndoHistory` (opens the [HistoryView](../ui/history_view.hpp.skel.md#class-historyview) panel), `NextBranch`, `PrevBranch`.
 - **Clipboard:** `Cut`, `CutToLineEnd`, `Copy`, `Paste`.
 - **Search and navigation:** `Find`, `FindNext`, `FindPrev`, `GotoLine`.

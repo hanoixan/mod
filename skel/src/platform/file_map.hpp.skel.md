@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source f19cb0bd, stand-in 10096aaf
+stamp: source e0c1a488, stand-in 15cb1d67
 ---
 # module: file_map
 
-Read-only memory mapping of whole files. This is what lets `mod` open files larger than RAM. Mapped bytes are immutable for the mapping's lifetime as far as `mod` is concerned. See the failure modes for external writers.
+Read-only copies of whole files: a memory mapping, which is what lets `mod` open files larger than RAM, or on Windows the file's bytes read into memory. On Windows (the MSYS2 runtime) a file another program has mapped or open cannot be truncated or rewritten (`ERROR_USER_MAPPED_FILE`, sharing violations), so other editors could not save a file open in mod; there the file is opened through `CreateFileW` sharing read, write and delete, read in whole and closed at once, and nothing of it stays held. `FileLoad { automatic, map, read_in }` picks: `automatic` is `read_in` under `__CYGWIN__` and `map` elsewhere; `maps_files()` says which `automatic` is, for App's handling of a file rewritten in place. Mapped bytes are immutable for the mapping's lifetime as far as `mod` is concerned. See the failure modes for external writers.
 
 - **Owns:** the `MappedFile` interface and `FileIdentity`.
 - **Access:** public. Mappings are shared via `std::shared_ptr<const MappedFile>`, because pieces and undo payloads may keep an old mapping alive.
@@ -32,7 +32,7 @@ Read-only memory mapping of whole files. This is what lets `mod` open files larg
 
 - **Inputs:** construction goes through the `open` factory.
 - **State changes:** immutable after construction.
-- **Owns:** the mapping and the file descriptor or handle. Both are released in the destructor.
+- **Owns:** the mapping and the file descriptor, or the bytes read in. Released in the destructor: a mapping is unmapped, bytes read in are freed (never passed to `munmap`, which on macOS would unmap the heap pages under them).
 - **Access:** may be read from any thread, including LineScanner and the sidecar writer.
 - **Referred by:** [sidecar](../edit/sidecar.hpp.skel.md)
 - **Referred by:** [file_map_posix](./file_map_posix.cpp.skel.md)
@@ -42,9 +42,9 @@ Read-only memory mapping of whole files. This is what lets `mod` open files larg
 
 ### function: open
 
-- **Inputs:** `path`: `std::filesystem::path`.
-- **Returns:** `Result<std::shared_ptr<const MappedFile>>`.
-- **State changes:** creates an OS mapping. Advises `MADV_SEQUENTIAL` where available, because most accesses are scans.
+- **Inputs:** `path`: `std::filesystem::path`; `load`: a `FileLoad` (default `automatic`; tests ask for `read_in` on any system).
+- **Returns:** `Result<std::shared_ptr<const MappedFile>>`. Read in, the identity is the file's at open with the size of the bytes read (a file that shrinks while it is read is read to where it ended); a file too large for memory is `too_large`.
+- **State changes:** mapped: creates an OS mapping, advising `MADV_SEQUENTIAL` where available, because most accesses are scans. Read in: the bytes are copied into memory the MappedFile owns and the file is closed before it returns.
 - **Access:** [Document.open](../edit/document.hpp.skel.md#function-open), [Document.save](../edit/document.hpp.skel.md#function-save) for remapping, and [Sidecar](../edit/sidecar.hpp.skel.md#class-sidecar) for the payload area.
 - **Referred by:** [Document.open](../edit/document.hpp.skel.md#function-open)
 

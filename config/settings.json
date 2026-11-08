@@ -4,6 +4,7 @@
   "syntax_coloring": true,
   "word_wrap": true,
   "pin_folder_tree": false,
+  "auto_reload": true,
   "mouse": true,
   "terminal_mode": "auto",
   "darkness": "normal",

@@ -225,7 +225,7 @@ TEST_CASE("File no longer holds Clear History… or Trim History…; the Undo Hi
     CHECK(file.title == "File");
     std::vector<CommandId> commands;
     for (const MenuItem& item : file.items) commands.push_back(item.command);
-    CHECK(commands == std::vector<CommandId>{CommandId::Open, CommandId::Save, CommandId::SaveAs, CommandId::CloseDocument, CommandId::Suspend, CommandId::Exit});
+    CHECK(commands == std::vector<CommandId>{CommandId::Open, CommandId::Save, CommandId::SaveAs, CommandId::CloseDocument, CommandId::Reload, CommandId::Suspend, CommandId::Exit});
 }
 
 TEST_CASE("File > Suspend shows Ctrl+T; Edit > Cut to Line End shows Ctrl+K") {
@@ -235,8 +235,9 @@ TEST_CASE("File > Suspend shows Ctrl+T; Edit > Cut to Line End shows Ctrl+K") {
     screen.resize({20, 60});
     f.menu.open(MenuId::file);
     f.menu.render(screen, 0, {});
-    CHECK(screen_row(screen, f.item_row(4)).find("Suspend") != std::string::npos);
-    CHECK(screen_row(screen, f.item_row(4)).find("Ctrl+T") != std::string::npos);
+    CHECK(screen_row(screen, f.item_row(4)).find("Reload") != std::string::npos);  // after Close, accelerator R
+    CHECK(screen_row(screen, f.item_row(5)).find("Suspend") != std::string::npos);
+    CHECK(screen_row(screen, f.item_row(5)).find("Ctrl+T") != std::string::npos);
     const auto& edit = f.menu.menus()[1];
     bool found = false;
     for (std::size_t i = 0; i < edit.items.size(); ++i) {

@@ -13,6 +13,7 @@ constexpr std::array<CommandInfo, kCommandCount> kTable{{
     {C::Save, "Save", "Save"},
     {C::SaveAs, "SaveAs", "Save As…"},
     {C::CloseDocument, "CloseDocument", "Close"},
+    {C::Reload, "Reload", "Reload"},
     {C::Suspend, "Suspend", "Suspend"},
     {C::ClearHistory, "ClearHistory", "Clear History…"},
     {C::TrimHistory, "TrimHistory", "Trim History…"},

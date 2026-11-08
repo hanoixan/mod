@@ -24,3 +24,15 @@ View > Split divides the view you are in into two, one above the other, both sho
 - Closing a document removes the other views that show it.
 - While the Undo History pane, the file dialog, a settings panel or the help is open, it fills the screen, with its own bottom line in place of any view's status line; the views come back when it closes.
 - If the screen gets shorter, the bottom views are removed until the rest fit.
+
+## Changes on disk
+
+mod checks every open document against its file every two seconds, and when you switch to one. When another program changes a file:
+
+- If the [`auto_reload` setting](settings.md#the-settings) is on (it is unless you turn it off) and you have no unsaved changes in it, mod loads the new version at once. The status line says `reloaded notes.md: it changed on disk` for five seconds once you are looking at it, so a document in another view, or not shown at all, tells you when you next go to it.
+- If the setting is off, or you have unsaved changes, the document stays as it is and its status line says `notes.md changed on disk: File > Reload to load it` until you reload it or save it. File > Reload (Esc F R) loads the new version; with unsaved changes it asks first, and your changes are kept off the undo path, in the [Undo History](undo-history.md).
+- If the file is deleted, the status line says so; saving writes it again.
+
+None of this takes the keys from you or opens a question: you go on typing. Saving over a file that changed on disk still asks whether to replace it.
+
+On Linux and macOS mod reads a file through a memory map. If another program rewrites the file in place (rather than replacing it, as most editors do), the map shows the new bytes at once, so mod reloads it whatever the setting says, and the status line says the version in mod could not be kept. On Windows mod reads the whole file in and closes it straight away, sharing it for reading, writing and deleting, so other programs can always save over a file that is open in mod; that uses as much memory as the file is large.

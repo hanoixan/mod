@@ -24,6 +24,7 @@ std::vector<Menu> menu_table() {
           {"Save", 's', C::Save, false},
           {"Save As…", 'a', C::SaveAs, false},
           {"Close", 'c', C::CloseDocument, false},
+          {"Reload", 'r', C::Reload, false},
           {"Suspend", 'u', C::Suspend, false},
           {"Exit", 'x', C::Exit, false}}},
         {"Edit", 'e',

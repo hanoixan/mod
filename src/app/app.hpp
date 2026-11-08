@@ -22,6 +22,7 @@
 #include "app/history_preview.hpp"
 #include "app/read_only.hpp"
 #include "app/keymap.hpp"
+#include "app/notices.hpp"
 #include "app/settings.hpp"
 #include "edit/clipboard.hpp"
 #include "edit/document.hpp"
@@ -127,6 +128,13 @@ private:
     void save_now(std::optional<std::filesystem::path> target, SaveMode mode, std::function<void()> then);
     void handle_external_change(std::function<void()> proceed = {});
     void reload_document();
+    // Reloads the document in `slot` (any open one, shown or not) from its file.
+    Status reload_slot(DocumentSlot& slot);
+    // Every open document checked against its file: reloaded, or given a notice (see Notices).
+    // `shown_free`: the focused view may be reloaded now (nothing is open over it).
+    void check_external_changes(bool shown_free);
+    // File > Reload.
+    void reload_command();
     void offer_prune();
     void prune_ask_age(std::uint64_t oldest_days);
     void prune_confirm(std::uint64_t days);
@@ -279,6 +287,10 @@ private:
     std::string status_;
     std::string title_;  // the terminal's title as last set
     std::optional<Clock::time_point> status_deadline_;
+    Clock::time_point status_set_{};  // when status_ was last set, against a notice's posting
+    // Per-document notices (changed on disk, reloaded), shown on the focused view's status line.
+    Notices notices_;
+    static constexpr std::chrono::seconds kReloadedNotice{5};
     // A menu item chosen by its letter, shown chosen until its flash ends.
     static constexpr std::chrono::milliseconds kMenuFlash{120};
     std::optional<CommandId> flash_command_;
