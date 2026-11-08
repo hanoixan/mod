@@ -115,6 +115,23 @@ std::uint64_t Editor::word_left(std::uint64_t pos) const {
     return pos;
 }
 
+std::uint64_t Editor::visual_line_start(std::uint64_t pos) const {
+    if (!wrap_width_) return line_start(pos);
+    return WrapLayout(doc_.text(), *wrap_width_, tab_width_).row_start(pos);
+}
+
+// The end of the row on screen. A row that wraps on ends where the next begins, which is drawn
+// on the next row, so the cursor stops on the row's last character (after its last word, when
+// the row ends in the space it wrapped at); the line's last row ends at the line's end.
+std::uint64_t Editor::visual_line_end(std::uint64_t pos) const {
+    if (!wrap_width_) return line_end(pos);
+    const WrapLayout wrap(doc_.text(), *wrap_width_, tab_width_);
+    const std::uint64_t row = wrap.row_start(pos);
+    const std::uint64_t end = wrap.row_end(row);
+    if (end >= wrap.line_end(wrap.line_start(row))) return end;
+    return std::max(row, prev_boundary(end));
+}
+
 std::uint64_t Editor::line_start(std::uint64_t pos) const {
     const std::uint64_t lf = doc_.text().find_lf_backward(pos, pos);
     return lf == PieceTree::npos ? 0 : lf + 1;
@@ -247,6 +264,8 @@ void Editor::move(Motion motion, bool extend, std::uint64_t page_rows) {
         case Motion::LineEnd: target = line_end(cursor_); break;
         case Motion::DocStart: target = 0; break;
         case Motion::DocEnd: target = size(); break;
+        case Motion::VisualLineStart: target = visual_line_start(cursor_); break;
+        case Motion::VisualLineEnd: target = visual_line_end(cursor_); break;
     }
     if (!keep_sticky) sticky_column_.reset();
     set_cursor(snap(target), extend);

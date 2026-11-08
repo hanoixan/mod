@@ -4,6 +4,8 @@
 
 Arrows move by character and line, Home and End to the start and end of the line, PageUp and PageDown by a screen, and Ctrl+Home and Ctrl+End to the start and end of the file. Ctrl+Left and Ctrl+Right move by word. Ctrl+A and Ctrl+E also go to the start and end of the line.
 
+With [Word Wrap](menus.md#view) on, a long line takes several rows on screen. Home and End then go to the start and end of the row the cursor is on; press them twice quickly (within 0.4 seconds) to go on to the start or end of the whole line. Without word wrap a row is the line, so once is enough. Ctrl+A and Ctrl+E always go to the line's start and end. In [Key bindings](key-bindings.md) these are Move Visual Line Start and End (the row) and Move Line Start and End (the line), with their Select twins, so you can give the line's ends to Home and End instead.
+
 Ctrl+Up and Ctrl+Down scroll the view a row at a time without moving the cursor, as in VS Code: the text and the cursor move together, and the cursor may scroll out of view. Scrolling stops when the first line is at the top or the last line at the bottom. The next key that moves the cursor or edits brings the view back to it, with up to five rows of text showing beyond it on the side it was scrolled off.
 
 Hold Shift with any of these to select. Typing replaces the selection.

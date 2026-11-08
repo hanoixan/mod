@@ -89,8 +89,11 @@ std::uint64_t ReadingLayout::move(Motion motion, std::uint64_t cursor, std::size
             const auto it = std::ranges::lower_bound(entries_, cursor, {}, &Entry::offset);
             return it == entries_.begin() ? entries_.front().offset : std::prev(it)->offset;
         }
-        case Motion::LineStart: return entries_[by_line_[spot.line].front()].offset;
-        case Motion::LineEnd: return entries_[by_line_[spot.line].back()].offset;
+        // Laid out for reading, a line is what is shown: visual and logical are the same.
+        case Motion::LineStart:
+        case Motion::VisualLineStart: return entries_[by_line_[spot.line].front()].offset;
+        case Motion::LineEnd:
+        case Motion::VisualLineEnd: return entries_[by_line_[spot.line].back()].offset;
         case Motion::DocStart: return entries_.front().offset;
         case Motion::DocEnd: return entries_.back().offset;
         case Motion::Up:

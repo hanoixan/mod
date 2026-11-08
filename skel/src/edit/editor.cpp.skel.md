@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./editor.hpp.skel.md
-stamp: source 2987a7a2, stand-in 1149421c
+stamp: source c15557d4, stand-in 1149421c
 ---
 # module: editor (implementation)
 

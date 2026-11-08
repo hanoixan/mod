@@ -712,3 +712,17 @@ TEST_CASE("a mapped file rewritten in place is reloaded even with unsaved change
                               {"quit", "\x11", nullptr}});
     check_steps(run);
 }
+
+TEST_CASE("End goes to the end of the row on screen, and twice quickly to the line's end; Home the same") {
+    // 80 columns, a gutter of 4: rows of 75 columns.
+    std::string words;
+    while (words.size() < 150) words += "word ";
+    const auto run = run_app("visual-end", words + "\n",
+                             {{"start", "", status_has("1:1")},
+                              {"End: the row's end", "\x1b[F", status_has("1:75")},
+                              {"End twice quickly: the line's end", "\x1b[F\x1b[F", status_has(std::format("1:{}", words.size() + 1))},
+                              {"Home: the last row's start", "\x1b[H", status_has("1:76")},
+                              {"Home twice quickly: the line's start", "\x1b[H\x1b[H", status_has("1:1")},
+                              {"quit", "\x11", nullptr}});
+    check_steps(run);
+}

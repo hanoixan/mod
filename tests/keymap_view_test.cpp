@@ -77,7 +77,8 @@ TEST_CASE("the editor lists every bindable command with its keys") {
         CHECK(row.find("Recent Setting") == std::string::npos);
         if (row.starts_with("Save  ")) save = row.ends_with("Ctrl+S");
         if (row.starts_with("Save As  ")) save_as = row.ends_with("(none)");
-        if (row.starts_with("Move Line Start  ")) line_start = row.ends_with("Ctrl+A, Home");
+        if (row.starts_with("Move Line Start  ")) line_start = row.ends_with("Ctrl+A");
+        if (row.starts_with("Move Visual Line Start  ")) CHECK(row.ends_with("Home"));
     }
     CHECK(save);
     CHECK(save_as);
@@ -194,10 +195,7 @@ TEST_CASE("Delete removes the command's last key; with none left it says so") {
     f.type("move line start");
     KeymapKeyResult r = f.view.handle_key(key(Key::Delete));
     CHECK(r.changed);
-    CHECK(r.message == "Home removed from Move Line Start");
-    CHECK(f.view.row_text(0).ends_with("Ctrl+A *"));
-    r = f.view.handle_key(key(Key::Delete));
-    CHECK(r.changed);
+    CHECK(r.message == "Ctrl+A removed from Move Line Start");
     CHECK(f.view.row_text(0).ends_with("(none) *"));
     r = f.view.handle_key(key(Key::Delete));
     CHECK_FALSE(r.changed);

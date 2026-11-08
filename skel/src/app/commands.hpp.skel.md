@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source ac7ec7a5, stand-in c6687c59
+stamp: source 31939d26, stand-in 5ac75b3a
 ---
 # module: commands
 
@@ -25,7 +25,7 @@ The closed set of user-level commands. Keys (through [Keymap](./keymap.hpp.skel.
 - **Options:** `Colors` (opens the [ColorsView](../ui/colors_view.hpp.skel.md#class-colorsview) editor), `KeyBindings` (opens the [KeymapView](../ui/keymap_view.hpp.skel.md#class-keymapview) editor), `UserSettings` (opens the [SettingsView](../ui/settings_view.hpp.skel.md#class-settingsview) panel), and `RecentSetting1` … `RecentSetting5`, the Options menu's recent-settings items, newest first. The five are consecutive, so [recent_setting_command](#function-recent_setting_command) and [recent_setting_index](#function-recent_setting_index) convert between a position and the command by arithmetic. Their menu labels are built by MenuBar, so their `menu_label` is empty.
 - **Documents:** `ShowDocument`, every item of the Documents menu; which document comes with the menu item (`MenuBar.chosen_arg`), so it cannot have keys.
 - **Help:** `ShowHelp` (F1, Help > Documentation: the help screen), `About`.
-- **Motions:** `MoveLeft`, `MoveRight`, `MoveWordLeft`, `MoveWordRight`, `MoveUp`, `MoveDown`, `MoveLineStart`, `MoveLineEnd`, `MovePageUp`, `MovePageDown`, `MoveDocStart`, `MoveDocEnd`. Each motion also has a `Select…` twin for the Shift variants.
+- **Motions:** `MoveLeft`, `MoveRight`, `MoveWordLeft`, `MoveWordRight`, `MoveUp`, `MoveDown`, `MoveLineStart`, `MoveLineEnd`, `MovePageUp`, `MovePageDown`, `MoveDocStart`, `MoveDocEnd`, `MoveVisualLineStart`, `MoveVisualLineEnd` (in the order of [Motion](../edit/editor.hpp.skel.md#symbol-motion), which App's `motion_of` relies on). Each motion also has a `Select…` twin for the Shift variants.
 - **The view:** `ScrollLineUp`, `ScrollLineDown` (Ctrl+Up, Ctrl+Down) scroll the view a row without moving the cursor ([EditorView.scroll_rows](../ui/editor_view.hpp.skel.md#function-scroll_rows)); no menu item.
 - **Editing:** `Newline`, `InsertTab` (spaces or a tab, as `tab_inserts` says), `Outdent` (Shift+Tab), `DeleteBack`, `DeleteForward`, `DeleteWordBack`, `DeleteWordForward`.
 - **Menus:** `ShowMenu` (F10 and Alt+X; Esc does the same, outside the keymap) shows the hidden menu bar, armed for a menu's letter; `OpenMenuFile`, `OpenMenuEdit`, `OpenMenuView`, `OpenMenuDocuments`, `OpenMenuOptions`, `OpenMenuHelp` open one menu directly and have no default keys.

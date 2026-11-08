@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 973c74d8, stand-in 85c78d56
+stamp: source 973c74d8, stand-in 4587810e
 ---
 # module: keymap
 
@@ -9,7 +9,7 @@ The key-to-command bindings. They start as the built-in **defaults** in the tabl
 Rules that hold for every edit:
 
 - A key belongs to at most one command. Binding a key that another command has is **refused**; the user removes it there first. Nothing is ever taken silently by the editor.
-- A command may have several keys (Home and Ctrl+A both move to the line start). The first one is the label shown in the menus.
+- A command may have several keys (F10 and Alt+X both show the menu). The first one is the label shown in the menus.
 - Plain text (a character without Ctrl or Alt) and Esc cannot be bound: text is inserted, and Esc closes things everywhere.
 - Keys inside menus, prompts and panels are fixed; only the bindings of commands are editable.
 
@@ -27,6 +27,7 @@ Default bindings requested at the start:
 | Shift+arrows | Select… motions |
 | Ctrl+F | Find (Tab inside the bar switches to replace) |
 | Ctrl+A / Ctrl+E | MoveLineStart / MoveLineEnd |
+| Home / End | MoveVisualLineStart / MoveVisualLineEnd (Shift: SelectVisualLineStart / SelectVisualLineEnd); twice quickly, the line's start / end |
 | Ctrl+Left / Ctrl+Right | MoveWordLeft / MoveWordRight (with Shift: select) |
 | Alt+X | ShowMenu: shows the hidden menu bar, as Esc does; the next letter picks a menu (the request replaced the earlier Alt+F / Alt+E / Alt+V / Alt+O / Alt+H keys, and later Alt+M) |
 

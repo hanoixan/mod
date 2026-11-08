@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 590db860, stand-in 6fa362a7
+stamp: source 67b9e182, stand-in d61c9faf
 ---
 # module: editor
 
@@ -22,11 +22,13 @@ Cursor, selection and editing commands over a [Document](./document.hpp.skel.md#
 - `Left`, `Right`: one extended grapheme cluster, from [prev_grapheme_boundary](../text/utf8.hpp.skel.md#function-prev_grapheme_boundary) and [next_grapheme_boundary](../text/utf8.hpp.skel.md#function-next_grapheme_boundary).
 - `WordLeft`, `WordRight`: Ctrl+Left/Right.
 - `Up`, `Down`: by display column.
-- `LineStart`: Home or Ctrl+A.
-- `LineEnd`: End or Ctrl+E.
+- `LineStart`: Ctrl+A, or Home pressed twice quickly.
+- `LineEnd`: Ctrl+E, or End pressed twice quickly.
 - `PageUp`, `PageDown`.
 - `DocStart`: Ctrl+Home.
 - `DocEnd`: Ctrl+End.
+- `VisualLineStart`: Home: with a wrap width ([set_wrap_width](#function-set_wrap_width)), the start of the row on screen holding the cursor ([WrapLayout.row_start](../text/wrap.hpp.skel.md#function-row_start)); without, `LineStart`.
+- `VisualLineEnd`: End: with a wrap width, the end of the row on screen. A row that wraps on ends where the next row starts, which is drawn on the next row, so the cursor stops on the row's last character instead (the space it wrapped at, so after its last word); the line's last row ends at the line's end. Without a wrap width, `LineEnd`. Moving again from there stays put; the double press to the line's end is App's.
 
 - **Access:** public.
 - **Referred by:** [reading_layout](../ui/reading_layout.hpp.skel.md)

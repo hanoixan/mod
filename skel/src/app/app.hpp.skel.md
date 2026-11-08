@@ -1,7 +1,7 @@
 ---
 role: product
 untested: needs a real terminal and every component wired together; it is exercised by running mod, and no automated test drives it
-stamp: source cb5fbc24, stand-in 5c0ccba6
+stamp: source 1e6568d1, stand-in fdbfc88e
 ---
 # module: app
 
@@ -157,7 +157,7 @@ The event loop.
 - **Returns:** nothing.
 - **State changes:** executes the command against the owned components. After every command, `EditorView.scroll_to_cursor` runs.
   - `ScrollLineUp` and `ScrollLineDown` call [EditorView.scroll_rows](../ui/editor_view.hpp.skel.md#function-scroll_rows) (−1, +1) on the shown view (or the file preview's) and return without following the cursor. Every other command, typed text and a paste first call [EditorView.follow_cursor](../ui/editor_view.hpp.skel.md#function-follow_cursor), so the view comes back to the cursor; a resize does not.
-  - Motions and edits go to Editor. `InsertTab` inserts one tab character (`\t`) as typed text, replacing the selection like any typed character; it never inserts spaces.
+  - Motions and edits go to Editor. **Double press:** `MoveVisualLineStart`/`End` (and their Select twins) run again within `kDoublePress` (400 ms) of the same command, with the cursor where it left it and the same document, become `LineStart`/`LineEnd`: Home and End go to the row's ends, and twice quickly to the line's. Any other command forgets the first press. `InsertTab` inserts one tab character (`\t`) as typed text, replacing the selection like any typed character; it never inserts spaces.
   - Save and Save As go to [save_document](#function-save_document). Save on an untitled document opens the `save_as` prompt instead.
   - `Find` opens the Prompt, prefilled with a selection of up to `kMaxFindPrefill` bytes, else the last query ([Prompt.last_query](../ui/prompt.hpp.skel.md#function-open_find); never what another prompt was given). `FindNext` and `FindPrev` (F3, Shift+F3) call [Searcher.find_next](../search/search.hpp.skel.md#function-find_next) from the cursor, forward or backward, with the last query, whether or not the find bar is open. When no query has been set in this session, F3 and Shift+F3 open the find bar exactly as `Find` (Ctrl+F) does. `GotoLine` (Ctrl+G) opens the `goto_line` prompt.
   - `UndoHistory` (Edit > Undo History…; it has no key) opens the [HistoryView](../ui/history_view.hpp.skel.md#class-historyview) with the document's undo tree. While it is open, App lays the screen out as the panel describes. The panel is a side pane on the left of the text area. The text area (with its gutter) stays visible to its right, narrower by the pane's width and the frame. The status line shows the panel's key hints. The pane's width comes from [history_pane_width](../ui/history_view.hpp.skel.md#function-history_pane_width). On a terminal narrower than 60 columns the panel takes the full width while it is open: the text area is not drawn, and it is laid out again when the panel closes. The text area is re-laid out (and `EditorView.scroll_to_cursor` run) when the panel opens and closes. When the panel returns a node, App calls [Document.jump_to](../edit/document.hpp.skel.md#function-jump_to), restores the cursor it returns, clears the selection, and closes the panel; on error it shows the reason and leaves the panel open.

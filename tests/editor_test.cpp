@@ -824,3 +824,28 @@ TEST_CASE("word_at and line_at give a double click's word and a triple click's l
     REQUIRE(f.ed->selection());
     CHECK(*f.ed->selection() == std::pair<std::uint64_t, std::uint64_t>{3, 8});
 }
+
+TEST_CASE("visual line motions: the row on screen with soft wrap, the line without") {
+    // Rows of 10 columns: "aaaa bbbb " / "cccc dddd " / "ee".
+    Fixture f("visual-lines.txt", "aaaa bbbb cccc dddd ee\nnext\n");
+    f.at(12);  // in "cccc"
+    f.ed->move(Motion::VisualLineEnd);
+    CHECK(f.ed->cursor() == 22);  // no wrap width: the line's end
+    f.ed->set_wrap_width(10);
+    f.at(12);
+    f.ed->move(Motion::VisualLineStart);
+    CHECK(f.ed->cursor() == 10);
+    f.ed->move(Motion::VisualLineEnd);
+    CHECK(f.ed->cursor() == 19);  // on the row's last character, the space it wrapped at
+    f.ed->move(Motion::VisualLineEnd);
+    CHECK(f.ed->cursor() == 19);  // again: it stays (App turns a quick second press into LineEnd)
+    f.at(21);  // on the line's last row
+    f.ed->move(Motion::VisualLineEnd);
+    CHECK(f.ed->cursor() == 22);  // the line's end
+    f.ed->move(Motion::VisualLineStart, true);
+    REQUIRE(f.ed->selection());
+    CHECK(*f.ed->selection() == std::pair<std::uint64_t, std::uint64_t>{20, 22});
+    f.at(3);
+    f.ed->move(Motion::LineEnd);
+    CHECK(f.ed->cursor() == 22);  // the logical motions are unchanged
+}

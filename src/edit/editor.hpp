@@ -14,7 +14,9 @@
 
 namespace mod {
 
-enum class Motion { Left, Right, WordLeft, WordRight, Up, Down, LineStart, LineEnd, PageUp, PageDown, DocStart, DocEnd };
+// VisualLineStart and VisualLineEnd are the row on screen's ends with soft wrap (the wrap width
+// set_wrap_width gave), the line's ends without it.
+enum class Motion { Left, Right, WordLeft, WordRight, Up, Down, LineStart, LineEnd, PageUp, PageDown, DocStart, DocEnd, VisualLineStart, VisualLineEnd };
 
 // Cursor, selection and editing commands over a Document. Main thread.
 class Editor : public DocumentListener {
@@ -77,6 +79,8 @@ private:
     std::uint64_t word_right(std::uint64_t pos) const;
     std::uint64_t word_left(std::uint64_t pos) const;
     std::uint64_t line_start(std::uint64_t pos) const;
+    std::uint64_t visual_line_start(std::uint64_t pos) const;
+    std::uint64_t visual_line_end(std::uint64_t pos) const;
     std::uint64_t line_end(std::uint64_t pos) const;
     std::uint64_t column_at(std::uint64_t line_start, std::uint64_t pos);
     std::uint64_t offset_at_column(std::uint64_t line_start, std::uint64_t column);

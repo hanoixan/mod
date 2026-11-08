@@ -64,9 +64,9 @@ Plain typing keys (letters, digits, Shift with them) and Esc cannot be bound. Ct
 | `Down` | Move Down |
 | `Ctrl+Left` | Move Word Left |
 | `Ctrl+Right` | Move Word Right |
-| `Home` | Move Line Start |
+| `Home` | Move Visual Line Start |
 | `Ctrl+A` | Move Line Start |
-| `End` | Move Line End |
+| `End` | Move Visual Line End |
 | `Ctrl+E` | Move Line End |
 | `PageUp` | Move Page Up |
 | `PageDown` | Move Page Down |
@@ -85,8 +85,8 @@ Plain typing keys (letters, digits, Shift with them) and Esc cannot be bound. Ct
 | `Shift+Down` | Select Down |
 | `Ctrl+Shift+Left` | Select Word Left |
 | `Ctrl+Shift+Right` | Select Word Right |
-| `Shift+Home` | Select Line Start |
-| `Shift+End` | Select Line End |
+| `Shift+Home` | Select Visual Line Start |
+| `Shift+End` | Select Visual Line End |
 | `Shift+PageUp` | Select Page Up |
 | `Shift+PageDown` | Select Page Down |
 | `Ctrl+Shift+Home` | Select Doc Start |
