@@ -32,6 +32,7 @@ set(MOD_TESTS
   markdown_links_test
   markdown_test
   menu_test
+  merge3_test
   notices_test
   piece_tree_test
   progress_test

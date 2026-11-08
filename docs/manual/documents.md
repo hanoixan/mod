@@ -30,9 +30,25 @@ View > Split divides the view you are in into two, one above the other, both sho
 mod checks every open document against its file every two seconds, and when you switch to one. When another program changes a file:
 
 - If the [`auto_reload` setting](settings.md#the-settings) is on (it is unless you turn it off) and you have no unsaved changes in it, mod loads the new version at once. The status line says `reloaded notes.md: it changed on disk` for five seconds once you are looking at it, so a document in another view, or not shown at all, tells you when you next go to it.
-- If the setting is off, or you have unsaved changes, the document stays as it is and its status line says `notes.md changed on disk: File > Reload to load it` until you reload it or save it. File > Reload (Esc F R) loads the new version; with unsaved changes it asks first, and your changes are kept off the undo path, in the [Undo History](undo-history.md).
+- If you have unsaved changes in it, or the setting is off, mod asks as soon as you are in that document: `notes.md changed on disk, and you have unsaved changes.` with three answers (Ignore is chosen with Enter or Esc):
+  - **Load from disk** (L) replaces everything in the document with the file's new version. Your unsaved changes stay in the [Undo History](undo-history.md), off the undo path.
+  - **Ignore** (I) keeps your text as it is. A later change to the file asks again; saving writes your version over the file.
+  - **Merge in place** (M) merges the two: what the other program changed since you last saved or loaded the file, and what you changed since then. Changes in different places are simply both taken. Where both of you changed the same lines, mod puts both versions in the text, with the text as you last saved it between them, for you to edit:
+
+    ```
+    <<<<<<< theirs
+    the file's new lines
+    ||||||| base
+    the lines as you last saved them
+    =======
+    your lines
+    >>>>>>> yours
+    ```
+
+    The status line says how many conflicts there are. The merge is one step: Undo takes it all back. A large file merges in the background with a progress bar on the status line, the document waiting meanwhile; Esc cancels the merge and leaves the text as it was.
+- While a document you are not in waits for its question, its status line says it changed on disk.
 - If the file is deleted, the status line says so; saving writes it again.
 
-None of this takes the keys from you or opens a question: you go on typing. Saving over a file that changed on disk still asks whether to replace it.
+Saving over a file that changed on disk asks the same question first; Ignore goes on and saves your version. Saving a document that still has `<<<<<<<` conflict blocks in it asks whether to save anyway, and opening a file with conflict blocks in it says how many there are.
 
 On Linux and macOS mod reads a file through a memory map. If another program rewrites the file in place (rather than replacing it, as most editors do), the map shows the new bytes at once, so mod reloads it whatever the setting says, and the status line says the version in mod could not be kept. On Windows mod reads the whole file in and closes it straight away, sharing it for reading, writing and deleting, so other programs can always save over a file that is open in mod; that uses as much memory as the file is large.

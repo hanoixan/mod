@@ -12,12 +12,12 @@ namespace {
 
 }  // namespace
 
-void ConfirmBar::open(std::string question, std::vector<std::string> choices, int esc_choice, ChoiceFn on_choice) {
+void ConfirmBar::open(std::string question, std::vector<std::string> choices, int esc_choice, ChoiceFn on_choice, int focus) {
     question_ = std::move(question);
     choices_ = std::move(choices);
     esc_choice_ = std::clamp(esc_choice, 0, std::max(0, static_cast<int>(choices_.size()) - 1));
     on_choice_ = std::move(on_choice);
-    focused_ = 0;
+    focused_ = std::clamp(focus, 0, std::max(0, static_cast<int>(choices_.size()) - 1));
     open_ = true;
 }
 

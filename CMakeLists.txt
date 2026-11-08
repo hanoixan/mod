@@ -112,6 +112,7 @@ set(MOD_CORE_SOURCES
   src/edit/clipboard.cpp
   src/edit/document.cpp
   src/edit/editor.cpp
+  src/edit/merge3.cpp
   src/edit/sidecar.cpp
   src/edit/undo_tree.cpp
   src/platform/file_map_posix.cpp

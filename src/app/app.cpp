@@ -220,6 +220,9 @@ void App::adopt_document(std::unique_ptr<Document> doc) {
     install_document(std::move(doc));
     prune_offer_pending_ = shown().doc->history_load_ms() > kSlowLoadMs;
     next_external_check_ = Clock::now() + kExternalCheckInterval;
+    // A file opened with conflict blocks in it (an unfinished merge) says so.
+    if (const std::size_t n = conflict_count(); n > 0)
+        notices_.post(shown().doc.get(), std::format("{} has {} merge conflict{} (<<<<<<< markers)", file_name(), n, n == 1 ? "" : "s"));
 }
 
 // ---- the open documents ------------------------------------------------------------------
@@ -541,6 +544,18 @@ void App::save_document(std::optional<fs::path> target, std::function<void()> th
         open_file_dialog(FileDialogMode::save, [this, then = std::move(then)](const fs::path& p) { save_document(p, then); });
         return;
     }
+    // Conflict blocks left in the text are asked about once per save.
+    if (!saving_with_conflicts_) {
+        if (const std::size_t n = conflict_count(); n > 0) {
+            ask(std::format("{} still has {} conflict{}. Save anyway?", file_name(), n, n == 1 ? "" : "s"), "Save",
+                [this, target, then] {
+                    saving_with_conflicts_ = true;
+                    save_document(target, then);
+                    saving_with_conflicts_ = false;
+                });
+            return;
+        }
+    }
     // Then an unanswered change on disk is settled; Reload cancels the save.
     handle_external_change([this, target = std::move(target), then = std::move(then)] { save_now(target, SaveMode::atomic, then); });
 }
@@ -585,19 +600,11 @@ void App::handle_external_change(std::function<void()> proceed) {
         if (proceed) proceed();
         return;
     }
-    external_prompt_open_ = true;
-    if (change.replaced) {
-        confirm_.open(file_name() + " changed on disk.", {"Reload (starts a new history; unsaved changes leave the undo path)", "Keep my version"}, 1,
-                             [this, proceed = std::move(proceed)](int choice) {
-                                 external_prompt_open_ = false;
-                                 if (choice == 0) {
-                                     reload_document();
-                                 } else {
-                                     shown().doc->keep_in_memory();
-                                     if (proceed) proceed();
-                                 }
-                             });
+    if (change.replaced || !maps_files()) {
+        // Ignore goes on with the save, over the file on disk.
+        ask_disk_change(std::move(proceed));
     } else {
+        external_prompt_open_ = true;
         confirm_.open(file_name() + " was modified in place on disk; your version cannot be kept.", {"Reload"}, 0,
                              [this](int) {
                                  external_prompt_open_ = false;
@@ -676,17 +683,220 @@ void App::check_external_changes(bool shown_free) {
             continue;
         }
         if (auto_reload && !d.is_dirty()) continue;  // tried again on the next check
-        const std::string text = name + " changed on disk: File > Reload to load it";
+        // Unsaved changes (or auto_reload off): the question, when this document is the one
+        // you are in; until then its status line says so.
+        disk_questions_.insert(&d);
+        const std::string text = name + " changed on disk";
         if (!notices_.has(&d) || notices_.show(&d, Clock::now()) != text) notices_.post(&d, text);
     }
-    // Notices for documents that closed go with them.
-    notices_.retain([this](const void* key) {
+    // Notices and waiting questions for documents that closed go with them.
+    auto open_doc = [this](const void* key) {
         for (const DocumentList::Id id : ws_.documents().order()) {
             const View* v = ws_.entry_of(id);
             if (v != nullptr && v->slot.doc.get() == key) return true;
         }
         return false;
+    };
+    notices_.retain(open_doc);
+    std::erase_if(disk_questions_, [&](const Document* d) { return !open_doc(d); });
+}
+
+void App::ask_disk_change(std::function<void()> on_ignore) {
+    Document& d = *shown().doc;
+    disk_questions_.erase(&d);
+    const std::string question = d.is_dirty() ? file_name() + " changed on disk, and you have unsaved changes." : file_name() + " changed on disk.";
+    external_prompt_open_ = true;
+    // Ignore has the focus, and is Esc: a stray Enter never replaces unsaved changes.
+    confirm_.open(question, {"Load from disk", "Ignore", "Merge in place"}, 1, [this, on_ignore = std::move(on_ignore)](int choice) {
+        external_prompt_open_ = false;
+        switch (choice) {
+            case 0: reload_document(); break;
+            case 2: start_merge(); break;
+            default:
+                // Ignore: the text stays; a later change asks again, and saving overwrites the file.
+                shown().doc->keep_in_memory();
+                notices_.clear(shown().doc.get());
+                if (on_ignore) on_ignore();
+                break;
+        }
+    }, 1);
+}
+
+namespace {
+
+// The line hashes of `t`, the progress drawn as `label` while it reads.
+LineIndex index_text(const PieceTree& t, std::string_view label, const std::function<void(const Progress&)>& progress) {
+    LineIndexer ix;
+    const std::uint64_t size = t.size();
+    std::uint64_t done = 0;
+    t.read(0, size, [&](std::span<const std::byte> b) {
+        ix.feed(b);
+        done += b.size();
+        if (progress) progress(Progress{std::string(label), done, size});
+        return true;
     });
+    return ix.finish();
+}
+
+}  // namespace
+
+void App::start_merge() {
+    if (merge_) return;
+    std::shared_ptr<Document> doc = shown().doc;
+    const std::string name = file_name();
+    auto disk = MappedFile::open(doc->path());
+    if (!disk) {
+        set_status("cannot merge " + name + ": " + disk.error().message);
+        return;
+    }
+    auto job = std::make_unique<MergeJob>();
+    job->doc = doc;
+    job->disk = *disk;
+    auto progress = [this](const Progress& p) { report_progress(p); };
+    if (auto st = doc->read_saved([&](const PieceTree& t) { job->base = index_text(t, "merging: the saved text", progress); }); !st) {
+        set_status("cannot merge " + name + ": " + st.error().message);
+        return;
+    }
+    job->ours = index_text(doc->text(), "merging: your text", progress);
+    {
+        LineIndexer ix;
+        const std::uint64_t size = job->disk->size();
+        for (std::uint64_t at = 0; at < size;) {
+            const std::uint64_t n = std::min<std::uint64_t>(size - at, std::uint64_t{1} << 22);
+            ix.feed(std::span(job->disk->data() + at, static_cast<std::size_t>(n)));
+            at += n;
+            report_progress(Progress{"merging: the file on disk", at, size});
+        }
+        job->theirs = ix.finish();
+    }
+    MergeJob* j = job.get();
+    job->worker = std::jthread([j] {
+        j->hunks = merge3(j->base.hash, j->ours.hash, j->theirs.hash, j->stop.get_token(), &j->progress);
+        j->finished.store(true, std::memory_order_release);
+    });
+    merge_ = std::move(job);
+}
+
+void App::cancel_merge() {
+    if (!merge_) return;
+    merge_->stop.request_stop();
+    merge_.reset();  // joins the worker
+    set_status("merge canceled; " + file_name() + " is as it was");
+}
+
+void App::poll_merge() {
+    if (merge_ && merge_->finished.load(std::memory_order_acquire)) finish_merge();
+}
+
+std::string App::merge_progress_text() const {
+    if (!merge_) return {};
+    const std::size_t total = std::max<std::size_t>(1, 2 * merge_->base.lines());
+    const std::size_t done = std::min(total, merge_->progress.load(std::memory_order_relaxed));
+    const int pct = static_cast<int>(done * 100 / total);
+    constexpr int kBar = 20;
+    const int fill = pct * kBar / 100;
+    std::string bar;
+    for (int i = 0; i < kBar; ++i) bar += i < fill ? "█" : "░";
+    return std::format("merging {} from disk {} {}%  Esc: cancel", merge_->doc->path().filename().string(), bar, pct);
+}
+
+void App::finish_merge() {
+    std::unique_ptr<MergeJob> job = std::move(merge_);
+    job->worker.join();
+    Document& d = *job->doc;
+    const std::string name = d.path().filename().string();
+    const std::optional<std::vector<MergeHunk>>& result = job->hunks;
+    if (!result) {
+        set_status("merge canceled; " + name + " is as it was");
+        return;
+    }
+    const std::vector<MergeHunk>& hunks = *result;
+    // The base's lines that conflict blocks show, read from the text as last saved.
+    std::vector<std::string> base_text(hunks.size());
+    std::size_t conflicts = 0;
+    for (const MergeHunk& h : hunks) conflicts += h.kind == MergeHunk::conflict ? 1 : 0;
+    if (conflicts > 0) {
+        auto st = d.read_saved([&](const PieceTree& t) {
+            for (std::size_t i = 0; i < hunks.size(); ++i) {
+                if (hunks[i].kind != MergeHunk::conflict) continue;
+                const std::uint64_t a = job->base.start[hunks[i].base0];
+                base_text[i] = t.read(a, job->base.start[hunks[i].base1] - a);
+            }
+        });
+        if (!st) {
+            set_status("cannot merge " + name + ": " + st.error().message);
+            return;
+        }
+    }
+    const std::string_view le = d.line_ending();
+    auto ended = [&](std::string s) {
+        if (!s.empty() && s.back() != '\n') s += le;
+        return s;
+    };
+    auto disk_bytes = [&](std::size_t l0, std::size_t l1) {
+        const std::uint64_t a = job->theirs.start[l0];
+        const std::uint64_t b = job->theirs.start[l1];
+        return std::string(reinterpret_cast<const char*>(job->disk->data()) + a, static_cast<std::size_t>(b - a));
+    };
+    // Applied from the last to the first, so earlier offsets stay good; one undo step.
+    Editor* editor = nullptr;
+    ws_.for_each_slot([&](DocumentSlot& s) {
+        if (s.doc.get() == &d && editor == nullptr) editor = s.editor.get();
+    });
+    const std::uint64_t cursor = editor ? editor->cursor() : 0;
+    d.begin_group(EditKind::other);
+    for (std::size_t i = hunks.size(); i-- > 0;) {
+        const MergeHunk& h = hunks[i];
+        const std::uint64_t at = job->ours.start[h.ours0];
+        const std::uint64_t len = job->ours.start[h.ours1] - at;
+        std::string text;
+        if (h.kind == MergeHunk::take_theirs) {
+            text = disk_bytes(h.theirs0, h.theirs1);
+        } else {
+            const std::string ours = d.text().read(at, len);
+            text = std::string("<<<<<<< theirs") + std::string(le) + ended(disk_bytes(h.theirs0, h.theirs1)) + "||||||| base" + std::string(le) +
+                   ended(base_text[i]) + "=======" + std::string(le) + ended(ours) + ">>>>>>> yours" + std::string(le);
+        }
+        d.apply(at, len, std::string_view(text), EditKind::other, cursor, cursor);
+    }
+    d.end_group();
+    d.adopt_disk_identity(job->disk->identity());
+    disk_questions_.erase(&d);
+    if (conflicts == 0) {
+        notices_.post(&d, std::format("merged the changes on disk into {}", name), kReloadedNotice);
+    } else {
+        notices_.post(&d, std::format("merged {} from disk: {} conflict{} marked <<<<<<< theirs", name, conflicts, conflicts == 1 ? "" : "s"));
+    }
+    after_command();
+}
+
+std::size_t App::conflict_count() const {
+    if (!shown().doc) return 0;
+    const PieceTree& t = shown().doc->text();
+    constexpr std::string_view kMark = "<<<<<<< ";
+    std::size_t n = 0;
+    std::size_t matched = 0;  // bytes of kMark matched at a line start
+    bool at_line_start = true;
+    t.read(0, t.size(), [&](std::span<const std::byte> b) {
+        for (const std::byte x : b) {
+            const char c = static_cast<char>(x);
+            if (at_line_start || matched > 0) {
+                if (matched < kMark.size() && c == kMark[matched]) {
+                    ++matched;
+                    at_line_start = false;
+                    if (matched == kMark.size()) {
+                        ++n;
+                        matched = 0;
+                    }
+                    continue;
+                }
+                matched = 0;
+            }
+            at_line_start = c == '\n';
+        }
+        return true;
+    });
+    return n;
 }
 
 void App::dirty_check(std::string question, std::function<void()> proceed) {
@@ -1344,6 +1554,15 @@ void App::dispatch(const InputEvent& event) {
     kill_chain_ = false;
     if (const auto* key = std::get_if<KeyEvent>(&event)) {
         dispatch_key(*key);
+        return;
+    }
+    // While a merge runs the document is frozen: Esc cancels it, anything else waits.
+    if (merge_) {
+        if (const auto* key = std::get_if<KeyEvent>(&event); key && key->key == Key::Escape) {
+            cancel_merge();
+        } else {
+            set_status("merging from disk; Esc cancels");
+        }
         return;
     }
     if (const auto* mouse = std::get_if<MouseEvent>(&event)) {
@@ -2081,6 +2300,11 @@ void App::render() {
         if (posted && (status_.empty() || status_set_ < *posted)) notice = notices_.show(shown().doc.get(), Clock::now());
     }
     if (notice) message = *notice;
+    std::string merging;
+    if (merge_) {
+        merging = merge_progress_text();
+        message = merging;
+    }
     if (message.empty() && history_view_.is_open()) message = kHistoryHints;
     if (message.empty()) {
         switch (panel()) {
@@ -2340,6 +2564,7 @@ int App::wait_timeout_ms() {
     if (status_deadline_) until(*status_deadline_);
     if (flash_deadline_) until(*flash_deadline_);
     if (shown().searcher->active()) consider(milliseconds(0));
+    if (merge_) consider(milliseconds(50));  // the progress bar, and the worker's result
     if (prompt_.is_open() && (prompt_.kind() == PromptKind::find || prompt_.kind() == PromptKind::replace) && shown().searcher->counting())
         consider(milliseconds(0));
     if (prune_offer_pending_) consider(kPruneOfferRetry);  // retried until verification resolves
@@ -2412,6 +2637,9 @@ void App::handle_events(WaitEvents ev, std::span<std::byte> buf) {
         next_external_check_ = Clock::now() + kExternalCheckInterval;
         check_external_changes(focus_free);
     }
+    // The question about a change on disk, once its document is the one you are in.
+    if (focus_free && !merge_ && shown().doc && disk_questions_.contains(shown().doc.get())) ask_disk_change();
+    poll_merge();
 }
 
 int App::run() {

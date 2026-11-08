@@ -17,7 +17,8 @@ public:
     using ChoiceFn = std::function<void(int)>;
 
     // Opening while open replaces the question; the first button has the focus.
-    void open(std::string question, std::vector<std::string> choices, int esc_choice, ChoiceFn on_choice);
+    // `focus`: the choice Enter takes before the arrows move (the first by default).
+    void open(std::string question, std::vector<std::string> choices, int esc_choice, ChoiceFn on_choice, int focus = 0);
     bool is_open() const noexcept { return open_; }
     void close() { open_ = false; }
 

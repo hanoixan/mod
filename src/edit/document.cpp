@@ -639,7 +639,9 @@ NodeId Document::current_node() const {
 
 // The anchor's size and hash, from the piece tree walked silently to it and back: no
 // notifications, no version bump, and neither `current` nor any preferred child moves.
-Result<FileState> Document::silent_walk_content(NodeId anchor) {
+// Walks the tree silently to `anchor`'s text, runs `there` on it, and walks back, leaving the
+// text, the history and every listener as they were.
+Status Document::visit_text_at(NodeId anchor, const std::function<void(const PieceTree&)>& there) {
     struct Applied {
         std::uint64_t offset;
         std::uint64_t inserted_len;
@@ -678,22 +680,46 @@ Result<FileState> Document::silent_walk_content(NodeId anchor) {
             return std::unexpected(st.error());
         }
     }
-    ContentHasher hasher;
-    const std::uint64_t size = tree_.size();
-    std::uint64_t done = 0;
-    std::uint64_t reported = 0;
-    tree_.read(0, size, [&](std::span<const std::byte> b) {
-        hasher.update(b);
-        done += b.size();
-        if (options_.progress && (done - reported >= kProgressSlice || done == size)) {
-            options_.progress(Progress{"hashing", done, size});
-            reported = done;
-        }
-        return true;
-    });
-    const FileState state{size, hasher.finish()};
+    try {
+        there(tree_);
+    } catch (...) {
+        walk_back();
+        throw;
+    }
     walk_back();
+    return {};
+}
+
+Result<FileState> Document::silent_walk_content(NodeId anchor) {
+    FileState state;
+    auto st = visit_text_at(anchor, [&](const PieceTree& t) {
+        ContentHasher hasher;
+        const std::uint64_t size = t.size();
+        std::uint64_t done = 0;
+        std::uint64_t reported = 0;
+        t.read(0, size, [&](std::span<const std::byte> b) {
+            hasher.update(b);
+            done += b.size();
+            if (options_.progress && (done - reported >= kProgressSlice || done == size)) {
+                options_.progress(Progress{"hashing", done, size});
+                reported = done;
+            }
+            return true;
+        });
+        state = FileState{size, hasher.finish()};
+    });
+    if (!st) return std::unexpected(st.error());
     return state;
+}
+
+std::optional<NodeId> Document::saved_node() const { return undo_.saved_node(); }
+
+Status Document::read_saved(const std::function<void(const PieceTree&)>& there) {
+    end_preview();
+    close_group();
+    const auto saved = undo_.saved_node();
+    if (!saved) return std::unexpected(make_error(ErrorCode::unsupported, "the history has no saved state"));
+    return visit_text_at(*saved, there);
 }
 
 Status Document::prune_history(std::int64_t cutoff_ms) {
@@ -1016,6 +1042,11 @@ ExternalChange Document::check_external_change() const {
     if (!known_identity_) return {ExternalChange::modified, true};  // reappeared after a deletion
     if (*id == *known_identity_) return {};
     return {ExternalChange::modified, !same_file(*id, *known_identity_)};
+}
+
+void Document::adopt_disk_identity(const FileIdentity& id) {
+    known_identity_ = id;
+    kept_external_ = true;
 }
 
 void Document::keep_in_memory() {

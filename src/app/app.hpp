@@ -4,8 +4,12 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <atomic>
 #include <memory>
 #include <optional>
+#include <set>
+#include <stop_token>
+#include <thread>
 #include <map>
 #include <span>
 #include <string>
@@ -25,6 +29,8 @@
 #include "app/notices.hpp"
 #include "app/settings.hpp"
 #include "edit/clipboard.hpp"
+#include "edit/merge3.hpp"
+#include "platform/file_map.hpp"
 #include "edit/document.hpp"
 #include "edit/editor.hpp"
 #include "platform/terminal.hpp"
@@ -135,6 +141,18 @@ private:
     void check_external_changes(bool shown_free);
     // File > Reload.
     void reload_command();
+    // A document with unsaved changes changed on disk: Load from disk, Ignore, or Merge in
+    // place. `on_ignore` runs after Ignore (a save that was waiting goes on).
+    void ask_disk_change(std::function<void()> on_ignore = {});
+    // Merge in place: the three-way merge of the shown document's text, its text as last
+    // saved, and the file now on disk. The lines are hashed here; the diff runs on a worker.
+    void start_merge();
+    void poll_merge();
+    void finish_merge();
+    void cancel_merge();
+    std::string merge_progress_text() const;
+    // Conflict blocks (lines starting "<<<<<<< ") in the shown document.
+    std::size_t conflict_count() const;
     void offer_prune();
     void prune_ask_age(std::uint64_t oldest_days);
     void prune_confirm(std::uint64_t days);
@@ -291,6 +309,20 @@ private:
     Clock::time_point status_set_{};  // when status_ was last set, against a notice's posting
     // Per-document notices (changed on disk, reloaded), shown on the focused view's status line.
     Notices notices_;
+    // Documents changed on disk with unsaved changes, waiting for the question until shown.
+    std::set<const Document*> disk_questions_;
+    struct MergeJob {
+        std::shared_ptr<Document> doc;
+        std::shared_ptr<const MappedFile> disk;
+        LineIndex base, ours, theirs;
+        std::atomic<std::size_t> progress{0};
+        std::atomic<bool> finished{false};
+        std::optional<std::vector<MergeHunk>> hunks;
+        std::stop_source stop;
+        std::jthread worker;  // last: joined first
+    };
+    std::unique_ptr<MergeJob> merge_;
+    bool saving_with_conflicts_ = false;  // the conflicts question was answered for this save
     static constexpr std::chrono::seconds kReloadedNotice{5};
     // A menu item chosen by its letter, shown chosen until its flash ends.
     static constexpr std::chrono::milliseconds kMenuFlash{120};

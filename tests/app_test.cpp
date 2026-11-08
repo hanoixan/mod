@@ -660,26 +660,68 @@ TEST_CASE("a file changed on disk with no unsaved changes is reloaded, and the s
     check_steps(run);
 }
 
-TEST_CASE("with unsaved changes, or auto_reload off, a change on disk leaves a notice until File > Reload") {
+TEST_CASE("with unsaved changes, or auto_reload off, a change on disk asks: Load from disk, Ignore or Merge in place") {
+    auto asks = [](std::string want) { return [want](const VtScreen& s) { return s.contains(want) && s.contains("Merge in place"); }; };
     const auto dirty = run_app("reload-dirty", "old\n",
                                {{"start", "", row_is(0, "  1 old")},
                                 {"an edit", "x", row_is(0, "  1 xold")},
                                 {"the file changes", "", change_file("reload-dirty", "file.txt", "theirs, longer\n")},
-                                {"a notice, the edit kept", "", [](const VtScreen& s) {
-                                     return s.status().find("changed on disk") != std::string::npos && s.row(0).starts_with("  1 xold");
-                                 }},
-                                {"typing still works: nothing took the focus", "y", row_is(0, "  1 xyold")},
-                                {"quit, discarding", "\x11\x1b[C\r", nullptr}});
+                                {"the question", "", asks("changed on disk, and you have unsaved changes")},
+                                {"Ignore: the edit stays", "i", [](const VtScreen& s) { return !s.contains("Merge in place") && s.row(0).starts_with("  1 xold"); }},
+                                {"typing goes on", "y", row_is(0, "  1 xyold")},
+                                {"a later change asks again", "", change_file("reload-dirty", "file.txt", "third version\n")},
+                                {"asked", "", asks("changed on disk")},
+                                {"Load from disk", "l", row_is(0, "  1 third version")},
+                                {"quit", "\x11\x1b[C\r", nullptr}});
     check_steps(dirty);
     const auto off = run_app("reload-off", {File{"file.txt", "old\n"}},
                              {{"start", "", row_is(0, "  1 old")},
                               {"the file changes", "", change_file("reload-off", "file.txt", "new, longer\n")},
-                              {"a lasting notice", "", status_has("File > Reload")},
-                              {"File > Reload", "\x1bxfr", row_is(0, "  1 new, longer")},
-                              {"the notice is gone", "", [](const VtScreen& s) { return s.status().find("changed on disk") == std::string::npos; }},
+                              {"a clean file asks too, with auto_reload off", "", asks("file.txt changed on disk.")},
+                              {"Load from disk", "l", row_is(0, "  1 new, longer")},
+                              {"File > Reload still works", "\x1bxfr", row_is(0, "  1 new, longer")},
                               {"quit", "\x11", nullptr}},
                              settings_setup(R"({"auto_reload": false})"));
     check_steps(off);
+}
+
+TEST_CASE("Merge in place: changes in different places merge, one undo step takes the merge back") {
+    const auto run = run_app("merge-clean", "a\nb\nc\n",
+                             {{"start", "", row_is(0, "  1 a")},
+                              {"an edit to the first line", "X", row_is(0, "  1 Xa")},
+                              {"the file's last line changes on disk", "", change_file("merge-clean", "file.txt", "a\nb\nC\n")},
+                              {"asked", "", [](const VtScreen& s) { return s.contains("Merge in place"); }},
+                              {"Merge in place", "m", [](const VtScreen& s) {
+                                   return s.row(0).starts_with("  1 Xa") && s.row(1).starts_with("  2 b") && s.row(2).starts_with("  3 C");
+                               }},
+                              {"said so", "", status_has("merged the changes on disk")},
+                              {"Ctrl+Z: the merge undone, the edit kept", "\x1a", [](const VtScreen& s) {
+                                   return s.row(0).starts_with("  1 Xa") && s.row(2).starts_with("  3 c");
+                               }},
+                              {"quit", "\x11\x1b[C\r", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("Merge in place: overlapping changes become diff3 conflict blocks; saving them asks, opening them tells") {
+    const auto run = run_app("merge-conflict", "a\nb\nc\n",
+                             {{"start", "", row_is(1, "  2 b")},
+                              {"edit line 2", "\x1b[By", row_is(1, "  2 yb")},
+                              {"line 2 changes on disk too", "", change_file("merge-conflict", "file.txt", "a\nB\nc\n")},
+                              {"asked", "", [](const VtScreen& s) { return s.contains("Merge in place"); }},
+                              {"Merge in place: the conflict block", "m", [](const VtScreen& s) {
+                                   return s.row(1).starts_with("  2 <<<<<<< theirs") && s.row(2).starts_with("  3 B") && s.row(3).starts_with("  4 ||||||| base") &&
+                                          s.row(4).starts_with("  5 b") && s.row(5).starts_with("  6 =======") && s.row(6).starts_with("  7 yb") &&
+                                          s.row(7).starts_with("  8 >>>>>>> yours") && s.row(8).starts_with("  9 c");
+                               }},
+                              {"the status line counts it", "", status_has("1 conflict")},
+                              {"Ctrl+S asks first", "\x13", [](const VtScreen& s) { return s.contains("still has 1 conflict. Save anyway?"); }},
+                              {"Save", "\r", status_has("saved file.txt")},
+                              {"quit", "\x11", nullptr}});
+    check_steps(run);
+    // Opened again with the blocks in it.
+    const auto again = run_app("merge-reopen", {File{"file.txt", "<<<<<<< theirs\nB\n||||||| base\nb\n=======\nyb\n>>>>>>> yours\n"}},
+                               {{"told", "", status_has("1 merge conflict")}, {"quit", "\x11", nullptr}});
+    check_steps(again);
 }
 
 TEST_CASE("a deleted file gets a notice; a hidden document's reload is told when it is shown") {
