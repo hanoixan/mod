@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./search.hpp.skel.md
-stamp: source eaee50de, stand-in 7361f842
+stamp: source 71cf4aab, stand-in 7361f842
 ---
 # module: search (implementation)
 

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 19e39572, stand-in da8e577f
+stamp: source a9eff1cc, stand-in 2c8c117e
 ---
 # module: search
 
@@ -17,7 +17,7 @@ Find and replace over the whole document. Searching streams over the piece tree 
 
 ## symbol: SearchOptions
 
-`{ bool regex; bool case_insensitive; bool whole_word; bool wrap; }`. Toggled in the find bar with Alt+R, Alt+C and Alt+W while it is focused. Defaults: regex on, case-sensitive, not whole-word, wrap on.
+`{ bool regex; bool case_insensitive; bool whole_word; bool wrap; }`. Toggled in the find bar with Alt+R, Alt+C and Alt+W (or a click on its toggles) while it is focused. The struct's defaults: regex on, case-sensitive, not whole-word, wrap on; the find bar starts with regex off (plain text), and keeps what the user sets for later searches in the session.
 
 - **Access:** public.
 
@@ -76,6 +76,22 @@ When no query has been set in this session, `find_next` is not called: F3 and Sh
 - **Returns:** `Status`: a template error, or `canceled` when the selection is not the last match (nothing replaced).
 - **State changes:** if the current selection equals the last match, replaces it with one `replace` node, then searches for the next match.
 - **Access:** the Replace button or key in the Prompt.
+
+### function: matches_in
+
+- **Inputs:** `start` (a line start), `end`, `max` (default 2000).
+- **Returns:** every match of the query starting in `[start, end)`, at most `max`, the range cut to `kRangeCap` (1 MiB); empty without a query. Empty matches step one code point on.
+- **State changes:** none (its own buffer, not the job's window).
+- **Access:** App, for the find bar's highlight of every match on screen through [EditorView.set_match_finder](../ui/editor_view.hpp.skel.md#function-set_match_finder).
+
+### function: step_count
+
+The find bar's match count, over the whole document, time-sliced.
+
+- **Inputs:** none.
+- **Returns:** nothing. `counting()` says whether there is more to do (a query, no pattern error, and the count not done for the document's current version); `count()` gives `Count { total, done, capped, current }`, `current` being the 1-based number of the last match once the count has reached it, nullopt without a query or after a pattern error.
+- **State changes:** counts one window (the forward scan's, about 4 MiB) of matches from where the count got to, keeping their starts; a `set_query` starts it over, and so does a change to the document (its version). At `kCountCap` (10000) matches it stops, `capped`.
+- **Access:** App's event loop while the find bar is open.
 
 ### function: replace_all
 

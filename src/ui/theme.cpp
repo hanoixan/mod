@@ -58,6 +58,7 @@ constexpr ColorEntry kEntries[] = {
     {"deprecated", std::nullopt, kModDeprecated, "strike", "Modifiers"},
     {"documentation", std::nullopt, kModDocumentation, "italic", "Modifiers"},
     {"searchMatch", search_match, 0, "black on-yellow", "Interface"},
+    {"searchOther", search_other, 0, "on-bright-black", "Interface"},
     {"selection", selection, 0, "reverse", "Interface"},
     {"gutter", gutter, 0, "dim", "Interface"},
     {"gutterCurrent", gutter_current, 0, "bold", "Interface"},
@@ -152,7 +153,8 @@ std::uint8_t vt100_flags(Style s) {
         case history_removed:
         case selection:
         case search_match: return kReverse;
-        case history_inserted: return kUnderline;
+        case history_inserted:
+        case search_other: return kUnderline;
         case error: return kBold | kReverse;
         default: return 0;
     }

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 77799301, stand-in df845905
+stamp: source a7687fe6, stand-in 20c7aa82
 ---
 # module: editor_view
 
@@ -113,6 +113,13 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 - **State changes:** none. Each `render` records, per row of the area, what it drew there: the byte range (lines and wrapped rows) or the rendered line (reading), with the area, the text column and the horizontal scroll.
 - **Access:** App, for the mouse.
 - **Depends on:** [ReadingLayout.offset_at](./reading_layout.hpp.skel.md#function-offset_at)
+
+### function: set_match_finder
+
+- **Inputs:** a `MatchFinder` (`std::vector<Match>(start, end)`), or none.
+- **Returns:** nothing.
+- **State changes:** while set, each line drawn (plain or wrapped; not the reading layout, nor a preview) asks it for the matches in that line's range, and their bytes are drawn with the `search_other` overlay, the current match keeping `search_match`. App sets it to [Searcher.matches_in](../search/search.hpp.skel.md#function-matches_in) before each frame while the find bar is open with a query, and clears it otherwise.
+- **Access:** App.render.
 
 ### function: set_tab_width
 

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./input.hpp.skel.md
-stamp: source ea50a017, stand-in 940f11f0
+stamp: source 3c5c27e0, stand-in 51d1e078
 ---
 # module: input (implementation)
 
@@ -15,6 +15,10 @@ ESC [ 2~ 3~ 5~ 6~      ins del pgup pgdn  (; m for mods)
 ESC O P..S, ESC [ 15~..24~   F1..F12
 ESC [ 200~ ... ESC [ 201~    bracketed paste
 ESC [ < b ; x ; y M / m      SGR mouse report: press or drag / release
+ESC [ code ; m u             kitty keyboard protocol (and CSI 27;m;code~): Enter, Tab, Backspace,
+                             Esc by code; Ctrl+letter as CtrlLetter; Ctrl+Space/@ and Ctrl+\ ] ^ _
+                             as the control bytes they stand for; Private Use Area codes
+                             (57344-63743: F13+, keypad, media) dropped, keypad Enter as Enter
 ESC <byte>             Alt + key        0x01..0x1A  Ctrl+A..Z (except 09 Tab, 0D Enter)
 0x7F / 0x08            Backspace / Ctrl+Backspace
 ESC [ Z                Shift+Tab (BackTab)

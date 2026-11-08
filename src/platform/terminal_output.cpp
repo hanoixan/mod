@@ -20,13 +20,17 @@ class XtermOutput final : public TerminalOutput {
 public:
     explicit constexpr XtermOutput(bool mouse) : mouse_(mouse) {}
     TerminalMode mode() const noexcept override { return TerminalMode::xterm; }
-    // The terminal's title is pushed on its stack first and popped last (CSI 22/23 t).
+    // The terminal's title is pushed on its stack first and popped last (CSI 22/23 t). The
+    // kitty keyboard protocol's first level (CSI > 1 u, pushed last and popped first) makes
+    // the terminals that have it report keys with modifiers unambiguously, Shift+Enter apart
+    // from Enter among them; the others ignore it.
     std::string_view enter() const noexcept override {
-        return mouse_ ? "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l\x1b[?1000h\x1b[?1002h\x1b[?1006h" : "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l";
+        return mouse_ ? "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l\x1b[?1000h\x1b[?1002h\x1b[?1006h\x1b[>1u"
+                      : "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l\x1b[>1u";
     }
     std::string_view leave() const noexcept override {
-        return mouse_ ? "\x1b[?1006l\x1b[?1002l\x1b[?1000l\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t"
-                      : "\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t";
+        return mouse_ ? "\x1b[<u\x1b[?1006l\x1b[?1002l\x1b[?1000l\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t"
+                      : "\x1b[<u\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t";
     }
     std::string_view mouse(bool on) const noexcept override { return on ? kMouseOn : kMouseOff; }
     std::string_view begin_frame() const noexcept override { return "\x1b[?2026h\x1b[?25l\x1b[?7l"; }

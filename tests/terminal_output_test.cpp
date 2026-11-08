@@ -44,11 +44,13 @@ std::string sgr(const TerminalOutput& o, Attr a) {
 
 }  // namespace
 
-TEST_CASE("xterm: the sequences of earlier versions, byte for byte") {
+TEST_CASE("xterm: the sequences of earlier versions, byte for byte, with the kitty keyboard level around them") {
     const TerminalOutput& x = output_for(TerminalMode::xterm);
     CHECK(x.mode() == TerminalMode::xterm);
-    CHECK(x.enter() == "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l");  // the title saved first
-    CHECK(x.leave() == "\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t");  // the terminal's own cursor shape and title back
+    // The title saved first; the kitty keyboard protocol's first level pushed last (Shift+Enter).
+    CHECK(x.enter() == "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l\x1b[>1u");
+    // That level popped first; the terminal's own cursor shape and title back.
+    CHECK(x.leave() == "\x1b[<u\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t");
     CHECK(x.begin_frame() == "\x1b[?2026h\x1b[?25l\x1b[?7l");
     CHECK(x.end_frame() == "\x1b[0m\x1b[?7h");
     CHECK(x.show_cursor() == "\x1b[?25h");
@@ -61,8 +63,8 @@ TEST_CASE("xterm: the sequences of earlier versions, byte for byte") {
 TEST_CASE("xterm with the mouse: its reports asked for on entering and turned off on leaving") {
     const TerminalOutput& m = output_for(TerminalMode::xterm, true);
     const TerminalOutput& x = output_for(TerminalMode::xterm);
-    CHECK(m.enter() == std::string(x.enter()) + "\x1b[?1000h\x1b[?1002h\x1b[?1006h");
-    CHECK(m.leave() == "\x1b[?1006l\x1b[?1002l\x1b[?1000l" + std::string(x.leave()));
+    CHECK(m.enter() == "\x1b[22;0t\x1b[?1049h\x1b[?2004h\x1b[?25l\x1b[?1000h\x1b[?1002h\x1b[?1006h\x1b[>1u");
+    CHECK(m.leave() == "\x1b[<u\x1b[?1006l\x1b[?1002l\x1b[?1000l\x1b[?2004l\x1b[?1049l\x1b[?25h\x1b[0m\x1b[0 q\x1b[23;0t");
     CHECK(m.mouse(true) == "\x1b[?1000h\x1b[?1002h\x1b[?1006h");
     CHECK(m.mouse(false) == "\x1b[?1006l\x1b[?1002l\x1b[?1000l");
     CHECK(x.mouse(true) == m.mouse(true));

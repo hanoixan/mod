@@ -1,10 +1,10 @@
 ---
 role: test
-stamp: source d9c01744, stand-in f6cde8fd
+stamp: source a3e7daf1, stand-in 7e43b608
 ---
 # module: input_test
 
-Byte-sequence tables for every keymap binding as sent by xterm, rxvt, linux console, macOS Terminal and Windows Terminal. Split reads at every byte position; lone Esc versus Alt+key with `timeout`; bracketed paste containing ESC bytes; invalid UTF-8. A paste that never ends is ended by the idle timeout without swallowing later keys; a huge paste arrives in bounded pieces with nothing lost; OSC and DCS replies are skipped (split, unterminated), Alt+] and Alt+Shift+P still work; CSI u control code points are not typed. A reply longer than the limit is dropped whole however it arrives (BEL or ESC \\ ending it, ESC \\ split across reads, or a silence); a paste is never cut between CR and LF even when a chunk ends exactly at the CR; a paste's pieces carry `more` but the last, which may be empty. SGR mouse reports: press, release, drag, Shift and Ctrl, the wheel, 0-based cells; plain motion, horizontal wheel and position 0 dropped; a report split across reads.
+Byte-sequence tables for every keymap binding as sent by xterm, rxvt, linux console, macOS Terminal and Windows Terminal. Split reads at every byte position; lone Esc versus Alt+key with `timeout`; bracketed paste containing ESC bytes; invalid UTF-8. A paste that never ends is ended by the idle timeout without swallowing later keys; a huge paste arrives in bounded pieces with nothing lost; OSC and DCS replies are skipped (split, unterminated), Alt+] and Alt+Shift+P still work; CSI u control code points are not typed. A reply longer than the limit is dropped whole however it arrives (BEL or ESC \\ ending it, ESC \\ split across reads, or a silence); a paste is never cut between CR and LF even when a chunk ends exactly at the CR; a paste's pieces carry `more` but the last, which may be empty. SGR mouse reports: press, release, drag, Shift and Ctrl, the wheel, 0-based cells; plain motion, horizontal wheel and position 0 dropped; a report split across reads. The kitty keyboard protocol's reports: Shift+Enter, Esc, Ctrl+letter, Alt+letter, Shift+Tab, Ctrl+Backspace, Ctrl+Space and Ctrl+\ as the legacy keys.
 
 - **Owns:** test fixtures only.
 - **Access:** run by CTest.

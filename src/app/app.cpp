@@ -1412,6 +1412,11 @@ void App::dispatch_mouse(const MouseEvent& m) {
         if (const auto cmd = menu_.click(m.row, m.col)) run_command(*cmd);
         return;
     }
+    // The find bar's toggles take clicks; the rest of a bar, nothing.
+    if (prompt_.is_open() && left && l.prompt.rows > 0 && inside(l.prompt)) {
+        (void)prompt_.click(m.row, m.col);
+        return;
+    }
     if (confirm_.is_open() || prompt_.is_open() || history_view_.is_open() || panel_open() || help_viewer_.is_open()) return;
     if (file_dialog_) {
         if (!l.dialog || !inside(*l.dialog)) return;
@@ -2056,6 +2061,14 @@ void App::render() {
         if (l.text.rows > 0 && l.text.cols > 0) preview_->view->render(screen_, l.text, std::nullopt, false);
     } else if (l.text.rows > 0 && l.text.cols > 0) {
         shown().view->set_split_focused(true);
+        // While the find bar is open, every match on screen is drawn, the current one apart.
+        const bool find_open = prompt_.is_open() && (prompt_.kind() == PromptKind::find || prompt_.kind() == PromptKind::replace);
+        Searcher* searcher = shown().searcher.get();
+        if (find_open && searcher != nullptr && searcher->has_query()) {
+            shown().view->set_match_finder([searcher](std::uint64_t a, std::uint64_t b) { return searcher->matches_in(a, b); });
+        } else {
+            shown().view->set_match_finder(nullptr);
+        }
         shown().view->render(screen_, l.text, shown().searcher->last_match(), text_focus);
     }
     if (prompt_.is_open() && !menu_.is_visible()) prompt_.render(screen_, l.prompt);
@@ -2285,6 +2298,12 @@ void App::poll_status() {
     }
 }
 
+// The find bar's match count goes on a window at a time while the bar is open.
+void App::step_count() {
+    const bool find_open = prompt_.is_open() && (prompt_.kind() == PromptKind::find || prompt_.kind() == PromptKind::replace);
+    if (find_open && shown().searcher && shown().searcher->counting()) shown().searcher->step_count();
+}
+
 void App::step_search() {
     if (!shown().searcher || !shown().searcher->active()) return;
     const StepResult r = shown().searcher->step();
@@ -2321,6 +2340,8 @@ int App::wait_timeout_ms() {
     if (status_deadline_) until(*status_deadline_);
     if (flash_deadline_) until(*flash_deadline_);
     if (shown().searcher->active()) consider(milliseconds(0));
+    if (prompt_.is_open() && (prompt_.kind() == PromptKind::find || prompt_.kind() == PromptKind::replace) && shown().searcher->counting())
+        consider(milliseconds(0));
     if (prune_offer_pending_) consider(kPruneOfferRetry);  // retried until verification resolves
     if (!t) return -1;
     return static_cast<int>(std::min<std::int64_t>(t->count(), 60'000));
@@ -2371,6 +2392,7 @@ void App::handle_events(WaitEvents ev, std::span<std::byte> buf) {
     }
     queue_.drain();
     step_search();
+    step_count();
     if (flash_deadline_ && Clock::now() >= *flash_deadline_) run_flashed_command();
     if (ev & resized) {
         title_.clear();  // after a suspended job continues (a resize), the title is set again

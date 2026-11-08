@@ -729,3 +729,35 @@ TEST_CASE("End goes to the end of the row on screen, and twice quickly to the li
                               {"quit", "\x11", nullptr}});
     check_steps(run);
 }
+
+TEST_CASE("the find bar labels its toggles with their keys, counts the matches and steps with Down, Up and F3") {
+    auto bar_has = [](std::string want) {
+        return [want](const VtScreen& s) { return s.row(s.rows() - 1).find(want) != std::string::npos; };
+    };
+    const auto run = run_app("find-bar", "a.b one\na.b two\naxb three\n",
+                             {{"Ctrl+F, a.b: plain text by default, so not axb", "\x06" "a.b", bar_has("1 of 2")},
+                              {"the toggles and their keys", "", bar_has("[ ] Regex Alt+R  [x] Case Alt+C  [ ] Word Alt+W")},
+                              {"Down: the next", "\x1b[B", bar_has("2 of 2")},
+                              {"Up: back", "\x1b[A", bar_has("1 of 2")},
+                              {"F3: the next", "\x1bOR", bar_has("2 of 2")},
+                              {"Shift+F3: back", "\x1b[1;2R", bar_has("1 of 2")},
+                              {"Shift+Enter (kitty's report): back, wrapping", "\x1b[13;2u", bar_has("2 of 2")},
+                              {"Alt+R: as a regex, axb matches too", "\x1br", bar_has("of 3")},
+                              {"and the label says so", "", bar_has("[x] Regex Alt+R")},
+                              {"quit", "\x1b\x11", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("a click on a find bar toggle flips it") {
+    auto bar_has = [](std::string want) {
+        return [want](const VtScreen& s) { return s.row(s.rows() - 1).find(want) != std::string::npos; };
+    };
+    // On a 12 × 80 screen the find bar is the last row; its toggles end at the right edge.
+    const int word_col = 80 - static_cast<int>(std::string_view("[ ] Word Alt+W  ").size()) + 1;
+    const auto run = run_app("find-click", "word sword\n",
+                             {{"Ctrl+F, word", "\x06word", bar_has("1 of 2")},
+                              {"click Word", click(11, word_col), bar_has("[x] Word Alt+W")},
+                              {"whole words only now", "", bar_has("1 of 1")},
+                              {"quit", "\x1b\x11", nullptr}});
+    check_steps(run);
+}

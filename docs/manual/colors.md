@@ -105,6 +105,7 @@ The editor shows a modifier's sample as a variable with the modifier on.
 | Name | Colors | Default |
 |---|---|---|
 | `searchMatch` | The current search match | `black on-yellow` |
+| `searchOther` | The other matches on screen while the find bar is open | `on-bright-black` |
 | `selection` | The selection, over the text's own look | `reverse` |
 | `gutter` | Line numbers | `dim` |
 | `gutterCurrent` | The current line's number, and headings in panels | `bold` |

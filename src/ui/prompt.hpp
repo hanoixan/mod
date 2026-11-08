@@ -38,6 +38,9 @@ public:
     // Rows the open prompt needs above the status line on a `screen_rows` × `screen_cols` screen.
     int rows_wanted(int screen_rows, int screen_cols) const;
     void render(Screen& screen, Rect area) const;
+    // A mouse press at screen (`row`, `col`): on one of the find bar's toggles, as the last
+    // render drew them, flips it as its Alt key would. True when it hit one.
+    bool click(int row, int col);
 
     // For tests and the status line.
     const std::string& field(int index) const { return fields_[static_cast<std::size_t>(index)].text; }
@@ -73,13 +76,22 @@ private:
     std::string error_;
     SubmitFn on_submit_;
     // find / replace
-    SearchOptions options_;
+    SearchOptions options_{.regex = false};  // the find bar starts with plain text
     std::uint64_t origin_ = 0;
     CursorFn cursor_;
     bool allow_replace_ = true;
     // info
     std::vector<std::string> lines_;
     int scroll_ = 0;
+    // Where the last render drew the find bar's toggles: row, [from, to) and the Alt letter.
+    struct DrawnToggle {
+        int row = 0;
+        int from = 0;
+        int to = 0;
+        char letter = 0;
+    };
+    mutable std::vector<DrawnToggle> drawn_toggles_;
+    void toggle(char letter);
 };
 
 }  // namespace mod

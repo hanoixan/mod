@@ -148,7 +148,15 @@ bool Keymap::bindable(const KeyEvent& key) {
 std::optional<CommandId> Keymap::lookup(const KeyEvent& key) const {
     // Plain text, with or without Shift, is inserted.
     if (key.key == Key::Char && (key.mods & (kAlt | kCtrl)) == 0) return std::nullopt;
-    return owner(key);
+    if (const auto c = owner(key)) return c;
+    // Shift+Enter, Shift+Backspace and Shift+Delete reach mod apart from the plain keys only in
+    // terminals with the kitty keyboard protocol; unbound, they do what the plain keys do, as
+    // they do everywhere else.
+    if (key.mods == kShift && (key.key == Key::Enter || key.key == Key::Backspace || key.key == Key::Delete))
+        return owner(KeyEvent{key.key, key.ch, 0});
+    // Ctrl+Shift+letter likewise: elsewhere it arrives as Ctrl+letter.
+    if (key.key == Key::CtrlLetter && (key.mods & kShift)) return owner(KeyEvent{key.key, key.ch, static_cast<std::uint8_t>(key.mods & ~kShift)});
+    return std::nullopt;
 }
 
 std::optional<CommandId> Keymap::owner(const KeyEvent& key) const {

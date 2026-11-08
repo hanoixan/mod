@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source f3a525ed, stand-in ddd68871
+stamp: source f3a525ed, stand-in a615c07c
 ---
 # module: terminal_output
 
@@ -63,7 +63,7 @@ The sequences for one behavior. Implementations are immutable singletons, so the
 ### function: enter
 
 - **Inputs:** none.
-- **Returns:** the `std::string_view` written when mod takes over the screen (xterm: `ESC[22;0t ESC[?1049h ESC[?2004h ESC[?25l`, the first pushing the terminal's title on its stack; vt100: empty). `leave()` is written when it gives the screen back (xterm: `ESC[?2004l ESC[?1049l ESC[?25h ESC[0m ESC[0 q ESC[23;0t`, the last popping the title, so the terminal's own comes back; terminals without a title stack ignore both; vt100: `ESC[0m ESC[2J ESC[H`).
+- **Returns:** the `std::string_view` written when mod takes over the screen (xterm: `ESC[22;0t ESC[?1049h ESC[?2004h ESC[?25l ESC[>1u`, the first pushing the terminal's title on its stack, the last pushing the kitty keyboard protocol's first level, "disambiguate", so terminals that have it report keys with modifiers as `CSI code;mods u` and Shift+Enter apart from Enter; the others ignore it; vt100: empty). `leave()` is written when it gives the screen back (xterm: `ESC[<u ESC[?2004l ESC[?1049l ESC[?25h ESC[0m ESC[0 q ESC[23;0t`, popping that level first, the last popping the title, so the terminal's own comes back; terminals without a title stack ignore both; vt100: `ESC[0m ESC[2J ESC[H`).
 - **State changes:** none.
 - **Access:** Terminal.
 

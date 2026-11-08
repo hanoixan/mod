@@ -59,6 +59,7 @@ enum class Style : std::uint8_t {
     constant,
     // UI.
     search_match,
+    search_other,  // the other matches on screen while the find bar is open
     selection,
     gutter,
     gutter_current,

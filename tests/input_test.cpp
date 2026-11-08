@@ -89,8 +89,9 @@ const std::vector<Case> kCases = {
     {"xterm", "\t", K(Key::Tab), C::InsertTab},
     {"xterm", "\x7f", K(Key::Backspace), C::DeleteBack},
     {"xterm", "\x1b[Z", K(Key::BackTab), C::Outdent},
-    {"xterm", "\x1b[13;2u", K(Key::Enter, S), std::nullopt},
-    {"xterm", "\x1b[27;2;13~", K(Key::Enter, S), std::nullopt},
+    // Shift+Enter (kitty's protocol, xterm's modifyOtherKeys): unbound, it is Enter.
+    {"xterm", "\x1b[13;2u", K(Key::Enter, S), C::Newline},
+    {"xterm", "\x1b[27;2;13~", K(Key::Enter, S), C::Newline},
     // rxvt.
     {"rxvt", "\x1b[7~", K(Key::Home), C::MoveVisualLineStart},
     {"rxvt", "\x1b[8~", K(Key::End), C::MoveVisualLineEnd},
@@ -486,4 +487,24 @@ TEST_CASE("a mouse report split across reads is decoded once it is whole") {
     const auto ev = feed_all(d, "2;7M");
     REQUIRE(ev.size() == 1);
     CHECK(std::get<MouseEvent>(ev[0]) == MouseEvent{MouseButton::left, MouseAction::press, 0, 6, 11});
+}
+
+TEST_CASE("the kitty keyboard protocol's reports decode as the legacy keys do, Shift+Enter apart") {
+    InputDecoder d;
+    auto one = [&](std::string_view seq) {
+        const auto ev = feed_all(d, seq);
+        REQUIRE(ev.size() == 1);
+        return std::get<KeyEvent>(ev[0]);
+    };
+    CHECK(one("\x1b[13;2u") == K(Key::Enter, S));
+    CHECK(one("\x1b[27u") == K(Key::Escape));
+    CHECK(one("\x1b[113;5u") == ctrl('q'));
+    CHECK(one("\x1b[120;3u") == alt('x'));
+    CHECK(one("\x1b[9;2u") == K(Key::BackTab));
+    CHECK(one("\x1b[127;5u") == K(Key::Backspace, Ct));
+    CHECK(one("\x1b[32;5u") == KeyEvent{Key::CtrlLetter, U' ', Ct});   // as NUL
+    CHECK(one("\x1b[92;5u") == KeyEvent{Key::CtrlLetter, U'\\', Ct});  // as 0x1C
+    CHECK(one("\x1b[57414u") == K(Key::Enter));  // keypad Enter
+    CHECK(feed_all(d, "\x1b[57376u").empty());   // F13: no character, never typed
+    CHECK(feed_all(d, "\x1b[57428u").empty());   // a media key
 }
