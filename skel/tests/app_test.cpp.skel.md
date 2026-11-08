@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source a9028d8b, stand-in cc02a615
+stamp: source fb128298, stand-in cc02a615
 ---
 # module: app_test
 
