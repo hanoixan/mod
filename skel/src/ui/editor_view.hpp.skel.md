@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 37148b2c, stand-in e0344b35
+stamp: source 38df4c47, stand-in 3b0cf695
 ---
 # module: editor_view
 
@@ -15,7 +15,7 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 
 **Long lines.** With word wrap **off** (the default), each line has one row and the view scrolls sideways to keep the cursor visible. A row whose line continues past the right edge shows a `>` in its last column, in the `overflow_marker` style (reverse video), in place of the character that would be there; a line that ends exactly at the edge has none, and the marker goes when the rest of the line is scrolled into view. Text hidden on the left is not marked. With word wrap **on**, a line continues on the following rows as [WrapLayout](../text/wrap.hpp.skel.md#class-wraplayout) lays it out, at a width of the text columns less one, so the cursor at the end of a full row has a cell; there is no sideways scroll and no marker; the gutter shows a line's number on its first row only; whitespace hanging past the width may show in the spare column, and the cursor never leaves the last column.
 
-- **Owns:** `top`, the horizontal scroll column, the gutter and wrap toggles, and per-frame layout scratch.
+- **Owns:** `top`, the horizontal scroll column, the gutter, wrap and merge-color toggles, the merge-color window, and per-frame layout scratch.
 - **Access:** public. One instance, owned by App. Main thread.
 - **Required:** always.
 - **Failure modes:** a very long line on screen. Only bytes up to `hscroll + width` display columns are decoded. Editor's column checkpoints are private to it, so EditorView counts columns itself with [display_width](../text/utf8.hpp.skel.md#function-display_width), and keeps its own for the line last measured (the cursor's): the (offset, column) of a character start every 4 KiB, for the text as it is (its version, size and the tab width), and how far that line is known to have no line feed. The cursor's column, the drawing of that line scrolled far to the right, and its line start all begin from the nearest checkpoint, so moving along a line of any length costs a frame about what a short line does; drawing the other lines never discards the checkpoints. With word wrap the index may be for a row that starts mid-line, so the line start takes the shortcut only when the index starts at a real line start. Other long lines scrolled far right still decode up to the window. The gutter width depends on the line count: while the count is unknown it is estimated from the file size (one line per 16 bytes, at least 3 digits), and once the background scan knows the count, the real count is used. On a large file whose estimate has a different number of digits from the real count, the text therefore shifts once, when the scan completes; never afterwards.
@@ -61,6 +61,25 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 - **Returns:** nothing.
 - **State changes:** in preview mode the view draws the document's (previewed) text read-only: no highlighter spans, no selection and no cursor, the inserted marks in `historyInserted` and the removed ones in `historyRemoved`.
 - **Access:** App, for the Undo History pane.
+
+### function: set_merge_colors
+
+Auto-color merges: diff3 conflict blocks are colored over the highlighter's spans, with a highlighter or without one.
+
+- **Inputs:** `on` (true by default). `merge_colors()` reads it back.
+- **Returns:** nothing.
+- **State changes:** while on, each line drawn (plain or wrapped; not in preview mode, nor the reading layout) has the [merge_color_spans](../syntax/merge_colors.hpp.skel.md#function-merge_color_spans) that fall in it laid over its highlighter spans with [overlay_spans](../syntax/layered_highlighter.hpp.skel.md#function-overlay_spans), under the search and selection overlays. The spans come from a cached **window** of the text: `kMergeWindow` (256 KiB) before the line asked for, from a line start (or the line itself when the line above is longer than twice that), to `kMergeWindow` after the end asked for (a long line counting only its first `kMergeWindow` bytes), computed again when the document's version changes or a line asked for is outside it. A block is colored when it lies wholly in the window.
+- **Access:** App: [apply_options](../app/app.cpp.skel.md), from the `auto_color_merges` [setting](../app/settings.hpp.skel.md#function-setting_specs), when the view is built and when the setting changes.
+- **Depends on:** [merge_color_spans](../syntax/merge_colors.hpp.skel.md#function-merge_color_spans)
+- **Depends on:** [overlay_spans](../syntax/layered_highlighter.hpp.skel.md#function-overlay_spans)
+- **Referred by:** [app (implementation)](../app/app.cpp.skel.md)
+
+### function: add_merge_spans
+
+- **Inputs:** `line`, `end`: the byte range of the line being drawn.
+- **Returns:** nothing.
+- **State changes:** refreshes the merge window when it is stale or does not cover the range, as [set_merge_colors](#function-set_merge_colors) describes, then lays the window's spans in the range, clipped to it, over the line's spans.
+- **Access:** private; the line's span loading, while merge colors are on.
 
 ### function: set_split_focused
 

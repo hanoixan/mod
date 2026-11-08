@@ -61,14 +61,17 @@ fs::path make_tree(const std::string& name) {
     return d;
 }
 
+// A dialog over a fresh tree, dot-files hidden (as in ../modi/). It opens in the File field;
+// most tests start from the list, so the fixture moves there unless `in_list` is false.
 struct Fixture {
-    double now = 100;
     fs::path dir;
     FileDialog dlg;
     static constexpr int rows = 6;
 
-    Fixture(const std::string& name, FileDialogMode mode = FileDialogMode::open, std::string initial = {})
-        : dir(make_tree(name)), dlg(mode, dir, std::move(initial), [this] { return now; }, false) {}  // as in ../modi/: dot-files hidden
+    Fixture(const std::string& name, FileDialogMode mode = FileDialogMode::open, std::string initial = {}, bool in_list = true)
+        : dir(make_tree(name)), dlg(mode, dir, std::move(initial), false) {
+        if (in_list) focus(FocusZone::list);
+    }
 
     FileDialogResult press(KeyEvent k) { return dlg.handle_key(k, rows); }
     FileDialogResult press(Key k, std::uint8_t mods = 0) { return press(key(k, mods)); }
@@ -84,9 +87,9 @@ struct Fixture {
 
 }  // namespace
 
-TEST_CASE("the dialog opens on the list with nothing selected, listing folders then files") {
-    Fixture f("open");
-    CHECK(f.dlg.focus() == FocusZone::list);
+TEST_CASE("the dialog opens in the File field with nothing selected, listing folders then files") {
+    Fixture f("open", FileDialogMode::open, {}, false);
+    CHECK(f.dlg.focus() == FocusZone::filename);
     CHECK(f.dlg.selected() == -1);
     REQUIRE(f.dlg.entries().size() == 5);
     CHECK(f.name_at(0) == "docs");
@@ -285,23 +288,130 @@ TEST_CASE("Escape cancels") {
     CHECK(f.press(Key::Escape).kind == FileDialogResult::Kind::canceled);
 }
 
-TEST_CASE("type-to-search selects the first name containing the text, with a 2 s window") {
-    Fixture f("search");
-    f.type("b");
+TEST_CASE("typing in the File field selects the first name starting with it, else containing it, and keeps the text") {
+    Fixture f("search", FileDialogMode::open, {}, false);  // docs, src, a.txt, b.md, c.txt
+    f.type("B");
+    CHECK(f.dlg.filename() == "B");  // the field keeps what was typed
     CHECK(f.name_at(f.dlg.selected()) == "b.md");
-    CHECK(f.dlg.search_text() == "b");
-    f.now += 1;
+    CHECK(f.dlg.match() == "b.md");
+    CHECK(f.dlg.completion() == ".md");  // the rest of the name, after the typed text
     f.type(".m");
-    CHECK(f.dlg.search_text() == "b.m");
-    CHECK(f.name_at(f.dlg.selected()) == "b.md");
-    f.now += 3;
-    f.type("T");
-    CHECK(f.dlg.search_text() == "t");  // restarted, lower-cased
-    CHECK(f.name_at(f.dlg.selected()) == "c.txt");  // from the current selection on
+    CHECK(f.dlg.completion() == "d");
+    f.type("d");
+    CHECK(f.dlg.completion().empty());  // the whole name typed: nothing to add
+    // A name that starts with the text comes before one that only contains it.
+    for (int i = 0; i < 4; ++i) f.press(Key::Backspace);
+    f.type("s");
+    CHECK(f.name_at(f.dlg.selected()) == "src");
+    CHECK(f.dlg.completion() == "rc");
+    // Only containing it: the whole name is offered.
+    f.press(Key::Backspace);
+    f.type("xt");
+    CHECK(f.name_at(f.dlg.selected()) == "a.txt");
+    CHECK(f.dlg.completion() == " → a.txt");
+    // Nothing matches: no match, the selection stays.
+    f.type("zz");
+    CHECK(f.dlg.match().empty());
+    CHECK(f.dlg.completion().empty());
+    CHECK(f.name_at(f.dlg.selected()) == "a.txt");
+    // A path is not looked up.
+    for (int i = 0; i < 4; ++i) f.press(Key::Backspace);
+    f.type("docs/");
+    CHECK(f.dlg.match().empty());
+}
+
+TEST_CASE("Right at the field's end takes the completion; with none it moves on") {
+    Fixture f("complete", FileDialogMode::open, {}, false);
+    f.type("c");
+    f.press(Key::Right);
+    CHECK(f.dlg.filename() == "c.txt");
+    CHECK(f.dlg.focus() == FocusZone::filename);
+    CHECK(f.dlg.completion().empty());
+    f.press(Key::Right);
+    CHECK(f.dlg.focus() == FocusZone::submit);
+
+    Fixture g("complete2", FileDialogMode::open, {}, false);
+    g.type("XT");
+    g.press(Key::Right);
+    CHECK(g.dlg.filename() == "a.txt");  // a match inside the name replaces the text with it
+
+    Fixture h("complete3", FileDialogMode::open, {}, false);
+    h.type("cx");
+    h.press(Key::Left);
+    CHECK(h.dlg.completion().empty());  // the cursor is not at the end
+    h.press(Key::Right);
+    CHECK(h.dlg.filename() == "cx");
+}
+
+TEST_CASE("a typed folder name and Enter goes into it and empties the field") {
+    Fixture f("enterdir", FileDialogMode::open, {}, false);
+    f.type("doc");
+    f.press(Key::Right);
+    CHECK(f.press(Key::Enter).kind == FileDialogResult::Kind::pending);
+    CHECK(f.dlg.current_dir() == f.dir / "docs");
+    CHECK(f.dlg.filename().empty());
+}
+
+TEST_CASE("typing in the list goes to the File field; Shift+Up and Shift+Down step through the names containing it") {
+    Fixture f("listtype");
+    f.type("t");
+    CHECK(f.dlg.focus() == FocusZone::filename);
+    CHECK(f.dlg.filename() == "t");
+    CHECK(f.name_at(f.dlg.selected()) == "a.txt");  // contains t; nothing starts with it
+    f.focus(FocusZone::list);
     f.press(Key::Down, kShift);
-    CHECK(f.name_at(f.dlg.selected()) == "a.txt");  // wraps to the next match
+    CHECK(f.name_at(f.dlg.selected()) == "c.txt");
+    CHECK(f.dlg.filename() == "t");  // stepping keeps the text
+    f.press(Key::Down, kShift);
+    CHECK(f.name_at(f.dlg.selected()) == "a.txt");  // wraps
     f.press(Key::Up, kShift);
     CHECK(f.name_at(f.dlg.selected()) == "c.txt");
+}
+
+TEST_CASE("the completion is drawn lighter after the typed text") {
+    Fixture f("ghost", FileDialogMode::open, {}, false);
+    f.type("b");
+    NullTerminal term;
+    Screen screen{term};
+    screen.resize({14, 60});
+    f.dlg.render(screen, Rect{0, 0, 14, 60});
+    CHECK(row_text(screen, 12).find("File: b.md") != std::string::npos);
+    const int typed = static_cast<int>(std::string(" File: ").size());
+    CHECK(screen.cell(12, typed).attr == attr_for(Style::list_selected));
+    CHECK((screen.cell(12, typed + 1).attr.flags & kDim) != 0);
+    CHECK((screen.cell(12, typed + 1).attr.flags & kBold) == 0);
+    CHECK(row_text(screen, 13).find("⌕") == std::string::npos);  // no separate search box
+}
+
+TEST_CASE("clicking a part of the path goes to that folder") {
+    Fixture f("crumbs");
+    f.press(Key::Down);
+    f.press(Key::Enter);  // into docs
+    REQUIRE(f.dlg.current_dir() == f.dir / "docs");
+    NullTerminal term;
+    Screen screen{term};
+    screen.resize({14, 140});
+    f.dlg.render(screen, Rect{0, 0, 14, 140});
+    const std::string path = row_text(screen, 1);
+    const std::string name = "crumbs";
+    const std::size_t at = path.rfind(name);
+    REQUIRE(at != std::string::npos);
+    int col = 0;  // the column of byte `at`: one per character, as row_text joins one cell per column
+    for (std::size_t i = 0; i < at;) {
+        const auto c = static_cast<unsigned char>(path[i]);
+        i += c < 0x80 ? 1 : c < 0xE0 ? 2 : c < 0xF0 ? 3 : 4;
+        ++col;
+    }
+    CHECK(f.dlg.click(1, col + 1, false, Fixture::rows).kind == FileDialogResult::Kind::pending);
+    CHECK(f.dlg.current_dir() == f.dir);
+#if !defined(__CYGWIN__)  // there the first part is the drive, D:, not /
+    f.dlg.render(screen, Rect{0, 0, 14, 140});
+    CHECK(f.dlg.click(1, 1, false, Fixture::rows).kind == FileDialogResult::Kind::pending);  // the first part: the root
+    CHECK(f.dlg.current_dir() == f.dir.root_path());
+    f.dlg.render(screen, Rect{0, 0, 14, 140});
+    f.dlg.click(1, 3, false, Fixture::rows);  // a separator: nothing
+    CHECK(f.dlg.current_dir() == f.dir.root_path());
+#endif
 }
 
 TEST_CASE("new folder: Enter creates it, empty creates nothing, Escape leaves the mode") {

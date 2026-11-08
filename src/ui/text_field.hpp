@@ -25,7 +25,9 @@ public:
     bool at_start() const noexcept { return cursor_ == 0; }
     bool at_end() const noexcept { return cursor_ == text_.size(); }
 
-    void render(Screen& screen, int row, int col, int width, Attr attr, bool focused);
+    // `ghost`, when given, is drawn in `ghost_attr` just after the text, as far as the width
+    // allows: a suggestion that is not part of the text.
+    void render(Screen& screen, int row, int col, int width, Attr attr, bool focused, std::string_view ghost = {}, Attr ghost_attr = {});
 
 private:
     std::size_t next_cluster(std::size_t pos) const;

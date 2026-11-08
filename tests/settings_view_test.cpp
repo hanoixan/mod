@@ -181,9 +181,9 @@ TEST_CASE("render: the rows, the selected row highlighted, and its help text bel
     Fixture f;
     NullTerminal term;
     Screen screen(term);
-    screen.resize({20, 60});
+    screen.resize({22, 60});
     f.select("line_numbers");
-    const Rect area{1, 1, 18, 58};
+    const Rect area{1, 1, 20, 58};
     f.view.render(screen, area);
     const std::size_t i = index_of("line_numbers");
     for (std::size_t r = 0; r < setting_specs().size(); ++r) {
@@ -192,7 +192,7 @@ TEST_CASE("render: the rows, the selected row highlighted, and its help text bel
     CHECK(screen.cell(1 + static_cast<int>(i), 1).attr == attr_for(Style::list_selected));
     CHECK(screen.cell(1, 1).attr != attr_for(Style::list_selected));
     std::string below;
-    for (int r = 1 + static_cast<int>(setting_specs().size()); r < 19; ++r) below += screen_row(screen, r) + " ";
+    for (int r = 1 + static_cast<int>(setting_specs().size()); r < 21; ++r) below += screen_row(screen, r) + " ";
     CHECK(below.find("Show the line-number gutter") != std::string::npos);
     CHECK(below.find("document.") != std::string::npos);  // wrapped onto a third row, not cut
     CHECK(screen_row(screen, 0).empty());  // nothing is drawn outside the area

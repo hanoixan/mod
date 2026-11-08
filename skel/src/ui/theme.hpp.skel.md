@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1a669e53, stand-in 885643fa
+stamp: source 1a669e53, stand-in bb0649cb
 ---
 # module: theme
 
@@ -69,6 +69,13 @@ Each style and each modifier has a **name** (camelCase, the LSP's own names wher
 | `page` | `page` | `plain` |
 | `historyInserted` | `history_inserted` | `black on-green` |
 | `historyRemoved` | `history_removed` | `strike red` |
+| `mergeBanner` | `merge_banner` | `reverse` |
+| `mergeYourInsertion` | `merge_your_insertion` | `black on-cyan` |
+| `mergeYourDeletion` | `merge_your_deletion` | `strike cyan` |
+| `mergeTheirInsertion` | `merge_their_insertion` | `black on-yellow` |
+| `mergeTheirDeletion` | `merge_their_deletion` | `strike yellow` |
+| `mergeBothInsertion` | `merge_both_insertion` | `black on-bright-magenta` |
+| `mergeBothDeletion` | `merge_both_deletion` | `strike bright-magenta` |
 
 Modifiers are applied on top of the style's look in this order, each adding its attributes and replacing the color only when its spec names one:
 
@@ -80,7 +87,7 @@ Modifiers are applied on top of the style's look in this order, each adding its 
 | `deprecated` | `kModDeprecated` | `strike` |
 | `documentation` | `kModDocumentation` | `italic` |
 
-**In vt100 mode** there is no color, dim, italic or strike, so the theme answers from a fixed fallback table instead, and color overrides do not apply: keywords, modifiers, macros, Markdown headings and strong text, `gutterCurrent` and the `declaration` modifier are bold; comments, Markdown emphasis, quotes and links are underlined; strike (Markdown, `deprecated` and `historyRemoved`) becomes reverse; `historyInserted` is underlined; the bars and highlights stand out from plain text: `selection`, `status`, `statusUnfocused`, `menu`, `overflowMarker`, `searchMatch` and `listSelected` are reverse, `menuAccel` reverse underline (only the focused status line's `>` tells the status lines apart), `listSelectedUnfocused` underlined, and `menuSelected` plain (cut out of the reverse menu); `error` is bold reverse; everything else, color-only text included, is plain. The vt100 look does not follow darkness: it is the same in normal, night and paper, the page included.
+**In vt100 mode** there is no color, dim, italic or strike, so the theme answers from a fixed fallback table instead, and color overrides do not apply: keywords, modifiers, macros, Markdown headings and strong text, `gutterCurrent` and the `declaration` modifier are bold; comments, Markdown emphasis, quotes and links are underlined; strike (Markdown, `deprecated`, `historyRemoved` and the three merge deletions) becomes reverse; `historyInserted` and the three merge insertions are underlined; the bars and highlights stand out from plain text: `selection`, `status`, `statusUnfocused`, `menu`, `overflowMarker`, `searchMatch`, `listSelected` and `mergeBanner` are reverse, `menuAccel` reverse underline (only the focused status line's `>` tells the status lines apart), `listSelectedUnfocused` underlined, and `menuSelected` plain (cut out of the reverse menu); `error` is bold reverse; everything else, color-only text included, is plain. The vt100 look does not follow darkness: it is the same in normal, night and paper, the page included.
 
 **Darkness** (`enum class Darkness { night, normal, paper }`, the `darkness` [setting](../app/settings.hpp.skel.md#function-setting_specs)) changes the defaults of the page and the blues (the bars are the same in every look) (no default uses dark blue on a dark screen; paper's light page keeps it), and only the defaults: an override still wins, and a spec equal to the level's default is no override.
 

@@ -6,6 +6,8 @@
 #include <span>
 #include <tuple>
 
+#include "syntax/layered_highlighter.hpp"
+#include "syntax/merge_colors.hpp"
 #include "text/utf8.hpp"
 #include "text/wrap.hpp"
 #include "ui/theme.hpp"
@@ -15,6 +17,7 @@ namespace {
 
 
 constexpr std::uint64_t kReadSlice = 64 * 1024;  // bytes of a line read at a time
+constexpr std::uint64_t kMergeWindow = 256 * 1024;  // how far around the lines drawn conflict blocks are looked for
 constexpr std::uint64_t npos = PieceTree::npos;
 
 int digits(std::uint64_t n) {
@@ -421,13 +424,33 @@ void EditorView::load_spans(std::uint64_t line, std::uint64_t end) {
         }
         return;
     }
-    if (!highlighter_) return;
-    line_buf_ = doc_.text().read(line, std::min(end - line, kReadSlice));
-    try {
-        spans_ = highlighter_->spans_for_line(line, line_buf_);
-    } catch (...) {
-        spans_.clear();  // a highlighter never breaks rendering
+    if (highlighter_) {
+        line_buf_ = doc_.text().read(line, std::min(end - line, kReadSlice));
+        try {
+            spans_ = highlighter_->spans_for_line(line, line_buf_);
+        } catch (...) {
+            spans_.clear();  // a highlighter never breaks rendering
+        }
     }
+    if (merge_colors_) add_merge_spans(line, end);
+}
+
+void EditorView::add_merge_spans(std::uint64_t line, std::uint64_t end) {
+    const PieceTree& t = doc_.text();
+    const std::uint64_t want_end = std::min(end, line + kMergeWindow);  // a long line's start only
+    if (merge_version_ != doc_.version() || line < merge_from_ || want_end > merge_to_) {
+        std::uint64_t from = line_start_of(line > kMergeWindow ? line - kMergeWindow : 0);
+        if (line - from > 2 * kMergeWindow) from = line;  // a very long line above
+        merge_from_ = from;
+        merge_to_ = std::min(t.size(), want_end + kMergeWindow);
+        merge_version_ = doc_.version();
+        merge_spans_ = merge_color_spans(t.read(merge_from_, merge_to_ - merge_from_), merge_from_);
+    }
+    if (merge_spans_.empty()) return;
+    std::vector<StyleSpan> over;
+    for (auto it = std::ranges::upper_bound(merge_spans_, line, {}, &StyleSpan::end); it != merge_spans_.end() && it->start < end; ++it)
+        over.push_back(StyleSpan{std::max(it->start, line), std::min(it->end, end), it->style, it->modifiers});
+    if (!over.empty()) spans_ = overlay_spans(spans_, over);
 }
 
 EditorView::Drawn EditorView::draw_text(Screen& screen, int row, int text_col, int right, std::uint64_t from, std::uint64_t to,

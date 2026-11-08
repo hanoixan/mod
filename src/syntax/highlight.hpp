@@ -75,6 +75,13 @@ enum class Style : std::uint8_t {
     status_unfocused,         // a split's status line while another has the focus
     list_selected,            // a list's selected row (the folder tree, Undo History) while it has the keys
     list_selected_unfocused,  // ...and while it has not
+    merge_banner,             // a diff3 conflict block's marker lines
+    merge_your_insertion,     // ...the characters the first section (yours) has that the base has not
+    merge_your_deletion,      // ...the base's characters that yours deleted or replaced
+    merge_their_insertion,    // ...the same for the last section (theirs)
+    merge_their_deletion,
+    merge_both_insertion,     // ...the characters both inserted, in each
+    merge_both_deletion,      // ...the base's characters that both deleted or replaced
     overflow_marker,          // last: the theme's tables are sized by it
 };
 

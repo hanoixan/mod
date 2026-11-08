@@ -39,6 +39,11 @@ constexpr SettingSpec kSpecs[] = {
     {"word_wrap", T::boolean, 1, 0, 1, "Word wrap on open",
      "Wrap long lines onto the next rows in each document as it is opened, instead of scrolling sideways; "
      "changing it also sets every open document. View > Word Wrap changes it for one document.", {}},
+    {"auto_color_merges", T::boolean, 1, 0, 1, "Auto-color merges",
+     "Color merge conflicts written in the diff3 style (<<<<<<< yours, |||||||, ======= and >>>>>>> theirs lines): "
+     "the four marker lines inverted, what each side added to the base on a background and the base's text it deleted "
+     "or replaced struck through, yours cyan, theirs yellow, made by both magenta (the merge colors in Options > "
+     "Colors). A block that is no longer whole is plain text.", {}},
     {"pin_folder_tree", T::boolean, 0, 0, 1, "Pin Folder Tree",
      "Keep the folder tree, the working folder's files and folders, shown to the left of the views. Unpinned, it shows "
      "only while you are in it (Esc, then Shift+Left) and goes when you leave. Changing it also pins or unpins it now; "

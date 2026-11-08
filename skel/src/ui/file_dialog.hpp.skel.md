@@ -1,26 +1,26 @@
 ---
 role: product
-stamp: source 77558d8a, stand-in b27a2f71
+stamp: source 2af95912, stand-in 8ab005a9
 ---
 # module: file_dialog
 
-../modi/'s (after ../modi/) Open and Save As dialog. It replaces the whole text area (the status line stays), and is driven by the keyboard only: there is no mouse. Its looks come from the [theme](./theme.hpp.skel.md): text in `text`, rules and secondary text in `gutter`, the focused zone and selection in `listSelected`, links in `markdownLinkText`, the primary button in `gutterCurrent`, errors in `error`. App opens it for Open, Save As and the first save of an untitled document.
+../modi/'s (after ../modi/) Open and Save As dialog. It replaces the whole text area (the status line stays), and is driven by the keyboard and, through [click](#function-click) and [wheel](#function-wheel), the mouse. Its looks come from the [theme](./theme.hpp.skel.md): text in `text`, rules and secondary text in `gutter`, the focused zone and selection in `listSelected`, links in `markdownLinkText`, the primary button in `gutterCurrent`, errors in `error`. App opens it for Open, Save As and the first save of an untitled document.
 
 Layout, top to bottom, in the `body` rows the dialog is given (the *list rows* are what is left after the fixed rows, at least 1):
 
 1. **Title:** two `─`, a space, `Open File` or `Save As`, a space, then `─` to the right edge. Dim.
-2. **Breadcrumb:** a space, then the folders of the current directory as `/ > home > user`, in the link attribute, with ` > ` between them.
+2. **Breadcrumb:** a space, then the folders of the current directory as `/ > home > user`, in the link attribute, with ` > ` between them. Each part is clickable: render records its row, its columns and how many folders above the current one it names (`DrawnCrumb`).
 3. **Toolbar:** a space, `[↑Up]`, `[⌂Home]`, then either `[+Folder]` or, in new-folder mode, a text field with the placeholder `folder name`; then, right-aligned, `◉Hidden` (hidden files shown) or `○Hidden`, and the filter, as `[*.*]` or, in filter-edit mode, a text field holding the pattern.
 4. **Header:** a space, then `Name` (55% of the width), `Size` (20%, right-aligned) and `Modified` (20%, right-aligned). The sorted column has ` ▲` (ascending) or ` ▼` after its name.
 5. **Separator:** `─` across. Dim.
 6. **List:** one row per entry from the scroll position: a space, `📁` for a folder or `📄` for a file, a space, the name (52%, cut to fit), the size (empty for a folder) and the modified time without its year (`MM-DD HH:MM`), both dim and right-aligned. The selected row is in the focus attribute. Blank rows pad the list. When there is an error, it replaces the last list row: a space and the message in the error attribute.
 7. **Separator.**
-8. **File:** ` File: ` and a text field holding the file name.
-9. **Actions:** a space, `[Open]` or `[Save]` (primary) and `[Cancel]`; right-aligned, a type-to-search mark `⌕ text` while a search is active, and `N of M` for the selected entry or `M items` when none is selected.
+8. **File:** ` File: ` and a text field holding the file name, followed, while the field has the focus, by its [completion](#function-completion) in a lighter look (the field's, dim instead of bold).
+9. **Actions:** a space, `[Open]` or `[Save]` (primary) and `[Cancel]`; right-aligned, `N of M` for the selected entry or `M items` when none is selected.
 
-A **focus zone** is where keys go; the focused button, header or list is drawn in `listSelected`. The zones in Tab order are `up`, `home`, `folder`, `hidden`, `filter`, `sort_name`, `sort_size`, `sort_modified`, `list`, `filename`, `submit`, `cancel`. The dialog opens on `list`.
+A **focus zone** is where keys go; the focused button, header or list is drawn in `listSelected`. The zones in Tab order are `up`, `home`, `folder`, `hidden`, `filter`, `sort_name`, `sort_size`, `sort_modified`, `list`, `filename`, `submit`, `cancel`. The dialog opens on `filename`.
 
-- **Owns:** the current directory, the entries, the filter, the hidden flag, the sort, the selection, the scroll position, the focus zone, the file name field, the type-to-search buffer and the error.
+- **Owns:** the current directory, the entries, the filter, the hidden flag, the sort, the selection, the scroll position, the focus zone, the file name field, the entry the field's text found (its name, and whether the name starts with the text) and the error.
 - **Access:** public. One instance at a time, owned by [App](../app/app.hpp.skel.md#class-app), which also keeps it while the overwrite question is asked. Main thread.
 - **Required:** always.
 - **Failure modes:** an unreadable directory shows its error and an empty list; the dialog stays usable (Up and Home still work). A directory removed while the dialog is open shows the error on the next refresh.
@@ -51,14 +51,15 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 
 ## class: FileDialog
 
-- **Inputs:** `mode`; `initial_dir`: the directory to show (App passes the document's folder, or the working directory when untitled); `initial_filename`: for Save As, the document's file name, else empty; `clock`: a `std::function<double()>` returning seconds (default: the steady clock), the test seam for the type-to-search timeout. `show_hidden`: whether dot-files are listed to begin with, true by default (they are shown unless the Hidden toggle hides them; ../modi/ hid them).
-- **State changes:** invariants: `selected` is -1 or an index of `entries`; the scroll position keeps the selected row visible after every key; every change of directory, filter or hidden flag refreshes the listing, clears the error and the selection and scrolls to the top, and leaves new-folder mode.
+- **Inputs:** `mode`; `initial_dir`: the directory to show (App passes the document's folder, or the working directory when untitled); `initial_filename`: for Save As, the document's file name, else empty; `show_hidden`: whether dot-files are listed to begin with, true by default (they are shown unless the Hidden toggle hides them; ../modi/ hid them).
+- **State changes:** invariants: `selected` is -1 or an index of `entries`; the scroll position keeps the selected row visible after every key; every change of directory, filter or hidden flag refreshes the listing, clears the error, the selection and the match and scrolls to the top, and leaves new-folder mode; the match is cleared too whenever the selection is moved in the list.
 - **Owns:** see the module.
 - **Access:** App.
 - **Referred by:** [app](../app/app.hpp.skel.md)
 - **Referred by:** [file_dialog (implementation)](./file_dialog.cpp.skel.md)
 - **Referred by:** [file_dialog_test](../../tests/file_dialog_test.cpp.skel.md)
 - **Referred by:** [file-dialog.md](../../docs/manual/file-dialog.md.skel.md)
+- **Referred by:** [app (implementation)](../app/app.cpp.skel.md)
 
 ### function: handle_key
 
@@ -68,10 +69,10 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 - **Returns:** a `FileDialogResult`: `chosen` when Enter submits a file name, `canceled` on Escape or `[Cancel]`, otherwise `pending`.
 - **State changes:**
   - **Tab** and **Shift+Tab** move to the next or previous zone, wrapping; when the file name field had focus, nothing else changes. **Escape** cancels.
-  - **In the list:** Up and Down move the selection (Up from none selects the first), PageUp and PageDown move it by a page, Home and End go to the first and last entry; each of these, when the selected entry is a file, copies its name into the File field, and keeps the selection visible. Left and Right (without Shift) move the focus to the previous or next zone. Shift+Up and Shift+Down select the previous or next entry whose name contains the search text. Enter on a folder enters it; on a file it submits that file's name; with nothing selected it submits the File field when that is not empty. Backspace goes to the parent folder. A printable character without Ctrl adds to the **type-to-search** text (which restarts when 2 s have passed since the last character, by `clock`) and selects the first entry, from the current selection on, whose name contains the text, ignoring case.
-  - **File field:** keys go to its [TextField](./text_field.hpp.skel.md#class-textfield); Enter submits the field's text; Left at the field's start and Right at its end move the focus to the previous or next zone.
+  - **In the list:** Up and Down move the selection (Up from none selects the first), PageUp and PageDown move it by a page, Home and End go to the first and last entry; each of these, when the selected entry is a file, copies its name into the File field, and keeps the selection visible. Left and Right (without Shift) move the focus to the previous or next zone. Shift+Up and Shift+Down select the previous or next entry whose name contains the File field's text, ignoring case, wrapping, the field keeping its text. Enter on a folder enters it; on a file it submits that file's name; with nothing selected it submits the File field when that is not empty. Backspace goes to the parent folder. A printable character without Ctrl moves the focus to the File field and is typed there.
+  - **File field:** keys go to its [TextField](./text_field.hpp.skel.md#class-textfield), and a key that changes its text runs [search_field](#function-search_field); Enter submits the field's text; Left at the field's start moves the focus to the previous zone; Right at its end takes the [completion](#function-completion) when there is one (the field's text becomes the match's whole name, looked up again), and otherwise moves the focus to the next zone.
   - **Buttons and headers** (any other zone): Left and Right move the focus to the previous or next zone; Enter activates: `up` goes to the parent; `home` to [user_home_dir](../platform/fs.hpp.skel.md#function-user_home_dir) (nothing when there is none); `folder` enters new-folder mode; `hidden` toggles hidden files; `filter` enters filter-edit mode; a `sort_…` header sorts by that column, or flips the direction when it already is the sorted column (a new column starts ascending); `submit` submits the File field; `cancel` cancels.
-  - **Submit:** an empty name does nothing. A name that is a directory enters it. Otherwise the result is `chosen`. (For Save As, App asks before replacing a file that exists; the dialog does not.)
+  - **Submit:** an empty name does nothing. A name that is a directory enters it and empties the File field. Otherwise the result is `chosen`. (For Save As, App asks before replacing a file that exists; the dialog does not.)
   - **New-folder mode** (the field is shown in the toolbar, with focus): Enter creates the folder (the text stripped; nothing when empty) under the current directory with [make_directory](../app/file_listing.hpp.skel.md#function-make_directory), refreshes the listing, and leaves the mode; a failure shows its message in the error row.
   - **Filter-edit mode:** Enter sets the filter to the stripped text (a blank text keeps the old filter), leaves the mode and refreshes the listing.
 - **Access:** App.dispatch_key while the dialog is open.
@@ -80,7 +81,7 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 
 - **Inputs:** `bytes`.
 - **Returns:** nothing.
-- **State changes:** pastes into the text field that has focus (the File field, the filter or the folder name); ignored in any other zone.
+- **State changes:** pastes into the text field that has focus (the File field, the filter or the folder name); ignored in any other zone. A paste into the File field runs [search_field](#function-search_field), with the list rows of the last render.
 - **Access:** App.dispatch, for a `PasteEvent`.
 
 ### function: render
@@ -94,7 +95,7 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 
 - **Inputs:** `row`, `col`: a screen cell of a mouse press; `double_click`: whether it is the second click of a double; `list_rows`: as for handle_key.
 - **Returns:** a `FileDialogResult`, as handle_key's.
-- **State changes:** by what the last `render` drew at the cell: a list entry is selected (the list takes the focus and the File field follows the selection), and on a double click acts as Enter on it (a folder is entered, a file chosen); a toolbar button, the Hidden toggle, the filter or a column header takes the focus and acts as Enter on it; the File row gives the File field the focus. Any field being edited (a new folder's name, the filter) is left first. Elsewhere, nothing.
+- **State changes:** by what the last `render` drew at the cell: a list entry is selected (the list takes the focus and the File field follows the selection), and on a double click acts as Enter on it (a folder is entered, a file chosen); a part of the breadcrumb goes to the folder it names (nothing for the current one, or between the parts); a toolbar button, the Hidden toggle, the filter or a column header takes the focus and acts as Enter on it; the File row gives the File field the focus. Any field being edited (a new folder's name, the filter) is left first. Elsewhere, nothing.
 - **Access:** App, for the mouse.
 
 ### function: wheel
@@ -103,6 +104,20 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 - **Returns:** nothing.
 - **State changes:** the list's selection moves `delta` entries (from the first entry when none is selected), kept in view, the File field following it.
 - **Access:** App, for the mouse wheel.
+
+### function: search_field
+
+- **Inputs:** `list_rows`, for scrolling.
+- **Returns:** nothing.
+- **State changes:** clears the match, then looks the File field's text up in the list: the first entry whose name starts with it, else the first whose name contains it, both ignoring case, becomes the selection, scrolled into view, and the match; the field keeps its text (the selection does not copy a name into it). An empty text, one with `/` or `\` in it (a path), or one nothing matches leaves the selection as it was.
+- **Access:** private; handle_key and handle_paste.
+
+### function: completion
+
+- **Inputs:** none.
+- **Returns:** a `std::string`: the lighter text drawn after the File field's: the rest of the match's name when the name starts with the text, ` → ` and the whole name when it only contains it; empty when there is no match, the name is the text itself, the field does not have the focus, or its cursor is not at its end.
+- **State changes:** none.
+- **Access:** render, handle_key (Right) and tests.
 
 ### function: list_rows_for
 
@@ -114,6 +129,6 @@ A **focus zone** is where keys go; the focused button, header or list is drawn i
 ### function: current_dir
 
 - **Inputs:** none.
-- **Returns:** the current directory; `filename()` returns the File field's text, `focus()` the zone, `selected()` the selected index, `entries()` the listing in its order, `error()` the error text or empty, `search_text()` the type-to-search text, `filter()` the pattern and `show_hidden()` the flag.
+- **Returns:** the current directory; `filename()` returns the File field's text, `focus()` the zone, `selected()` the selected index, `entries()` the listing in its order, `error()` the error text or empty, `match()` the name of the entry the File field's text found (see [search_field](#function-search_field)) or empty, `filter()` the pattern and `show_hidden()` the flag.
 - **State changes:** none.
 - **Access:** App (to restore the dialog after the overwrite question) and tests.

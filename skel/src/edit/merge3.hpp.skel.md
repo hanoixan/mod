@@ -30,6 +30,7 @@ The line diff and three-way merge behind Merge in place ([App.ask_disk_change](.
 - **Access:** merge3, tests.
 - **Referred by:** [merge3 (implementation)](./merge3.cpp.skel.md)
 - **Referred by:** [merge3_test](../../tests/merge3_test.cpp.skel.md)
+- **Referred by:** [merge_colors (implementation)](../syntax/merge_colors.cpp.skel.md)
 
 ## function: merge3
 

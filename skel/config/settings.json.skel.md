@@ -21,11 +21,14 @@ A reference `settings.json` with every setting at its default, installed as `<pr
   "line_numbers": true,
   "syntax_coloring": true,
   "word_wrap": true,
+  "auto_color_merges": true,
+  "pin_folder_tree": false,
   "auto_reload": true,
   "mouse": true,
   "terminal_mode": "auto",
   "darkness": "normal",
   "cursor_style": "bar",
+  "read_only_copy": "markdown",
   "tab_inserts": "spaces",
   "keymap": {}
 }

@@ -30,6 +30,7 @@ UTF-8 decoding, extended grapheme cluster boundaries (for cursor movement and de
 - **Referred by:** [markdown (implementation)](../syntax/markdown.cpp.skel.md)
 - **Referred by:** [keymap (implementation)](../app/keymap.cpp.skel.md)
 - **Referred by:** [fuzz_utf8](../../fuzz/fuzz_utf8.cpp.skel.md)
+- **Referred by:** [merge_colors (implementation)](../syntax/merge_colors.cpp.skel.md)
 
 ## function: decode_before
 

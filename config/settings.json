@@ -3,6 +3,7 @@
   "line_numbers": true,
   "syntax_coloring": true,
   "word_wrap": true,
+  "auto_color_merges": true,
   "pin_folder_tree": false,
   "auto_reload": true,
   "mouse": true,

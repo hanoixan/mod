@@ -1,11 +1,11 @@
 ---
 role: product
 unit: ./file_dialog.hpp.skel.md
-stamp: source 73979492, stand-in acde88cb
+stamp: source 1d9f8b52, stand-in a9f55160
 ---
 # module: file_dialog (implementation)
 
-Implements [FileDialog](./file_dialog.hpp.skel.md#class-filedialog). Columns are laid out with [display_width](../text/utf8.hpp.skel.md#function-display_width), cutting a name that is too wide on a cluster boundary and padding with spaces; the emoji icons are two cells wide.
+Implements [FileDialog](./file_dialog.hpp.skel.md#class-filedialog). Columns are laid out with [display_width](../text/utf8.hpp.skel.md#function-display_width), cutting a name that is too wide on a cluster boundary and padding with spaces; the emoji icons are two cells wide. Name lookups compare lower-cased names; the File field's completion is drawn in its look with bold taken off and dim put on.
 
 - **Owns:** nothing beyond the class.
 - **Access:** internal.

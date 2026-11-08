@@ -33,6 +33,7 @@ constexpr std::string_view kHistoryHints = "Enter: jump  Tab: text  C: clear  T:
 constexpr std::string_view kSettingsHints = "Up/Down: move  Enter: change  Left/Right: step a number  Esc: close";
 constexpr std::string_view kDocSearchHints = "Type to search every page  Up/Down: choose  Enter: open  Esc: close";
 constexpr std::string_view kFileDialogHints = "Tab: next part  Enter: choose  Backspace: up a folder  Esc: cancel";
+constexpr std::string_view kFileFieldHints = "Type to find  Right: complete  Enter: choose  Tab: next part  Esc: cancel";
 constexpr std::string_view kHelpHints = "Up/Down: links  Enter: follow  Left: back  /: search  Esc: close";
 constexpr std::string_view kColorsHints = "Enter: change  Del: default  Alt+R: all defaults  Esc: close";
 constexpr std::string_view kKeymapHints = "Enter: add key  Del: remove  ^R: reset  Alt+R: reset all  Esc: close";
@@ -364,6 +365,7 @@ void App::apply_options(DocumentSlot& s) {
     const bool reading = s.options->view_mode && s.doc && view_layout_of(*s.doc) == ViewLayout::markdown;
     s.view->set_line_numbers(s.options->line_numbers && !reading);
     s.view->set_word_wrap(s.options->word_wrap);
+    s.view->set_merge_colors(settings_.flag("auto_color_merges"));
     s.view->set_view_mode(s.options->view_mode);
     s.view->set_reading(reading);
 }
@@ -854,8 +856,8 @@ void App::finish_merge() {
             text = disk_bytes(h.theirs0, h.theirs1);
         } else {
             const std::string ours = d.text().read(at, len);
-            text = std::string("<<<<<<< theirs") + std::string(le) + ended(disk_bytes(h.theirs0, h.theirs1)) + "||||||| base" + std::string(le) +
-                   ended(base_text[i]) + "=======" + std::string(le) + ended(ours) + ">>>>>>> yours" + std::string(le);
+            text = std::string("<<<<<<< yours") + std::string(le) + ended(ours) + "||||||| base" + std::string(le) + ended(base_text[i]) + "=======" +
+                   std::string(le) + ended(disk_bytes(h.theirs0, h.theirs1)) + ">>>>>>> theirs" + std::string(le);
         }
         d.apply(at, len, std::string_view(text), EditKind::other, cursor, cursor);
     }
@@ -865,7 +867,7 @@ void App::finish_merge() {
     if (conflicts == 0) {
         notices_.post(&d, std::format("merged the changes on disk into {}", name), kReloadedNotice);
     } else {
-        notices_.post(&d, std::format("merged {} from disk: {} conflict{} marked <<<<<<< theirs", name, conflicts, conflicts == 1 ? "" : "s"));
+        notices_.post(&d, std::format("merged {} from disk: {} conflict{} marked <<<<<<< yours", name, conflicts, conflicts == 1 ? "" : "s"));
     }
     after_command();
 }
@@ -1078,6 +1080,8 @@ void App::apply_to_session(const SettingSpec& spec) {
             v.options->word_wrap = settings_.flag(spec.key);
             apply_options(v);
         });
+    } else if (spec.key == "auto_color_merges") {
+        ws_.for_each_slot([&](DocumentSlot& v) { apply_options(v); });
     } else if (spec.key == "mouse") {
         apply_mouse();
     } else if (spec.key == "cursor_style") {
@@ -2316,7 +2320,7 @@ void App::render() {
         }
     }
     if (message.empty() && help_viewer_.is_open()) message = kHelpHints;
-    if (message.empty() && file_dialog_) message = kFileDialogHints;
+    if (message.empty() && file_dialog_) message = file_dialog_->focus() == FocusZone::filename ? kFileFieldHints : kFileDialogHints;
     const std::string hint = help_hint(keymap_);
     if (message.empty()) message = hint;
     if (help_viewer_.is_open()) {

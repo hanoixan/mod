@@ -709,9 +709,9 @@ TEST_CASE("Merge in place: overlapping changes become diff3 conflict blocks; sav
                               {"line 2 changes on disk too", "", change_file("merge-conflict", "file.txt", "a\nB\nc\n")},
                               {"asked", "", [](const VtScreen& s) { return s.contains("Merge in place"); }},
                               {"Merge in place: the conflict block", "m", [](const VtScreen& s) {
-                                   return s.row(1).starts_with("  2 <<<<<<< theirs") && s.row(2).starts_with("  3 B") && s.row(3).starts_with("  4 ||||||| base") &&
-                                          s.row(4).starts_with("  5 b") && s.row(5).starts_with("  6 =======") && s.row(6).starts_with("  7 yb") &&
-                                          s.row(7).starts_with("  8 >>>>>>> yours") && s.row(8).starts_with("  9 c");
+                                   return s.row(1).starts_with("  2 <<<<<<< yours") && s.row(2).starts_with("  3 yb") && s.row(3).starts_with("  4 ||||||| base") &&
+                                          s.row(4).starts_with("  5 b") && s.row(5).starts_with("  6 =======") && s.row(6).starts_with("  7 B") &&
+                                          s.row(7).starts_with("  8 >>>>>>> theirs") && s.row(8).starts_with("  9 c");
                                }},
                               {"the status line counts it", "", status_has("1 conflict")},
                               {"Ctrl+S asks first", "\x13", [](const VtScreen& s) { return s.contains("still has 1 conflict. Save anyway?"); }},
@@ -719,7 +719,7 @@ TEST_CASE("Merge in place: overlapping changes become diff3 conflict blocks; sav
                               {"quit", "\x11", nullptr}});
     check_steps(run);
     // Opened again with the blocks in it.
-    const auto again = run_app("merge-reopen", {File{"file.txt", "<<<<<<< theirs\nB\n||||||| base\nb\n=======\nyb\n>>>>>>> yours\n"}},
+    const auto again = run_app("merge-reopen", {File{"file.txt", "<<<<<<< yours\nyb\n||||||| base\nb\n=======\nB\n>>>>>>> theirs\n"}},
                                {{"told", "", status_has("1 merge conflict")}, {"quit", "\x11", nullptr}});
     check_steps(again);
 }
