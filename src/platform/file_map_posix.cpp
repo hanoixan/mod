@@ -154,7 +154,8 @@ Result<std::shared_ptr<const MappedFile>> MappedFile::open(const std::filesystem
 }
 
 MappedFile::~MappedFile() {
-    if (data_ != nullptr) ::munmap(const_cast<std::byte*>(data_), static_cast<std::size_t>(size_));
+    // Read in, the bytes are owned_'s and freed with it; only a mapping is unmapped.
+    if (data_ != nullptr && !owned_) ::munmap(const_cast<std::byte*>(data_), static_cast<std::size_t>(size_));
     if (fd_ >= 0) ::close(fd_);
 }
 

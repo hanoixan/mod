@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source e0c1a488, stand-in 1123c45b
+stamp: source e0c1a488, stand-in 15cb1d67
 ---
 # module: file_map
 
@@ -32,7 +32,7 @@ Read-only copies of whole files: a memory mapping, which is what lets `mod` open
 
 - **Inputs:** construction goes through the `open` factory.
 - **State changes:** immutable after construction.
-- **Owns:** the mapping and the file descriptor, or the bytes read in. Released in the destructor.
+- **Owns:** the mapping and the file descriptor, or the bytes read in. Released in the destructor: a mapping is unmapped, bytes read in are freed (never passed to `munmap`, which on macOS would unmap the heap pages under them).
 - **Access:** may be read from any thread, including LineScanner and the sidecar writer.
 - **Referred by:** [sidecar](../edit/sidecar.hpp.skel.md)
 - **Referred by:** [file_map_posix](./file_map_posix.cpp.skel.md)

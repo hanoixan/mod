@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./file_map.hpp.skel.md
-stamp: source 80387404, stand-in bcf664b7
+stamp: source 5fedfc77, stand-in bcf664b7
 ---
 # module: file_map_posix
 
