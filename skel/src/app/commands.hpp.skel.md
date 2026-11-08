@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 31939d26, stand-in 5ac75b3a
+stamp: source dc28165f, stand-in 9a6594ae
 ---
 # module: commands
 
@@ -103,4 +103,4 @@ The twelve `Move…` values come in the order of [Motion](../edit/editor.hpp.ske
 - **Inputs:** a `CommandId`.
 - **Returns:** whether the command changes the document's text or its history: `Undo`, `Redo`, `UndoHistory`, `NextBranch`, `PrevBranch`, `ClearHistory`, `TrimHistory`, `Cut`, `CutToLineEnd`, `Paste`, `Newline`, `InsertTab`, `Outdent` and the four deletes. Everything else, including the motions, the selection motions, Copy, Find and the file commands, does not.
 - **State changes:** none.
-- **Access:** App, which refuses these in read-only mode.
+- **Access:** App, which refuses these in view mode.

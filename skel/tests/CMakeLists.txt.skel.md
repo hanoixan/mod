@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source cae2ecf7, stand-in 3b45072f
+stamp: source f9f7b57e, stand-in d6832151
 ---
 # resource: tests/CMakeLists.txt
 
@@ -39,7 +39,7 @@ Defines one test executable per `*_test.cpp`, linked against an internal `mod_co
 - **Depends on:** [settings_view_test](./settings_view_test.cpp.skel.md)
 - **Depends on:** [menu_test](./menu_test.cpp.skel.md)
 - **Depends on:** [markdown_links_test](./markdown_links_test.cpp.skel.md)
-- **Depends on:** [read_only_test](./read_only_test.cpp.skel.md)
+- **Depends on:** [view_mode_test](./view_mode_test.cpp.skel.md)
 - **Depends on:** [document_list_test](./document_list_test.cpp.skel.md)
 - **Depends on:** [docs_test](./docs_test.cpp.skel.md)
 - **Depends on:** [doc_search_test](./doc_search_test.cpp.skel.md)

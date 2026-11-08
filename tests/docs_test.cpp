@@ -11,7 +11,7 @@
 
 #include "app/commands.hpp"
 #include "app/keymap.hpp"
-#include "app/read_only.hpp"
+#include "app/view_mode.hpp"
 #include "app/settings.hpp"
 #include "syntax/markdown.hpp"
 #include "text/piece_tree.hpp"
@@ -58,7 +58,7 @@ TEST_CASE("every relative link in the manual resolves to a file, and every ancho
         for (const MarkdownLink& link : here.links) {
             CAPTURE(page.string());
             CAPTURE(link.target);
-            const LinkAction a = ReadOnlyNav::resolve(link, page, here);
+            const LinkAction a = ViewModeNav::resolve(link, page, here);
             if (a.kind == LinkAction::message) {
                 CHECK(link.target.find("://") != std::string::npos);  // only web addresses are messages
                 continue;
@@ -68,7 +68,7 @@ TEST_CASE("every relative link in the manual resolves to a file, and every ancho
             CHECK(fs::is_regular_file(a.path));
             if (!a.anchor.empty() && fs::is_regular_file(a.path)) {
                 PieceTree other;
-                CHECK(ReadOnlyNav::find_anchor(outline_of(a.path, other), a.anchor).has_value());
+                CHECK(ViewModeNav::find_anchor(outline_of(a.path, other), a.anchor).has_value());
             }
         }
     }
@@ -83,7 +83,7 @@ TEST_CASE("every page of the manual can be reached from index.md") {
         PieceTree tree;
         const MarkdownOutline o = outline_of(page, tree);
         for (const MarkdownLink& link : o.links) {
-            const LinkAction a = ReadOnlyNav::resolve(link, page, o);
+            const LinkAction a = ViewModeNav::resolve(link, page, o);
             if (a.kind != LinkAction::open || a.path.extension() != ".md" || !fs::is_regular_file(a.path)) continue;
             if (seen.insert(a.path).second && a.path.string().starts_with(kManual.string())) todo.push_back(a.path);
         }

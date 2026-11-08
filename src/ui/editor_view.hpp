@@ -78,9 +78,9 @@ public:
     bool word_wrap() const noexcept { return wrap_; }
     // Shows the line (or, with word wrap, the row) containing `offset` first.
     void set_top(std::uint64_t offset);
-    // Marks the status line "[view]" while the document is in read-only mode.
-    void set_read_only(bool on) { read_only_ = on; }
-    // Draws the document laid out for reading (Markdown in read-only mode) while the text
+    // Marks the status line "[view]" while the document is in view mode.
+    void set_view_mode(bool on) { view_mode_ = on; }
+    // Draws the document laid out for reading (Markdown in view mode) while the text
     // area is wide enough; otherwise, and when off, as lines.
     void set_reading(bool on);
     bool reading() const noexcept { return reading_; }
@@ -161,7 +161,7 @@ private:
     int tab_width_;
     bool line_numbers_ = true;
     bool wrap_ = false;
-    bool read_only_ = false;
+    bool view_mode_ = false;
     std::uint64_t top_ = 0;
     bool scrolled_away_ = false;  // by scroll_rows, until follow_cursor
     std::uint64_t hscroll_ = 0;

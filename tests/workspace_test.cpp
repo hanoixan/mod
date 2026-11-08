@@ -83,8 +83,8 @@ TEST_CASE("a view following a link still counts as showing its document: releasi
     f.split();
     // The focused view follows a link: its slot shows the target, the document waits in base.
     View& top = f.ws.focused();
-    top.ro.away = true;
-    top.ro.base = std::move(top.slot);
+    top.vm.away = true;
+    top.vm.base = std::move(top.slot);
     top.slot.doc = f.document("target.md");
     f.ws.focus_on(1);  // the lower view, also on a
     f.ws.release_focused();  // the top view still shows a: nothing parked
@@ -93,7 +93,7 @@ TEST_CASE("a view following a link still counts as showing its document: releasi
     f.ws.release_focused();  // now nothing else shows a: parked, with its followed link
     const View* parked = f.ws.entry_of(a);
     REQUIRE(parked != nullptr);
-    CHECK(parked->ro.away);
+    CHECK(parked->vm.away);
     CHECK(Workspace::document_of(*parked)->path().filename() == "a.txt");
 }
 

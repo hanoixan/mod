@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 63208a53, stand-in 18a67560
+stamp: source 63208a53, stand-in 7163e490
 ---
 # resource: sidecar-format.md
 
@@ -12,7 +12,7 @@ The document must contain the following:
 2. **Encoding conventions:** every integer is little-endian and fixed-width. Strings are UTF-8 with a `u32` length prefix. There is no padding.
 3. **File header (32 bytes):** magic `"MODHIST\0"` (8 bytes), `u16 format_version` (= 1), `u16 hash_algorithm` (1 = SHA-256; 0 and every other value are invalid in format version 1, and a reader must refuse the file), `u32 flags` (reserved, 0), `u64 created_unix_ms`, `u64 reserved`. A reader that does not know `format_version` must refuse to append.
    The `hash` type used in the records below is 32 raw bytes: the SHA-256 digest ([FIPS 180-4](https://csrc.nist.gov/pubs/fips/180-4/upd1/final)) of the whole file content, in standard digest byte order (the order `sha256sum` prints).
-4. **Record framing:** `u64 body_length`, `u8 type`, then the body, then `u32 crc32` over `type || body`. The CRC is [crc32](../src/util/hash.hpp.skel.md#function-crc32) (IEEE). Records only ever get appended, except that a writer may replace the whole file with a pruned one (item 11). A reader stops at the first record that is truncated or has a bad CRC, and treats everything before it as valid.
+4. **Record framing:** `u64 body_length`, `u8 type`, then the body, then `u32 crc32` over `type || body`. The CRC is [crc32](../../src/util/hash.hpp.skel.md#function-crc32) (IEEE). Records only ever get appended, except that a writer may replace the whole file with a pruned one (item 11). A reader stops at the first record that is truncated or has a bad CRC, and treats everything before it as valid.
 5. **Record types:**
    - `1 ROOT { u64 node_id; u64 base_size; hash base_hash; i64 time_ms }` (body: 56 bytes): the start of a history tree. The document content is the file whose size and hash match.
    - `2 PAYLOAD { raw bytes }`: referenced by later NODE records using the absolute file offset of the body's first byte.
@@ -32,13 +32,13 @@ The document must contain the following:
     - one POSITION record.
 
     Node ids are not renumbered and may have gaps. A reader must not assume that a ROOT's `time_ms` is older than every NODE's: it is the age of the oldest kept branch, not when history began. A pruned file has dropped the SAVE records of removed nodes, so a file on disk that matches only one of those starts a new ROOT on the next load.
-12. **A worked example:** a hex dump of a sidecar holding a 3-node history with one branch, annotated record by record. It is produced by `mod` itself with an injected clock, so [sidecar_test](../tests/sidecar_test.cpp.skel.md) can compare `mod`'s output with it byte for byte, and its ROOT and SAVE hashes are the SHA-256 of the fixture content shown beside it.
+12. **A worked example:** a hex dump of a sidecar holding a 3-node history with one branch, annotated record by record. It is produced by `mod` itself with an injected clock, so [sidecar_test](../../tests/sidecar_test.cpp.skel.md) can compare `mod`'s output with it byte for byte, and its ROOT and SAVE hashes are the SHA-256 of the fixture content shown beside it.
 
 - **Required:** always.
-- **Referred by:** [Sidecar.rewrite](../src/edit/sidecar.hpp.skel.md#function-rewrite)
-- **Failure modes:** the spec drifts from the implementation. [sidecar_test](../tests/sidecar_test.cpp.skel.md) includes a golden-file test whose bytes are the worked example from this document.
-- **Depends on:** [ContentHash](../src/util/hash.hpp.skel.md#symbol-contenthash)
-- **Referred by:** [sidecar (implementation)](../src/edit/sidecar.cpp.skel.md)
-- **Referred by:** [sidecar](../src/edit/sidecar.hpp.skel.md)
-- **Referred by:** [sidecar_test](../tests/sidecar_test.cpp.skel.md)
+- **Referred by:** [Sidecar.rewrite](../../src/edit/sidecar.hpp.skel.md#function-rewrite)
+- **Failure modes:** the spec drifts from the implementation. [sidecar_test](../../tests/sidecar_test.cpp.skel.md) includes a golden-file test whose bytes are the worked example from this document.
+- **Depends on:** [ContentHash](../../src/util/hash.hpp.skel.md#symbol-contenthash)
+- **Referred by:** [sidecar (implementation)](../../src/edit/sidecar.cpp.skel.md)
+- **Referred by:** [sidecar](../../src/edit/sidecar.hpp.skel.md)
+- **Referred by:** [sidecar_test](../../tests/sidecar_test.cpp.skel.md)
 - **Unknowns:** none

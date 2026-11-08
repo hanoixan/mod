@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./app.hpp.skel.md
-stamp: source f4352bcc, stand-in 558a07b0
+stamp: source fffe5c64, stand-in 8eeab780
 ---
 # module: app (implementation)
 
@@ -12,9 +12,9 @@ Implements [App](./app.hpp.skel.md#class-app). Input routing order for each even
 3. History panel open: `HistoryView.handle_key`. A result with `command` runs that command (`ClearHistory`, `TrimHistory` or `TogglePersistHistory`) with the panel still open.
 4. A panel open: `SettingsView.handle_key`, `KeymapView.handle_key` or `DocSearchView.handle_key`; then, with the help shown, Esc puts it away; the result is applied as [App](./app.hpp.skel.md#class-app) describes.
 5. Read-only mode on: Tab, Shift+Tab, Enter and Space (in a Markdown file) and Ctrl+Left / Ctrl+Right are handled as [App](./app.hpp.skel.md#class-app) describes, before the keymap.
-6. `Keymap.lookup` gives a command; in read-only mode one that edits is refused. Alt+F/E/V/O/H and F10 are bindings to the `OpenMenu…` commands, so opening a menu is just a command.
-7. A `Char` without Ctrl or Alt (refused in read-only mode) calls `Editor.insert_text(typing)`.
-8. A `PasteEvent` (refused in read-only mode) calls [Editor.paste_text](../edit/editor.hpp.skel.md#function-paste_text), which gives every line break of the pasted text the document's line ending; while a menu, the history panel or the settings panel has focus, a paste is dropped (a prompt open over the history panel or a panel still receives it); the Key Bindings editor takes a paste into its search field.
+6. `Keymap.lookup` gives a command; in view mode one that edits is refused. Alt+F/E/V/O/H and F10 are bindings to the `OpenMenu…` commands, so opening a menu is just a command.
+7. A `Char` without Ctrl or Alt (refused in view mode) calls `Editor.insert_text(typing)`.
+8. A `PasteEvent` (refused in view mode) calls [Editor.paste_text](../edit/editor.hpp.skel.md#function-paste_text), which gives every line break of the pasted text the document's line ending; while a menu, the history panel or the settings panel has focus, a paste is dropped (a prompt open over the history panel or a panel still receives it); the Key Bindings editor takes a paste into its search field.
 
 Anything else is ignored.
 

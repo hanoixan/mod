@@ -130,7 +130,7 @@ std::span<const CommandInfo> all_commands();
 std::optional<CommandId> command_by_name(std::string_view name);
 // A name to show: the menu label without its "…", or the name with its words spaced.
 std::string command_display_name(CommandId id);
-// Whether the command changes the document's text or its history; read-only mode refuses those.
+// Whether the command changes the document's text or its history; view mode refuses those.
 bool command_edits(CommandId id);
 
 }  // namespace mod

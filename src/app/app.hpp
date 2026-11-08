@@ -24,7 +24,7 @@
 #include "app/document_slot.hpp"
 #include "app/folder_tree.hpp"
 #include "app/history_preview.hpp"
-#include "app/read_only.hpp"
+#include "app/view_mode.hpp"
 #include "app/keymap.hpp"
 #include "app/notices.hpp"
 #include "app/settings.hpp"
@@ -174,7 +174,7 @@ private:
     void save_colors();
     void toggle_persist_history(bool overwrite);
     // The command line's -ro and --persist-history, for the documents it opened.
-    void apply_start_options(bool open_read_only, bool persist_history);
+    void apply_start_options(bool open_in_view_mode, bool persist_history);
     void persist_next(std::vector<std::shared_ptr<Document>> docs);
     void run_flashed_command();
     // Split views.
@@ -188,10 +188,10 @@ private:
     bool single_view() const;
     // Per-document View options.
     ViewOptions options_on_open() const;
-    bool read_only() const { return shown().options && shown().options->read_only; }
+    bool view_mode() const { return shown().options && shown().options->view_mode; }
     void apply_options(DocumentSlot& s);
     void apply_options_to_views_of(const ViewOptions* options);
-    void set_read_only_in_other_views(bool on);
+    void set_view_mode_in_other_views(bool on);
     void open_file_dialog(FileDialogMode mode, std::function<void(const std::filesystem::path&)> on_chosen);
     void handle_file_dialog_key(const KeyEvent& key);
     void quit_on_escapes();
@@ -222,22 +222,22 @@ private:
     void handle_tree_result(const TreeKeyResult& r);
     void after_command();
 
-    // The focused view's slot and read-only state.
+    // The focused view's slot and view-mode state.
     DocumentSlot& shown() { return ws_.focused().slot; }
     const DocumentSlot& shown() const { return ws_.focused().slot; }
-    ReadOnlyState& ro() { return ws_.focused().ro; }
-    const ReadOnlyState& ro() const { return ws_.focused().ro; }
+    ViewModeState& vm() { return ws_.focused().vm; }
+    const ViewModeState& vm() const { return ws_.focused().vm; }
     void enter_help();
-    // The status message for an edit refused in read-only mode or in the help.
+    // The status message for an edit refused in view mode or in the help.
     void refuse_edit();
     void leave_help();
     // Commands the help view handles itself; any other leaves it first.
     static bool stays_in_help(CommandId id);
-    void toggle_read_only();
-    void leave_read_only();
-    // Keys that mean something else in read-only mode (Tab, Enter, Space, Ctrl+Left/Right);
+    void toggle_view_mode();
+    void leave_view_mode();
+    // Keys that mean something else in view mode (Tab, Enter, Space, Ctrl+Left/Right);
     // true when consumed.
-    bool read_only_key(const KeyEvent& key);
+    bool view_mode_key(const KeyEvent& key);
     const MarkdownOutline& outline();
     bool shown_is_markdown() const;
     void follow_link();

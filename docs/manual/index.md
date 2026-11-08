@@ -22,4 +22,4 @@ This manual is plain Markdown: read it in any viewer, or in mod itself with View
 - [Colors](colors.md): changing any color, and every color's name.
 - [Help](help.md): where this manual lives and what Help offers.
 
-The format of the history files is described in [the sidecar format](../sidecar-format.md), for anyone writing tools that read them.
+The format of the history files is described in [the sidecar format](../sidecar/sidecar-format.md), for anyone writing tools that read them.

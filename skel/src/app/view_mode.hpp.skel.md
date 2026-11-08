@@ -1,16 +1,16 @@
 ---
 role: product
-stamp: source 4b14b379, stand-in 9f7d9862
+stamp: source b2affcad, stand-in 5cda2ccc
 ---
 # module: read_only
 
-The parts of read-only mode that need no terminal or document: finding the next link, saying what following a link means, and the **trail** of places a read-only view has been. App owns one of these per document and does the showing itself.
+The parts of view mode that need no terminal or document: finding the next link, saying what following a link means, and the **trail** of places a view in view mode has been. App owns one of these per document and does the showing itself.
 
 The trail is the view's own back/forward history, kept only for the session: entry 0 is the document itself, and following a link to another file (or to a heading in the same one) adds an entry after the current one, dropping any entries forward of it, as a browser does. Each entry remembers where the view was (the cursor and the first line shown) when it was left, so going back returns to exactly that place.
 
 - **Owns:** the trail.
 - **Access:** public. Main thread.
-- **Required:** optional — only read-only mode uses it.
+- **Required:** optional — only view mode uses it.
 - **Failure modes:** listed per function.
 - **Depends on:** [MarkdownOutline](../syntax/markdown.hpp.skel.md#symbol-markdownoutline)
 - **Unknowns:** none
@@ -27,15 +27,15 @@ The trail is the view's own back/forward history, kept only for the session: ent
 
 - **Access:** public.
 
-## class: ReadOnlyNav
+## class: ViewModeNav
 
 - **Inputs:** none. A new trail holds one empty entry until `reset`.
 - **State changes:** the trail and the index of the shown entry. Invariant: the index is inside the trail.
 - **Owns:** see the module.
 - **Access:** App.
-- **Referred by:** [read_only_test](../../tests/read_only_test.cpp.skel.md)
+- **Referred by:** [view_mode_test](../../tests/view_mode_test.cpp.skel.md)
 - **Referred by:** [app](./app.hpp.skel.md)
-- **Referred by:** [read_only (implementation)](./read_only.cpp.skel.md)
+- **Referred by:** [read_only (implementation)](./view_mode.cpp.skel.md)
 - **Referred by:** [workspace](./workspace.hpp.skel.md)
 
 ### function: next_link
@@ -72,7 +72,7 @@ The trail is the view's own back/forward history, kept only for the session: ent
 - **Inputs:** the entry for the document itself.
 - **Returns:** nothing.
 - **State changes:** the trail becomes that one entry, shown.
-- **Access:** App, when read-only mode is turned on (and with an empty entry when it is turned off).
+- **Access:** App, when view mode is turned on (and with an empty entry when it is turned off).
 
 ### function: visit
 

@@ -800,11 +800,11 @@ void EditorView::render_status(Screen& screen, int row, std::string_view message
     left += doc_.is_untitled() ? std::string("[untitled]") : doc_.path().filename().string();
     if (doc_.is_dirty()) left += " *";
     if (doc_.read_only_file()) left += " [read-only]";
-    if (read_only_) left += " [view]";
+    if (view_mode_) left += " [view]";
     std::string right = line ? std::format("{}:{}", *line + 1, column_of(ls, cursor) + 1) : std::format("…:{}", column_of(ls, cursor) + 1);
     if (const auto count = doc_.text().line_count()) right += std::format(" / {}", *count);
-    // A read-only view never edits, so its history state is not news.
-    if (const std::string_view h = read_only_ ? std::string_view() : history_label(doc_.history_state()); !h.empty()) right += std::format("  {}", h);
+    // A view in view mode never edits, so its history state is not news.
+    if (const std::string_view h = view_mode_ ? std::string_view() : history_label(doc_.history_state()); !h.empty()) right += std::format("  {}", h);
     if (const auto current = doc_.history().current()) {
         const NodeId parent = doc_.history().meta(*current).parent;
         if (parent != kNoParent && doc_.history().contains(parent)) {

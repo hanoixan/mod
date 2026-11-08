@@ -35,14 +35,14 @@ struct File {
 };
 
 struct Setup {
-    bool read_only = false;
+    bool view_mode = false;
     std::string term = "xterm-256color";
     std::string settings_json;  // settings.json's text, if any
 };
 
-Setup read_only_setup() {
+Setup view_mode_setup() {
     Setup s;
-    s.read_only = true;
+    s.view_mode = true;
     return s;
 }
 
@@ -71,7 +71,7 @@ Run run_app(const std::string& name, const std::vector<File>& files, std::vector
         std::ofstream(dir / "config" / "mod" / "settings.json") << setup.settings_json;
     }
     CliOptions options;
-    options.view = setup.read_only;
+    options.view = setup.view_mode;
     for (const File& f : files) {
         fs::create_directories((dir / f.name).parent_path());
         std::ofstream(dir / f.name, std::ios::binary) << f.text;
@@ -206,12 +206,12 @@ TEST_CASE("the terminal's title names the focused view's document, with '*' whil
     }
 }
 
-TEST_CASE("following a link in read-only mode leaves the title on the view's own document") {
+TEST_CASE("following a link in view mode leaves the title on the view's own document") {
     const auto run = run_app("title-link", {File{"index.md", "See [the notes](notes.md).\n"}, File{"notes.md", "# Notes\n"}},
                              {{"at start", "", [](const VtScreen& s) { return !s.titles().empty() && s.titles().back() == "mod:index.md"; }},
                               {"Tab to the link, Enter", "\t\r", [](const VtScreen& s) { return s.status().find("notes.md") != std::string::npos; }},
                               {"quit", "\x11", nullptr}},
-                             read_only_setup());
+                             view_mode_setup());
     check_steps(run);
     REQUIRE_FALSE(run.titles.empty());
     CHECK(run.titles.back() == "mod:index.md");
@@ -596,18 +596,18 @@ TEST_CASE("view mode: Markdown laid out without line numbers, other files read-o
                             {{"laid out, no gutter", "", row_is(0, "Notes")},
                              {"typing is refused", "x", status_has("view mode")},
                              {"quit", "\x11", nullptr}},
-                            read_only_setup());
+                            view_mode_setup());
     check_steps(md);
     const auto txt = run_app("view-txt", {File{"plain.txt", "alpha\n"}},
                              {{"the text with its numbers", "", row_is(0, "  1 alpha")},
                               {"marked [view]", "", status_has("[view]")},
                               {"typing is refused", "x", row_is(0, "  1 alpha")},
                               {"quit", "\x11", nullptr}},
-                             read_only_setup());
+                             view_mode_setup());
     check_steps(txt);
     // No extension, a heading on the first line: Markdown.
     const auto bare = run_app("view-bare", {File{"NOTES", "# Heading\n\nText.\n"}},
-                              {{"laid out", "", row_is(0, "Heading")}, {"quit", "\x11", nullptr}}, read_only_setup());
+                              {{"laid out", "", row_is(0, "Heading")}, {"quit", "\x11", nullptr}}, view_mode_setup());
     check_steps(bare);
 }
 

@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source f758c5ee, stand-in def57d6d
+stamp: source f89a7cf3, stand-in d5013a90
 ---
 # resource: CMakeLists.txt
 
@@ -25,7 +25,7 @@ Contract for the implementer:
 - Under the MSYS2 runtime (`CMAKE_SYSTEM_NAME` `MSYS` or `CYGWIN`), define `_GNU_SOURCE`: its headers hide POSIX and BSD extensions such as `FNM_CASEFOLD` under a strict `-std`.
 - Embed defaults: `file(READ config/languages.json …)`, then `file(CONFIGURE OUTPUT ${CMAKE_BINARY_DIR}/generated/default_languages.inc CONTENT … @ONLY)` (no template file in the source tree) as a raw string literal with the delimiter `mod_json`. Configure fails with `FATAL_ERROR` if the JSON contains `)mod_json"`. `config/languages.json` is added to the directory's `CMAKE_CONFIGURE_DEPENDS`, so editing it re-runs configure, and the generated directory is a `PRIVATE` include directory of `mod_core`. See [language_config (implementation)](./src/syntax/language_config.cpp.skel.md).
 - Options: `MOD_BUILD_TESTS` (ON when top-level), `MOD_SANITIZE` (address and undefined behavior, for Debug; undefined behavior aborts, `-fno-sanitize-recover=undefined`, so a test that meets it fails) and `MOD_BUILD_FUZZERS` (clang only: the core is compiled with `-fsanitize=fuzzer-no-link,address,undefined` and `-fno-sanitize-recover=undefined`, and the [fuzz targets](./fuzz/CMakeLists.txt.skel.md) are built). `fuzz/` is added when tests or fuzzers are built.
-- `install(TARGETS mod)`, and with `include(GNUInstallDirs)`: `docs/manual/` to `${CMAKE_INSTALL_DATADIR}/mod/doc`, `docs/sidecar-format.md` and the generated `settings.json` to `${CMAKE_INSTALL_DATADIR}/mod`. The `settings.json` comes from an executable `gen_default_settings` ([tools/gen_default_settings.cpp](./tools/gen_default_settings.cpp.skel.md), linking `mod_core`, with the shared warning options) run by an `add_custom_command` writing `${CMAKE_BINARY_DIR}/generated/settings.json`, made part of `ALL` by a `default_settings` target. `mod_core` gets two private compile definitions for the help screen: `MOD_INSTALL_DOC_DIR` (`${CMAKE_INSTALL_FULL_DATADIR}/mod/doc`) and `MOD_SOURCE_DOC_DIR` (the source tree's `docs/manual`). The `LICENSE` (MIT, `Copyright (c) 2026 hanoixan`) is installed to `${CMAKE_INSTALL_DATADIR}/licenses/mod`.
+- `install(TARGETS mod)`, and with `include(GNUInstallDirs)`: `docs/manual/` to `${CMAKE_INSTALL_DATADIR}/mod/doc`, `docs/sidecar/sidecar-format.md` to `${CMAKE_INSTALL_DATADIR}/mod/sidecar` (the same folder as in the source tree, so the manual's relative link to it works both in the repository and installed), and the generated `settings.json` to `${CMAKE_INSTALL_DATADIR}/mod`. The `settings.json` comes from an executable `gen_default_settings` ([tools/gen/gen_default_settings.cpp](./tools/gen/gen_default_settings.cpp.skel.md), linking `mod_core`, with the shared warning options) run by an `add_custom_command` writing `${CMAKE_BINARY_DIR}/generated/settings.json`, made part of `ALL` by a `default_settings` target. `mod_core` gets two private compile definitions for the help screen: `MOD_INSTALL_DOC_DIR` (`${CMAKE_INSTALL_FULL_DATADIR}/mod/doc`) and `MOD_SOURCE_DOC_DIR` (the source tree's `docs/manual`). The `LICENSE` (MIT, `Copyright (c) 2026 hanoixan`) is installed to `${CMAKE_INSTALL_DATADIR}/licenses/mod`.
 - **Packaging** with CPack, for Linux: generators DEB and RPM (set by [package.sh](./tools/ci/package.sh.skel.md)); package name `mod`, version from `project()`, release `1`; vendor and maintainer `hanoixan <https://github.com/hanoixan/mod>` (no email); summary "A terminal text editor"; homepage the repository; license `MIT`; DEB architecture `amd64` with `CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON` and section `editors`; RPM architecture `x86_64`, group `Applications/Editors`, autoreq on; file names `mod_<version>_amd64.deb` and `mod-<version>-1.x86_64.rpm`; install prefix `/usr`. The Arch package and PKGBUILD live in [packaging/arch](./packaging/arch/PKGBUILD.in.skel.md). No macOS or Windows package in this phase.
 - `add_subdirectory(tests)` when tests are enabled.
 
@@ -36,7 +36,7 @@ Contract for the implementer:
 - **Depends on:** [src/app/app.cpp](./src/app/app.cpp.skel.md)
 - **Depends on:** [src/app/commands.cpp](./src/app/commands.cpp.skel.md)
 - **Depends on:** [src/app/keymap.cpp](./src/app/keymap.cpp.skel.md)
-- **Depends on:** [src/app/read_only.cpp](./src/app/read_only.cpp.skel.md)
+- **Depends on:** [src/app/view_mode.cpp](./src/app/view_mode.cpp.skel.md)
 - **Depends on:** [src/app/document_slot.cpp](./src/app/document_slot.cpp.skel.md)
 - **Depends on:** [src/app/document_list.cpp](./src/app/document_list.cpp.skel.md)
 - **Depends on:** [src/app/doc_search.cpp](./src/app/doc_search.cpp.skel.md)
@@ -72,7 +72,7 @@ Contract for the implementer:
 - **Depends on:** [src/edit/sidecar.cpp](./src/edit/sidecar.cpp.skel.md)
 - **Depends on:** [src/edit/undo_tree.cpp](./src/edit/undo_tree.cpp.skel.md)
 - **Depends on:** [src/main.cpp](./src/main.cpp.skel.md)
-- **Depends on:** [tools/gen_default_settings.cpp](./tools/gen_default_settings.cpp.skel.md)
+- **Depends on:** [tools/gen/gen_default_settings.cpp](./tools/gen/gen_default_settings.cpp.skel.md)
 - **Depends on:** [config/settings.json](./config/settings.json.skel.md)
 - **Depends on:** [installed_data](./infra/storage.iac.skel.md#resource-installed_data)
 - **Depends on:** [docs/manual/index.md](./docs/manual/index.md.skel.md)

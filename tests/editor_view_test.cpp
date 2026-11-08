@@ -271,7 +271,7 @@ TEST_CASE("wrap on: an edit above the view keeps the same text at the top") {
     CHECK(f.row(0) == top_row);
 }
 
-TEST_CASE("set_top shows a given line first; the status line marks a read-only view") {
+TEST_CASE("set_top shows a given line first; the status line marks a view in view mode") {
     Fixture f("settop.txt", "l1\nl2\nl3\nl4\nl5\nl6\n", 3, 20);
     f.view->set_top(7);  // inside "l3": the line's start
     CHECK(f.view->top() == 6);
@@ -281,16 +281,16 @@ TEST_CASE("set_top shows a given line first; the status line marks a read-only v
     f.view->render_status(f.screen, 3, "");
     CHECK(f.row(3).find("settop.txt  ") != std::string::npos);
     CHECK(f.row(3).find("[view]") == std::string::npos);
-    f.view->set_read_only(true);
+    f.view->set_view_mode(true);
     f.view->render_status(f.screen, 3, "");
     CHECK(f.row(3).find("settop.txt [view]") != std::string::npos);
 }
 
-TEST_CASE("history kept in memory is not news on the status line, nor in a read-only view") {
+TEST_CASE("history kept in memory is not news on the status line, nor in a view in view mode") {
     Fixture f("rostatus.txt", "abc\n", 2, 60, false, false);  // no history file: kept in memory
     f.view->render_status(f.screen, 1, "");
     CHECK(f.row(1).find("history:") == std::string::npos);
-    f.view->set_read_only(true);
+    f.view->set_view_mode(true);
     f.view->render_status(f.screen, 1, "");
     CHECK(f.row(1).find("history:") == std::string::npos);
 }

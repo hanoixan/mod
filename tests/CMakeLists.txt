@@ -36,7 +36,7 @@ set(MOD_TESTS
   notices_test
   piece_tree_test
   progress_test
-  read_only_test
+  view_mode_test
   search_test
   settings_test
   settings_view_test

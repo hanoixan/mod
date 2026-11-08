@@ -1,9 +1,8 @@
 /build/
 /CMakeUserPresets.json
-/.claude/do-next-run.md
 /DONE.md
 /NEXT.md
 /dist/
 /.superpowers/
-/docs/superpowers/
 /.do-next-run.md
+/.claude/settings.local.json

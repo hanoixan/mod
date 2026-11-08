@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source f5a3bca8, stand-in e19438ab
+stamp: source 16f121e6, stand-in 52ac3263
 ---
 # module: workspace
 
-The open documents and the split views onto them, kept apart from App so the bookkeeping can be tested without a terminal: which documents are open (a [DocumentList](./document_list.hpp.skel.md#class-documentlist)), the views top to bottom and which has the focus, and the **parked** documents no view shows. Views and parked documents are told apart **by document id**, never by the slot's document, which, while a view follows a link in read-only mode, is the link's target: so a document can never be parked while a view still shows it, and a file shown only in a view that is not focused is still found when it is opened again.
+The open documents and the split views onto them, kept apart from App so the bookkeeping can be tested without a terminal: which documents are open (a [DocumentList](./document_list.hpp.skel.md#class-documentlist)), the views top to bottom and which has the focus, and the **parked** documents no view shows. Views and parked documents are told apart **by document id**, never by the slot's document, which, while a view follows a link in view mode, is the link's target: so a document can never be parked while a view still shows it, and a file shown only in a view that is not focused is still found when it is opened again.
 
 - **Owns:** the document list, the views and the parked documents (their slots, and so their documents and highlighters' shares).
 - **Access:** App. Main thread.
@@ -12,19 +12,19 @@ The open documents and the split views onto them, kept apart from App so the boo
 - **Failure modes:** none of its own; misuse (taking a parked document into a view that is not empty, removing the last view) is a programming error, asserted.
 - **Depends on:** [DocumentList](./document_list.hpp.skel.md#class-documentlist)
 - **Depends on:** [DocumentSlot](./document_slot.hpp.skel.md#class-documentslot)
-- **Depends on:** [ReadOnlyNav](./read_only.hpp.skel.md#class-readonlynav)
+- **Depends on:** [ViewModeNav](./view_mode.hpp.skel.md#class-viewmodenav)
 - **Depends on:** [focus_after_unsplit](./split_layout.hpp.skel.md#function-focus_after_unsplit)
 - **Unknowns:** none
 
-## symbol: ReadOnlyState
+## symbol: ViewModeState
 
-`{ ReadOnlyNav nav; bool away; DocumentSlot base; const Document* outline_doc; uint64_t outline_version; MarkdownOutline outline; }`: a view's read-only mode: where it has been, and, while it shows a followed link's target (`away`), the document itself waiting in `base`; the outline is cached for one document at one version.
+`{ ViewModeNav nav; bool away; DocumentSlot base; const Document* outline_doc; uint64_t outline_version; MarkdownOutline outline; }`: a view's view mode: where it has been, and, while it shows a followed link's target (`away`), the document itself waiting in `base`; the outline is cached for one document at one version.
 
 - **Access:** App, Workspace.
 
 ## symbol: View
 
-`{ DocumentList::Id id; DocumentSlot slot; ReadOnlyState ro; }`: one split view, or a parked document: which open document (`id`, 0 for none), its slot, and its read-only state.
+`{ DocumentList::Id id; DocumentSlot slot; ViewModeState vm; }`: one split view, or a parked document: which open document (`id`, 0 for none), its slot, and its view-mode state.
 
 - **Access:** App, Workspace.
 

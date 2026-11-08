@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source 5a054ff8, stand-in 0ea2572a
+stamp: source 5a054ff8, stand-in 360d7860
 ---
 # module: sidecar
 
-Persists the [UndoTree](./undo_tree.hpp.skel.md#class-undotree) to `<real path>.history` as an append-only, checksummed, little-endian record log. The one exception is a prune, which replaces the whole file with a smaller one; see [rewrite](#function-rewrite). The format is public; see [sidecar-format.md](../../docs/sidecar-format.md.skel.md). Nodes are appended as they are created, not only on save, so a crash loses no history and unsaved edits are recoverable: after reopening, they are reachable with redo from the last save point.
+Persists the [UndoTree](./undo_tree.hpp.skel.md#class-undotree) to `<real path>.history` as an append-only, checksummed, little-endian record log. The one exception is a prune, which replaces the whole file with a smaller one; see [rewrite](#function-rewrite). The format is public; see [sidecar-format.md](../../docs/sidecar/sidecar-format.md.skel.md). Nodes are appended as they are created, not only on save, so a crash loses no history and unsaved edits are recoverable: after reopening, they are reachable with redo from the last save point.
 
 All file writes happen on one writer thread, in FIFO order. The main thread never blocks on sidecar I/O, except in `flush`, which runs before save rebinding and at exit.
 
@@ -24,7 +24,7 @@ All file writes happen on one writer thread, in FIFO order. The main thread neve
 - **Depends on:** [crc32](../util/hash.hpp.skel.md#function-crc32)
 - **Depends on:** [MappedFile](../platform/file_map.hpp.skel.md#class-mappedfile)
 - **Depends on:** [sidecar_file](../../infra/storage.iac.skel.md#resource-sidecar_file)
-- **Depends on:** [sidecar format](../../docs/sidecar-format.md.skel.md)
+- **Depends on:** [sidecar format](../../docs/sidecar/sidecar-format.md.skel.md)
 
 On File > Save As, the history is **copied** to the new file's sidecar with [copy_to](#function-copy_to), and the old sidecar stays with the old file. From then on the two sidecars share a common prefix and evolve independently.
 

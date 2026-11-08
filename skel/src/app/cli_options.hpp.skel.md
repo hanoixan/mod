@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 8b10c20f, stand-in c13607ae
+stamp: source 8b10c20f, stand-in dd252f57
 ---
 # module: cli_options
 
@@ -29,7 +29,7 @@ The command line, parsed into what [App](./app.hpp.skel.md#class-app) starts wit
 
 ## symbol: CliOptions
 
-`{ Action action; std::vector<std::filesystem::path> paths; bool read_only; bool persist_history; std::vector<std::pair<std::string, std::int64_t>> settings; std::vector<std::pair<std::string, std::string>> colors; }` with `enum class Action { run, help, version }`. `settings` holds schema keys and validated values, in command-line order (a later flag for the same key wins); `colors` holds names and specs, validated.
+`{ Action action; std::vector<std::filesystem::path> paths; bool view; bool persist_history; std::vector<std::pair<std::string, std::int64_t>> settings; std::vector<std::pair<std::string, std::string>> colors; }` with `enum class Action { run, help, version }`. `settings` holds schema keys and validated values, in command-line order (a later flag for the same key wins); `colors` holds names and specs, validated.
 
 - **Access:** public.
 - **Referred by:** [App.handle_external_change](./app.hpp.skel.md#function-handle_external_change)

@@ -100,7 +100,7 @@ set(MOD_CORE_SOURCES
   src/app/document_slot.cpp
   src/app/keymap.cpp
   src/app/notices.cpp
-  src/app/read_only.cpp
+  src/app/view_mode.cpp
   src/app/settings.cpp
   src/app/split_layout.cpp
   src/app/startup.cpp
@@ -190,7 +190,7 @@ install(TARGETS mod)
 # The manual and a reference settings.json, under <prefix>/share/mod. The defaults file is
 # generated from the settings schema, so it can never disagree with the code.
 include(GNUInstallDirs)
-add_executable(gen_default_settings tools/gen_default_settings.cpp)
+add_executable(gen_default_settings tools/gen/gen_default_settings.cpp)
 target_link_libraries(gen_default_settings PRIVATE mod_core)
 mod_target_options(gen_default_settings)
 set(MOD_DEFAULT_SETTINGS ${CMAKE_BINARY_DIR}/generated/settings.json)
@@ -200,7 +200,7 @@ add_custom_command(OUTPUT ${MOD_DEFAULT_SETTINGS}
   COMMENT "Generating the default settings.json")
 add_custom_target(default_settings ALL DEPENDS ${MOD_DEFAULT_SETTINGS})
 install(DIRECTORY docs/manual/ DESTINATION ${CMAKE_INSTALL_DATADIR}/mod/doc)
-install(FILES docs/sidecar-format.md DESTINATION ${CMAKE_INSTALL_DATADIR}/mod)
+install(FILES docs/sidecar/sidecar-format.md DESTINATION ${CMAKE_INSTALL_DATADIR}/mod/sidecar)
 install(FILES ${MOD_DEFAULT_SETTINGS} DESTINATION ${CMAKE_INSTALL_DATADIR}/mod)
 install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/mod)
 

@@ -17,7 +17,7 @@ struct ViewOptions {
     bool line_numbers = true;
     bool syntax = true;
     bool word_wrap = true;
-    bool read_only = false;
+    bool view_mode = false;
 };
 
 // One shown document and the components built on it: the editor, the searcher, the

@@ -137,20 +137,20 @@ App::App(const CliOptions& options, std::unique_ptr<Terminal> terminal)
 }
 
 // Every document open at startup came from the command line (the untitled buffer aside).
-void App::apply_start_options(bool open_read_only, bool persist_history) {
+void App::apply_start_options(bool open_in_view_mode, bool persist_history) {
     std::vector<std::shared_ptr<Document>> persist;
     ws_.for_each_slot([&](DocumentSlot& s) {
         if (!s.doc || s.doc->is_untitled()) return;
-        if (open_read_only) {
-            s.options->read_only = true;
+        if (open_in_view_mode) {
+            s.options->view_mode = true;
             apply_options(s);
         }
         if (persist_history) persist.push_back(s.doc);
     });
-    if (open_read_only) {
+    if (open_in_view_mode) {
         for (const DocumentList::Id id : ws_.documents().order()) {
             View* v = ws_.entry_of(id);
-            if (v != nullptr && v->slot.view) v->ro.nav.reset(TrailEntry{v->slot.doc->path(), v->slot.editor->cursor(), v->slot.view->top()});
+            if (v != nullptr && v->slot.view) v->vm.nav.reset(TrailEntry{v->slot.doc->path(), v->slot.editor->cursor(), v->slot.view->top()});
         }
     }
     if (!persist.empty()) persist_next(std::move(persist));
@@ -216,7 +216,7 @@ Status App::open_document(const std::optional<fs::path>& path) {
 
 void App::adopt_document(std::unique_ptr<Document> doc) {
     history_view_.close();
-    leave_read_only();  // a newly opened file starts editable
+    leave_view_mode();  // a newly opened file starts editable
     install_document(std::move(doc));
     prune_offer_pending_ = shown().doc->history_load_ms() > kSlowLoadMs;
     next_external_check_ = Clock::now() + kExternalCheckInterval;
@@ -228,7 +228,7 @@ void App::adopt_document(std::unique_ptr<Document> doc) {
 // ---- the open documents ------------------------------------------------------------------
 
 bool App::replaceable_untitled() const {
-    return !ro().away && shown().doc && shown().doc->is_untitled() && !shown().doc->is_dirty() && shown().doc->text().size() == 0;
+    return !vm().away && shown().doc && shown().doc->is_untitled() && !shown().doc->is_dirty() && shown().doc->text().size() == 0;
 }
 
 
@@ -310,7 +310,7 @@ void App::split_view() {
     View v;
     v.id = ws_.focused().id;
     v.slot = share_slot(shown());
-    if (read_only()) v.ro.nav.reset(here());
+    if (view_mode()) v.vm.nav.reset(here());
     ws_.insert_below_focus(std::move(v));
     screen_.invalidate();
 }
@@ -361,10 +361,10 @@ void App::apply_options(DocumentSlot& s) {
     if (!s.view || !s.options) return;
     // View mode lays Markdown out for reading, wrapped to the window and without line numbers;
     // any other file is its text, read-only, with the View options it has.
-    const bool reading = s.options->read_only && s.doc && view_layout_of(*s.doc) == ViewLayout::markdown;
+    const bool reading = s.options->view_mode && s.doc && view_layout_of(*s.doc) == ViewLayout::markdown;
     s.view->set_line_numbers(s.options->line_numbers && !reading);
     s.view->set_word_wrap(s.options->word_wrap);
-    s.view->set_read_only(s.options->read_only);
+    s.view->set_view_mode(s.options->view_mode);
     s.view->set_reading(reading);
 }
 
@@ -376,16 +376,16 @@ void App::apply_options_to_views_of(const ViewOptions* options) {
 
 // Read-only is the document's: the other views of the focused document follow it.
 // Turning it off brings a view that followed a link back to the document.
-void App::set_read_only_in_other_views(bool on) {
+void App::set_view_mode_in_other_views(bool on) {
     for (std::size_t i = 0; i < ws_.size(); ++i) {
         View& v = ws_.at(i);
         if (i == ws_.focus() || !v.slot.view || v.slot.options != shown().options) continue;
-        if (!on && v.ro.away) {
-            v.slot = std::move(v.ro.base);
-            v.ro.away = false;
+        if (!on && v.vm.away) {
+            v.slot = std::move(v.vm.base);
+            v.vm.away = false;
         }
-        v.ro.outline_doc = nullptr;
-        v.ro.nav.reset(on ? TrailEntry{v.slot.doc->path(), v.slot.editor->cursor(), v.slot.view->top()} : TrailEntry{});
+        v.vm.outline_doc = nullptr;
+        v.vm.nav.reset(on ? TrailEntry{v.slot.doc->path(), v.slot.editor->cursor(), v.slot.view->top()} : TrailEntry{});
         apply_options(v.slot);
     }
 }
@@ -399,7 +399,7 @@ void App::show_document(DocumentList::Id id) {
         ws_.focused().id = id;
         shown() = std::move(shared);
         ws_.documents().show(id);
-        if (read_only()) ro().nav.reset(here());
+        if (view_mode()) vm().nav.reset(here());
         on_focus_changed();
         after_command();
         return;
@@ -448,7 +448,7 @@ void App::exit_next(std::vector<DocumentList::Id> pending) {
     const DocumentList::Id id = pending.front();
     pending.erase(pending.begin());
     show_document(id);
-    if (ro().away) leave_read_only();  // the document itself is the one asked about
+    if (vm().away) leave_view_mode();  // the document itself is the one asked about
     dirty_check(std::format("Save changes to {} before closing?", file_name()), [this, pending] { exit_next(pending); });
 }
 
@@ -462,7 +462,7 @@ std::vector<DocumentMenuEntry> App::document_entries() const {
         if (v == nullptr) continue;
         const Document* base = Workspace::document_of(*v);
         std::string label = name(base);
-        if (v->ro.away) label += " → " + name(v->slot.doc.get());
+        if (v->vm.away) label += " → " + name(v->slot.doc.get());
         out.push_back({std::move(label), base != nullptr && base->is_dirty(), id == ws_.focused().id});
     }
     return out;
@@ -634,7 +634,7 @@ void App::reload_command() {
         set_status("an untitled document has no file to reload");
         return;
     }
-    if (ro().away) leave_read_only();  // the document itself is what reloads
+    if (vm().away) leave_view_mode();  // the document itself is what reloads
     if (!shown().doc->is_dirty()) {
         reload_document();
         return;
@@ -1016,7 +1016,7 @@ void App::open_find() {
         initial = prompt_.last_query();
     }
     const std::uint64_t origin = sel ? sel->first : shown().editor->cursor();
-    prompt_.open_find(std::move(initial), origin, [this] { return shown().editor->cursor(); }, !read_only());
+    prompt_.open_find(std::move(initial), origin, [this] { return shown().editor->cursor(); }, !view_mode());
 }
 
 void App::goto_line() {
@@ -1296,7 +1296,7 @@ void App::save_colors() {
 // ---- commands ---------------------------------------------------------------------------
 
 void App::run_command(CommandId id) {
-    if (read_only() && command_edits(id)) {
+    if (view_mode() && command_edits(id)) {
         refuse_edit();
         return;
     }
@@ -1351,7 +1351,7 @@ void App::run_command(CommandId id) {
             break;
         case CommandId::Reload: reload_command(); break;
         case CommandId::CloseDocument:
-            if (ro().away) leave_read_only();  // the document itself is what closes
+            if (vm().away) leave_view_mode();  // the document itself is what closes
             dirty_check(std::format("Save changes to {} before closing it?", file_name()), [this] { close_shown(); });
             break;
         case CommandId::ShowDocument:
@@ -1469,7 +1469,7 @@ void App::run_command(CommandId id) {
             if (help_viewer_.is_open()) {
                 set_status("the manual is always read-only");
             } else {
-                toggle_read_only();
+                toggle_view_mode();
             }
             break;
         case CommandId::UserSettings:
@@ -1587,7 +1587,7 @@ void App::dispatch(const InputEvent& event) {
         case Panel::colors: return;  // dropped
         case Panel::none: break;
     }
-    if (read_only()) {
+    if (view_mode()) {
         refuse_edit();
         return;
     }
@@ -1876,13 +1876,13 @@ void App::dispatch_key(const KeyEvent& key) {
         menu_.show();
         return;
     }
-    if (read_only() && read_only_key(key)) return;
+    if (view_mode() && view_mode_key(key)) return;
     if (const auto cmd = keymap_.lookup(key)) {
         run_command(*cmd);
         return;
     }
     if (key.key == Key::Char && (key.mods & (kAlt | kCtrl)) == 0) {
-        if (read_only()) {
+        if (view_mode()) {
             refuse_edit();
             return;
         }
@@ -1947,7 +1947,7 @@ void App::leave_help() {
     after_command();
 }
 
-// ---- read-only mode -----------------------------------------------------------------------
+// ---- view mode ---------------------------------------------------------------------------
 
 TrailEntry App::here() const {
     return TrailEntry{shown().doc->path(), shown().editor->cursor(), shown().view->top()};
@@ -1957,36 +1957,36 @@ bool App::shown_is_markdown() const { return view_layout_of(*shown().doc) == Vie
 
 const MarkdownOutline& App::outline() {
     const Document* d = shown().doc.get();
-    if (ro().outline_doc != d || ro().outline_version != d->version()) {
-        ro().outline = shown_is_markdown() ? scan_markdown(d->text()) : MarkdownOutline{};
-        ro().outline_doc = d;
-        ro().outline_version = d->version();
+    if (vm().outline_doc != d || vm().outline_version != d->version()) {
+        vm().outline = shown_is_markdown() ? scan_markdown(d->text()) : MarkdownOutline{};
+        vm().outline_doc = d;
+        vm().outline_version = d->version();
     }
-    return ro().outline;
+    return vm().outline;
 }
 
-void App::toggle_read_only() {
-    if (!read_only()) {
-        shown().options->read_only = true;
-        ro().nav.reset(here());
+void App::toggle_view_mode() {
+    if (!view_mode()) {
+        shown().options->view_mode = true;
+        vm().nav.reset(here());
         apply_options(shown());
-        set_read_only_in_other_views(true);
+        set_view_mode_in_other_views(true);
         set_status(shown_is_markdown() ? "view mode: Tab moves between links, Enter follows one" : "view mode: read-only");
         return;
     }
-    if (!ro().away) {
-        leave_read_only();
+    if (!vm().away) {
+        leave_view_mode();
         set_status("editing");
         return;
     }
     // Editing a link target opens it as a document of its own; this view steps back off it.
     const TrailEntry target = here();
-    if (const auto back = ro().nav.back(target)) show_entry(*back);
+    if (const auto back = vm().nav.back(target)) show_entry(*back);
     if (auto s = open_new_document(target.path); !s) {
         set_status("cannot open " + display_path(target.path) + ": " + s.error().message);
         return;
     }
-    if (read_only()) leave_read_only();  // it was already open, in read-only mode
+    if (view_mode()) leave_view_mode();  // it was already open, in view mode
     shown().editor->select_range(target.cursor, target.cursor);
     shown().view->set_top(target.top);
     set_status("editing " + file_name());
@@ -1994,25 +1994,25 @@ void App::toggle_read_only() {
 }
 
 // Back to plain editing of the document itself; a shown link target is dropped.
-void App::leave_read_only() {
-    if (ro().away) {
+void App::leave_view_mode() {
+    if (vm().away) {
         prompt_.set_searcher(nullptr);
-        shown() = std::move(ro().base);  // drops the target
+        shown() = std::move(vm().base);  // drops the target
         prompt_.set_searcher(shown().searcher.get());
-        ro().away = false;
+        vm().away = false;
     }
-    if (shown().options) shown().options->read_only = false;
-    set_read_only_in_other_views(false);
-    ro().outline_doc = nullptr;
-    ro().nav.reset(TrailEntry{});
+    if (shown().options) shown().options->view_mode = false;
+    set_view_mode_in_other_views(false);
+    vm().outline_doc = nullptr;
+    vm().nav.reset(TrailEntry{});
     apply_options(shown());
 }
 
-bool App::read_only_key(const KeyEvent& key) {
+bool App::view_mode_key(const KeyEvent& key) {
     const bool markdown = shown_is_markdown();
     const auto plain = [&](Key k) { return key.key == k && (key.mods & (kAlt | kCtrl | kShift)) == 0; };
     if (key.key == Key::Left && key.mods == kCtrl) {
-        if (const auto e = ro().nav.back(here())) {
+        if (const auto e = vm().nav.back(here())) {
             show_entry(*e);
         } else {
             set_status("no earlier page");
@@ -2020,7 +2020,7 @@ bool App::read_only_key(const KeyEvent& key) {
         return true;
     }
     if (key.key == Key::Right && key.mods == kCtrl) {
-        if (const auto e = ro().nav.forward(here())) {
+        if (const auto e = vm().nav.forward(here())) {
             show_entry(*e);
         } else {
             set_status("no later page");
@@ -2032,8 +2032,8 @@ bool App::read_only_key(const KeyEvent& key) {
         const MarkdownOutline& o = outline();
         // From inside a link, both directions start at that link.
         std::uint64_t pos = shown().editor->cursor();
-        if (const auto at = ReadOnlyNav::link_at(o, pos)) pos = at->start;
-        const auto link = ReadOnlyNav::next_link(o, pos, key.key == Key::BackTab ? -1 : 1);
+        if (const auto at = ViewModeNav::link_at(o, pos)) pos = at->start;
+        const auto link = ViewModeNav::next_link(o, pos, key.key == Key::BackTab ? -1 : 1);
         if (!link) {
             set_status("no links in " + file_name());
             return true;
@@ -2053,12 +2053,12 @@ bool App::read_only_key(const KeyEvent& key) {
 void App::follow_link() {
     const MarkdownOutline& o = outline();
     const auto sel = shown().editor->selection();
-    const auto link = ReadOnlyNav::link_at(o, sel ? sel->first : shown().editor->cursor());
+    const auto link = ViewModeNav::link_at(o, sel ? sel->first : shown().editor->cursor());
     if (!link) {
         set_status("no link here: Tab moves to the next one");
         return;
     }
-    const LinkAction a = ReadOnlyNav::resolve(*link, shown().doc->path(), o);
+    const LinkAction a = ViewModeNav::resolve(*link, shown().doc->path(), o);
     switch (a.kind) {
         case LinkAction::none: break;
         case LinkAction::message: set_status(a.text); break;
@@ -2073,7 +2073,7 @@ void App::follow_link() {
                 break;
             }
             const TrailEntry from = here();
-            if (show_entry(TrailEntry{a.path, 0, 0}, a.anchor)) ro().nav.visit(from, here());
+            if (show_entry(TrailEntry{a.path, 0, 0}, a.anchor)) vm().nav.visit(from, here());
             break;
         }
     }
@@ -2082,16 +2082,16 @@ void App::follow_link() {
 // Shows a place from the trail: the document itself, or a link target opened for viewing
 // (no history is read or written for it), at the entry's position or at `anchor`.
 bool App::show_entry(const TrailEntry& entry, const std::string& anchor) {
-    const fs::path& base_path = ro().away ? ro().base.doc->path() : shown().doc->path();
+    const fs::path& base_path = vm().away ? vm().base.doc->path() : shown().doc->path();
     const fs::path want = resolve_real_path(entry.path).value_or(entry.path);  // as Document names its file
-    if (!ro().away && shown().doc->path() == want) {
+    if (!vm().away && shown().doc->path() == want) {
         // Already shown: only the position changes.
     } else if (want == base_path) {
         prompt_.set_searcher(nullptr);
-        shown() = std::move(ro().base);
+        shown() = std::move(vm().base);
         prompt_.set_searcher(shown().searcher.get());
-        ro().away = false;
-    } else if (!(ro().away && shown().doc->path() == want)) {
+        vm().away = false;
+    } else if (!(vm().away && shown().doc->path() == want)) {
         DocumentOptions options = document_options();
         options.history = false;
         auto opened = Document::open(want, queue_, std::move(options));
@@ -2100,17 +2100,17 @@ bool App::show_entry(const TrailEntry& entry, const std::string& anchor) {
             return false;
         }
         history_view_.close();
-        if (!ro().away) {
-            ro().base = std::move(shown());
-            ro().away = true;
+        if (!vm().away) {
+            vm().base = std::move(shown());
+            vm().away = true;
         }
-        install_document(std::move(*opened), ro().base.options);  // a link target follows its document's options
+        install_document(std::move(*opened), vm().base.options);  // a link target follows its document's options
     }
     apply_options(shown());  // read-only, as the document it was followed from
     std::uint64_t cursor = entry.cursor;
     std::uint64_t top = entry.top;
     if (!anchor.empty()) {
-        if (const auto at = ReadOnlyNav::find_anchor(outline(), anchor)) {
+        if (const auto at = ViewModeNav::find_anchor(outline(), anchor)) {
             cursor = top = *at;
         } else {
             set_status("no heading #" + anchor + " in " + file_name());
@@ -2223,7 +2223,7 @@ App::Layout App::layout() const {
 // document (not a link it is following), with " *" while it has unsaved changes. Sent only
 // when it changes; a VT100 gets none.
 void App::update_title() {
-    const Document* doc = ro().away ? ro().base.doc.get() : shown().doc.get();
+    const Document* doc = vm().away ? vm().base.doc.get() : shown().doc.get();
     if (doc == nullptr) return;
     std::string title = "mod:" + (doc->is_untitled() ? std::string("[untitled]") : doc->path().filename().string());
     if (doc->is_dirty()) title += " *";
@@ -2335,7 +2335,7 @@ void App::render() {
             case CommandId::ToggleLineNumbers: return shown().options && shown().options->line_numbers;
             case CommandId::ToggleSyntax: return shown().options && shown().options->syntax;
             case CommandId::ToggleWordWrap: return shown().options && shown().options->word_wrap;
-            case CommandId::ToggleViewMode: return read_only();
+            case CommandId::ToggleViewMode: return view_mode();
             case CommandId::PinFolderTree: return tree_pinned_;
             default: break;
         }
@@ -2462,7 +2462,7 @@ void App::open_preview(const fs::path& path) {
     s.searcher = std::make_unique<Searcher>(*s.doc, *s.editor);
     s.view = std::make_unique<EditorView>(*s.doc, *s.editor, nullptr, settings_.tab_width());
     s.options = std::make_shared<ViewOptions>(options_on_open());
-    s.options->read_only = true;
+    s.options->view_mode = true;
     apply_options(s);
     pick_highlighter(s);
     preview_ = std::move(s);

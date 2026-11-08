@@ -20,16 +20,16 @@ struct LinkAction {
     std::string text;              // message: for the status line
 };
 
-// A place in the trail of a read-only view: a file and where the view was in it.
+// A place in the trail of a view in view mode: a file and where the view was in it.
 struct TrailEntry {
     std::filesystem::path path;
     std::uint64_t cursor = 0;
     std::uint64_t top = 0;
 };
 
-// Link navigation and the back/forward trail of one read-only view. Knows nothing of
+// Link navigation and the back/forward trail of one view in view mode. Knows nothing of
 // documents or the screen: the caller shows files and moves the cursor. Main thread.
-class ReadOnlyNav {
+class ViewModeNav {
 public:
     // The link after (`direction` 1) or before (-1) `pos`, wrapping; nullopt without links.
     static std::optional<MarkdownLink> next_link(const MarkdownOutline& outline, std::uint64_t pos, int direction);

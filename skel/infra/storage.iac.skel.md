@@ -36,7 +36,7 @@ The temporary file `$TMPDIR/mod-stage-<random>` (or `/tmp/...` when `TMPDIR` is 
 
 ## resource: sidecar_file
 
-The `<name>.history` undo-history log. Format: [sidecar-format.md](../docs/sidecar-format.md.skel.md).
+The `<name>.history` undo-history log. Format: [sidecar-format.md](../docs/sidecar/sidecar-format.md.skel.md).
 
 - **Data requirements:**
 - **Referred by:** [sidecar](../src/edit/sidecar.hpp.skel.md)
@@ -97,7 +97,7 @@ The user configuration directory: `$XDG_CONFIG_HOME/mod/`, or `~/.config/mod/` u
 
 ## resource: installed_data
 
-`<prefix>/share/mod/`, written by `cmake --install` and read-only to mod: `doc/` holds the [manual](../docs/manual/index.md.skel.md), and beside it `sidecar-format.md` and a reference `settings.json` ([config/settings.json](../config/settings.json.skel.md)).
+`<prefix>/share/mod/`, written by `cmake --install` and read-only to mod: `doc/` holds the [manual](../docs/manual/index.md.skel.md), and beside it `sidecar/sidecar-format.md` and a reference `settings.json` ([config/settings.json](../config/settings.json.skel.md)).
 
 - **Data requirements:** a few hundred KB of Markdown and JSON, world-readable, replaced whole by each install. No PII. mod never writes here and does not read the `settings.json` copy; the help screen reads the manual.
 - **Referred by:** [CMakeLists.txt](../CMakeLists.txt.skel.md)

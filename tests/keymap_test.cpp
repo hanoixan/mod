@@ -217,7 +217,7 @@ TEST_CASE("Ctrl+T suspends and Ctrl+K cuts to the line end; Ctrl+Z and Ctrl+Y st
     CHECK(command_info(C::Suspend).bindable);
 }
 
-TEST_CASE("which commands edit the document, for read-only mode") {
+TEST_CASE("which commands edit the document, for view mode") {
     for (C c : {C::Undo, C::Redo, C::Cut, C::CutToLineEnd, C::Paste, C::Newline, C::InsertTab, C::DeleteBack, C::DeleteForward,
                 C::DeleteWordBack, C::DeleteWordForward, C::UndoHistory, C::NextBranch, C::PrevBranch, C::ClearHistory, C::TrimHistory}) {
         CAPTURE(command_info(c).name);

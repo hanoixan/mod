@@ -26,7 +26,7 @@ public:
     explicit Prompt(Searcher* searcher);
 
     void open(PromptKind kind, std::string label, std::string initial_text, SubmitFn on_submit);
-    // With `allow_replace` false (a read-only view), Tab does not switch to replace.
+    // With `allow_replace` false (a view in view mode), Tab does not switch to replace.
     void open_find(std::string initial_text, std::uint64_t origin, CursorFn cursor, bool allow_replace = true);
     void open_info(std::string title, std::string_view text);
     void set_searcher(Searcher* searcher);

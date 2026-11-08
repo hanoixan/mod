@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 4d2fa0c8, stand-in 4bbe59d4
+stamp: source 1888ebbd, stand-in 4bbe59d4
 ---
 # module: workspace_test
 
