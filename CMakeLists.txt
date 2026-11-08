@@ -99,6 +99,7 @@ set(MOD_CORE_SOURCES
   src/app/document_list.cpp
   src/app/document_slot.cpp
   src/app/keymap.cpp
+  src/app/notices.cpp
   src/app/read_only.cpp
   src/app/settings.cpp
   src/app/split_layout.cpp

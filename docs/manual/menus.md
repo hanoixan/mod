@@ -14,7 +14,7 @@ On macOS Terminal and iTerm2, turn on "Use Option as Meta key" for Alt to reach 
 
 ## File
 
-Open…, Save, Save As…, Close, Suspend, Exit. Open… opens the file as a new document, or shows it if it is already open; see [Several documents](documents.md).
+Open…, Save, Save As…, Close, Reload, Suspend, Exit. Open… opens the file as a new document, or shows it if it is already open; see [Several documents](documents.md). Reload loads the document you are in again from its file, asking first if you have unsaved changes; see [Changes on disk](documents.md#changes-on-disk).
 
 ## Edit
 

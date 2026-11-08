@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "platform/file_map.hpp"
+#include "platform/fs.hpp"
 #include "text/line_scanner.hpp"
 #include "text/piece_tree.hpp"
 #include "util/event_queue.hpp"
@@ -415,4 +416,35 @@ TEST_CASE("deleting from one large piece keeps the tree balanced: 100 000 erases
     CHECK(seconds < time_budget(10.0));
     REQUIRE(tree.size() == oracle.size());
     CHECK(content(tree) == oracle);
+}
+
+TEST_CASE("a file read in holds its bytes after the file is closed, rewritten or deleted") {
+    const fs::path p = scratch("read-in.txt");
+    {
+        std::ofstream out(p, std::ios::binary | std::ios::trunc);
+        out << "hello, world\n";
+    }
+    auto m = MappedFile::open(p, FileLoad::read_in);
+    REQUIRE(m);
+    const auto& f = **m;
+    REQUIRE(f.size() == 13);
+    CHECK(std::string(reinterpret_cast<const char*>(f.data()), 13) == "hello, world\n");
+    const auto id = stat_path(p);
+    REQUIRE(id);
+    CHECK(f.identity() == *id);  // the identity the external-change check compares against
+    // Rewritten in place (what a mapping cannot survive) and then deleted: the copy is unchanged.
+    {
+        std::ofstream out(p, std::ios::binary | std::ios::trunc);
+        out << "bye";
+    }
+    CHECK(std::string(reinterpret_cast<const char*>(f.data()), 13) == "hello, world\n");
+    fs::remove(p);
+    CHECK(std::string(reinterpret_cast<const char*>(f.data()), 13) == "hello, world\n");
+    // An empty file reads in as no bytes; a folder is refused as with a mapping.
+    { std::ofstream out(p, std::ios::binary | std::ios::trunc); }
+    auto e = MappedFile::open(p, FileLoad::read_in);
+    REQUIRE(e);
+    CHECK((*e)->size() == 0);
+    CHECK_FALSE(MappedFile::open(p.parent_path(), FileLoad::read_in));
+    fs::remove(p);
 }

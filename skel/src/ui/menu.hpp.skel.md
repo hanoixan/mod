@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 3461b18c, stand-in 06a961f3
+stamp: source 3461b18c, stand-in f9f5cb31
 ---
 # module: menu
 
@@ -11,7 +11,7 @@ The menu bar: File, Edit, View, Documents, Options and Help. It is **hidden** un
 Esc pressed **three times, each within 250 ms of the one before**, quits mod (see [App](../app/app.hpp.skel.md#class-app)); since the first opens the bar and the second closes it, the third is the quit.
 
 Menu contents:
-- **File:** Open…, Save (Ctrl+S), Save As…, Close, Suspend (Ctrl+T), Exit (Ctrl+Q). Clear History… and Trim History… are in the Undo History pane (Edit > Undo History…), not in a menu.
+- **File:** Open…, Save (Ctrl+S), Save As…, Close, Reload (`r`), Suspend (Ctrl+T), Exit (Ctrl+Q). Clear History… and Trim History… are in the Undo History pane (Edit > Undo History…), not in a menu.
 - **Edit:** Undo (Ctrl+Z), Redo (Ctrl+Y), Undo History…, Next Branch, Previous Branch, Cut (Ctrl+X), Cut to Line End (Ctrl+K), Copy (Ctrl+C), Paste (Ctrl+V), Find/Replace (Ctrl+F), Find Next (F3), Find Previous (Shift+F3), Go to Line… (Ctrl+G).
 - **View:** Line Numbers ✓, Syntax Coloring ✓ (code and Markdown), Word Wrap ✓ (on by default), View Mode ✓ (accelerator `v`; per document, off when a file is opened), Pin Folder Tree ✓ (`f`; pins the folder tree, for the session), a separator, Split (`s` is Syntax Coloring's, so Split is **p**), Unsplit (**u**).
 - **Documents:** the open documents in the order they were opened, numbered 1 to 9 (the number is the accelerator; later ones have none), with a check on the shown one and `*` after one with unsaved changes. A document in read-only mode that is showing a followed link reads "guide.md → keys.md". Choosing one shows it.

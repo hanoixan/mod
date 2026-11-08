@@ -10,9 +10,11 @@
 #include <optional>
 #include <regex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "app/app.hpp"
+#include "platform/file_map.hpp"
 #include "scripted_terminal.hpp"
 
 using namespace mod;
@@ -615,6 +617,98 @@ TEST_CASE("View > View Mode turns view mode on and off") {
                               {"View > View Mode", "\x1bxvv", row_is(0, "Notes")},
                               {"marked", "", status_has("[view]")},
                               {"and off again", "\x1bxvv", row_is(0, "  1 # Notes")},
+                              {"quit", "\x11", nullptr}});
+    check_steps(run);
+}
+
+namespace {
+
+// A step condition that changes a file on disk the first time it is asked, then is met: a
+// new file renamed over it, as most editors save (`in_place`: rewritten where it is).
+auto change_file(const std::string& test, const std::string& name, std::optional<std::string> text, bool in_place = false) {
+    auto done = std::make_shared<bool>(false);
+    return [=](const VtScreen&) {
+        if (!*done) {
+            const fs::path p = fs::path(MOD_TEST_SCRATCH) / "app_test" / test / name;
+            if (text && in_place) {
+                std::ofstream(p, std::ios::binary | std::ios::trunc) << *text;
+            } else if (text) {
+                const fs::path tmp = p.string() + ".new";
+                std::ofstream(tmp, std::ios::binary | std::ios::trunc) << *text;
+                fs::rename(tmp, p);
+            } else {
+                fs::remove(p);
+            }
+            *done = true;
+        }
+        return true;
+    };
+}
+
+}  // namespace
+
+TEST_CASE("a file changed on disk with no unsaved changes is reloaded, and the status line says so") {
+    const auto run = run_app("reload-auto", "old text\n",
+                             {{"start", "", row_is(0, "  1 old text")},
+                              {"another program rewrites it", "", change_file("reload-auto", "file.txt", "new text, longer\n")},
+                              {"reloaded", "", row_is(0, "  1 new text, longer")},
+                              {"said so", "", status_has("reloaded file.txt")},
+                              {"quit", "\x11", nullptr}});
+    check_steps(run);
+}
+
+TEST_CASE("with unsaved changes, or auto_reload off, a change on disk leaves a notice until File > Reload") {
+    const auto dirty = run_app("reload-dirty", "old\n",
+                               {{"start", "", row_is(0, "  1 old")},
+                                {"an edit", "x", row_is(0, "  1 xold")},
+                                {"the file changes", "", change_file("reload-dirty", "file.txt", "theirs, longer\n")},
+                                {"a notice, the edit kept", "", [](const VtScreen& s) {
+                                     return s.status().find("changed on disk") != std::string::npos && s.row(0).starts_with("  1 xold");
+                                 }},
+                                {"typing still works: nothing took the focus", "y", row_is(0, "  1 xyold")},
+                                {"quit, discarding", "\x11\x1b[C\r", nullptr}});
+    check_steps(dirty);
+    const auto off = run_app("reload-off", {File{"file.txt", "old\n"}},
+                             {{"start", "", row_is(0, "  1 old")},
+                              {"the file changes", "", change_file("reload-off", "file.txt", "new, longer\n")},
+                              {"a lasting notice", "", status_has("File > Reload")},
+                              {"File > Reload", "\x1bxfr", row_is(0, "  1 new, longer")},
+                              {"the notice is gone", "", [](const VtScreen& s) { return s.status().find("changed on disk") == std::string::npos; }},
+                              {"quit", "\x11", nullptr}},
+                             settings_setup(R"({"auto_reload": false})"));
+    check_steps(off);
+}
+
+TEST_CASE("a deleted file gets a notice; a hidden document's reload is told when it is shown") {
+    const auto gone = run_app("reload-deleted", "text\n",
+                              {{"start", "", row_is(0, "  1 text")},
+                               {"deleted", "", change_file("reload-deleted", "file.txt", std::nullopt)},
+                               {"a notice", "", status_has("deleted on disk")},
+                               {"quit", "\x11\x1b[C\r", nullptr}});
+    check_steps(gone);
+    const auto hidden = run_app("reload-hidden", {File{"a.txt", "alpha\n"}, File{"b.txt", "beta\n"}},
+                                {{"a shown", "", row_is(0, "  1 alpha")},
+                                 {"b changes on disk", "", change_file("reload-hidden", "b.txt", "beta two\n")},
+                                 {"a's status line says nothing of it", "", [](const VtScreen& s) {
+                                      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                                      return s.status().find("b.txt") == std::string::npos;
+                                  }},
+                                 {"Documents > b.txt: reloaded, and told", "\x1bxd2", [](const VtScreen& s) {
+                                      return s.row(0).starts_with("  1 beta two") && s.status().find("reloaded b.txt") != std::string::npos;
+                                  }},
+                                 {"quit", "\x11", nullptr}});
+    check_steps(hidden);
+}
+
+TEST_CASE("a mapped file rewritten in place is reloaded even with unsaved changes, as they cannot be kept") {
+    if (!maps_files()) return;  // read in (Windows): an ordinary change
+    const auto run = run_app("reload-in-place", "old\n",
+                             {{"start", "", row_is(0, "  1 old")},
+                              {"an edit", "x", row_is(0, "  1 xold")},
+                              {"rewritten in place", "", change_file("reload-in-place", "file.txt", "theirs, longer\n", true)},
+                              {"reloaded, and told why", "", [](const VtScreen& s) {
+                                   return s.row(0).starts_with("  1 theirs, longer") && s.status().find("could not be kept") != std::string::npos;
+                               }},
                               {"quit", "\x11", nullptr}});
     check_steps(run);
 }

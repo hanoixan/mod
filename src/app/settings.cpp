@@ -43,6 +43,10 @@ constexpr SettingSpec kSpecs[] = {
      "Keep the folder tree, the working folder's files and folders, shown to the left of the views. Unpinned, it shows "
      "only while you are in it (Esc, then Shift+Left) and goes when you leave. Changing it also pins or unpins it now; "
      "View > Pin Folder Tree changes it for this session.", {}},
+    {"auto_reload", T::boolean, 1, 0, 1, "Reload files changed on disk",
+     "When another program changes a file open in mod, load the new version at once, if you have no unsaved changes "
+     "in it, and say so for a few seconds. Off, or with unsaved changes, the file's status line says it changed until "
+     "you choose File > Reload.", {}},
     {"mouse", T::boolean, 1, 0, 1, "Mouse",
      "Let mod take the mouse: a click places the cursor, a drag selects, a double click selects a word and a triple "
      "click a line, Shift+click extends the selection, the wheel scrolls, and clicks work in the menus, the file "

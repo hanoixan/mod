@@ -1,11 +1,11 @@
 ---
 role: product
 unit: ./file_map.hpp.skel.md
-stamp: source d92fb6d9, stand-in f54ebc52
+stamp: source 80387404, stand-in bcf664b7
 ---
 # module: file_map_posix
 
-Implements [MappedFile](./file_map.hpp.skel.md#class-mappedfile) with `open(O_RDONLY|O_CLOEXEC)`, `fstat`, `mmap(PROT_READ, MAP_PRIVATE)` and `posix_madvise`.
+Implements [MappedFile](./file_map.hpp.skel.md#class-mappedfile) with `open(O_RDONLY|O_CLOEXEC)`, `fstat`, `mmap(PROT_READ, MAP_PRIVATE)` and `posix_madvise`; read in, with `read` into an owned buffer and `close`. Under `__CYGWIN__` the descriptor comes from `CreateFileW(GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, OPEN_EXISTING)` on the path converted with `cygwin_conv_path`, attached with `cygwin_attach_handle_to_fd`; when `CreateFileW` fails the runtime's own `open` runs instead, so errno names the failure as it always did. `windows.h` is included before `sys/cygwin.h` (which declares its HANDLE functions only after it), with `NOMINMAX` and `WIN32_LEAN_AND_MEAN`.
 
 - **Owns:** the fd and the mapping.
 - **Access:** internal.
