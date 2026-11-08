@@ -158,7 +158,7 @@ std::optional<std::vector<LineEdit>> diff_lines(std::span<const std::uint64_t> a
 // ---- diff3 ---------------------------------------------------------------------------------
 
 std::optional<std::vector<MergeHunk>> merge3(std::span<const std::uint64_t> base, std::span<const std::uint64_t> ours,
-                                             std::span<const std::uint64_t> theirs, std::stop_token stop, std::atomic<std::size_t>* progress) {
+                                             std::span<const std::uint64_t> theirs, const std::stop_token& stop, std::atomic<std::size_t>* progress) {
     auto mine = diff_lines(base, ours, stop, progress);
     if (!mine) return std::nullopt;
     auto other = diff_lines(base, theirs, stop, progress);

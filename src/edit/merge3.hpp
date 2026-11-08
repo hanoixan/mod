@@ -59,7 +59,7 @@ struct MergeHunk {
 // on both sides is taken once; changes of both sides that overlap, or touch at one place, are a
 // conflict. `progress` counts base lines settled across both diffs (2 × base's lines in all).
 std::optional<std::vector<MergeHunk>> merge3(std::span<const std::uint64_t> base, std::span<const std::uint64_t> ours,
-                                             std::span<const std::uint64_t> theirs, std::stop_token stop = {},
+                                             std::span<const std::uint64_t> theirs, const std::stop_token& stop = {},
                                              std::atomic<std::size_t>* progress = nullptr);
 
 }  // namespace mod

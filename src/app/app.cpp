@@ -809,7 +809,7 @@ void App::finish_merge() {
         set_status("merge canceled; " + name + " is as it was");
         return;
     }
-    const std::vector<MergeHunk>& hunks = *job->hunks;
+    const std::vector<MergeHunk>& hunks = job->hunks.value();  // checked above
     // The base's lines that conflict blocks show, read from the text as last saved.
     std::vector<std::string> base_text(hunks.size());
     std::size_t conflicts = 0;
