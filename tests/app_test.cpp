@@ -631,7 +631,10 @@ auto change_file(const std::string& test, const std::string& name, std::optional
         if (!*done) {
             const fs::path p = fs::path(MOD_TEST_SCRATCH) / "app_test" / test / name;
             if (text && in_place) {
-                std::ofstream(p, std::ios::binary | std::ios::trunc) << *text;
+                // Overwritten from the start, never truncated: a mapped file that shrinks, even
+                // for a moment, raises SIGBUS on the next read (an accepted risk; see file_map.hpp).
+                // The text given must be at least as long as the file.
+                std::fstream(p, std::ios::binary | std::ios::in | std::ios::out) << *text;
             } else if (text) {
                 const fs::path tmp = p.string() + ".new";
                 std::ofstream(tmp, std::ios::binary | std::ios::trunc) << *text;
