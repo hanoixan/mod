@@ -44,7 +44,7 @@ int open_for_reading(const std::filesystem::path& path) {
         return fd;
     }
     std::string name = path.string();  // the runtime's name for the descriptor
-    const int fd = ::cygwin_attach_handle_to_fd(name.data(), -1, h, 1, GENERIC_READ);
+    const int fd = ::cygwin_attach_handle_to_fd(name.data(), -1, h, O_BINARY, GENERIC_READ);
     if (fd < 0) ::CloseHandle(h);
     return fd;
 #else
