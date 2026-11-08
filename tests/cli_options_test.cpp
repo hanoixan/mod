@@ -33,13 +33,18 @@ TEST_CASE("paths, --, help and version") {
     CHECK(parse({"--version"})->action == CliOptions::Action::version);
 }
 
-TEST_CASE("-ro, --read-only and --persist-history") {
-    auto o = parse({"-ro", "x.md"});
+TEST_CASE("-v, --view and --persist-history; -ro and --read-only are gone") {
+    auto o = parse({"-v", "x.md"});
     REQUIRE(o);
-    CHECK(o->read_only);
+    CHECK(o->view);
     CHECK_FALSE(o->persist_history);
-    CHECK(parse({"--read-only"})->read_only);
+    CHECK(parse({"--view"})->view);
+    CHECK_FALSE(parse({"x.md"})->view);
     CHECK(parse({"--persist-history", "y"})->persist_history);
+    CHECK_FALSE(parse({"-ro", "x.md"}));
+    CHECK_FALSE(parse({"--read-only"}));
+    CHECK(cli_usage().find("-v, --view") != std::string::npos);
+    CHECK(cli_usage().find("-ro") == std::string::npos);
 }
 
 TEST_CASE("every scalar setting has a flag; the values are validated against the schema") {

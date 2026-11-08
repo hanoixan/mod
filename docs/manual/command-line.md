@@ -10,7 +10,7 @@ Each path opens as a document; the first is shown. On Windows a path may be writ
 
 | Option | Effect |
 |---|---|
-| `-ro`, `--read-only` | Opens the named files in [read-only mode](read-only.md), as if View > Read Only were chosen in each. Files you open later open as usual. |
+| `-v`, `--view` | Opens the named files in [view mode](view-mode.md), as if View > View Mode were chosen in each: read-only, and Markdown laid out for reading. Files you open later open as usual. |
 | `--persist-history` | Turns on Persist History for the named files, so their [undo history](undo-history.md) is kept in a `.history` file beside each. The history file is written from the first change on; if one is there that mod cannot read, mod asks before replacing it. |
 | `--` | Ends the options: what follows is a path, even if it starts with `-`. |
 
@@ -30,7 +30,7 @@ Colors take the names and specs described in [Colors](colors.md). A color given 
 An unknown option or a value mod cannot use stops mod before it starts, with a message saying what was wrong and the usage.
 
 ```text
-mod -ro README.md                 read the README laid out, without changing it
+mod -v README.md                  read the README laid out, without changing it
 mod --persist-history notes.txt   keep notes.txt's undo history between sessions
 mod --darkness=paper --tab-width=2 main.c
 ```

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 16fadf28, stand-in 7402075c
+stamp: source b643bd0a, stand-in 7402075c
 ---
 # resource: documents.md
 

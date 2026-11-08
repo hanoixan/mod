@@ -48,6 +48,9 @@ struct RenderedPage {
 
 // Lays a Markdown page out for reading at `width` columns (at least 20): what the
 // Markdown means, without its marks.
-RenderedPage render_markdown(std::string_view text, int width);
+// With `wrap`, a table too wide for the page has its columns fitted to it and its cells wrapped
+// within them, and a code line too wide goes on at its indent on the rows below; without it they
+// run past the right edge, to be panned to.
+RenderedPage render_markdown(std::string_view text, int width, bool wrap = false);
 
 }  // namespace mod

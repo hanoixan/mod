@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source f93e60db, stand-in 9512bf56
+stamp: source 77799301, stand-in df845905
 ---
 # module: editor_view
 
@@ -158,9 +158,9 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 
 ### function: set_reading
 
-- **Inputs:** `on`: whether to draw the document laid out for reading (App sets it for a Markdown document in read-only mode).
+- **Inputs:** `on`: whether to draw the document laid out for reading (App sets it for a Markdown document in view mode, and hides the gutter for it with set_line_numbers).
 - **Returns:** nothing.
-- **State changes:** while on, and the text area is at least 21 columns wide (gutter aside), the view draws a [ReadingLayout](./reading_layout.hpp.skel.md#class-readinglayout) of the document instead of its lines: made again when the document's version or the width changes, always wrapped (Word Wrap does not apply), scrolled by rendered line, and **panned sideways** as a whole when the cursor's column is past the right edge (a wide table or code line, which the layout does not wrap): the view keeps the cursor on screen with the same margin as unwrapped editing, and comes back to column 0 when the cursor's column fits from there; a line running past the right edge shows `>` in the `overflow_marker` style in the last column, the gutter numbering each source line on the first rendered line that comes from it, the selection and the search match drawn over the bytes whose source is in them, the cursor at [locate](./reading_layout.hpp.skel.md#function-locate) of the editor's cursor. Styles come from the layout's spans when the view has a highlighter (Syntax Coloring is on), and none otherwise. A narrower area draws the lines as usual.
+- **State changes:** while on, and the text area is at least 21 columns wide (gutter aside), the view draws a [ReadingLayout](./reading_layout.hpp.skel.md#class-readinglayout) of the document instead of its lines: made again when the document's version, the width or Word Wrap changes, its paragraphs always wrapped and its tables and code lines fitted to the width while Word Wrap is on (the layout's `wrap`), scrolled by rendered line, and **panned sideways** as a whole when the cursor's column is past the right edge (a wide table or code line with Word Wrap off, or a table with too many columns to fit): the view keeps the cursor on screen with the same margin as unwrapped editing, and comes back to column 0 when the cursor's column fits from there; a line running past the right edge shows `>` in the `overflow_marker` style in the last column, the gutter numbering each source line on the first rendered line that comes from it, the selection and the search match drawn over the bytes whose source is in them, the cursor at [locate](./reading_layout.hpp.skel.md#function-locate) of the editor's cursor. Styles come from the layout's spans when the view has a highlighter (Syntax Coloring is on), and none otherwise. A narrower area draws the lines as usual.
 - **Access:** App.
 
 ### function: reading_layout

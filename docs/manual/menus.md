@@ -22,7 +22,7 @@ Undo, Redo, Undo History…, Next Branch, Previous Branch, Cut, Cut to Line End,
 
 ## View
 
-Line Numbers, Syntax Coloring, Word Wrap and Read Only, each a check mark, then Pin Folder Tree, which keeps the [folder tree](folder-tree.md) shown beside the views for the session, or lets it go back to showing only while you are in it. Syntax Coloring covers Markdown too: Markdown files are styled exactly when it is on. Each document has its own: they change only the document you are in (in every [split view](documents.md#split-views) of it), and the check marks show that document's. What a document starts with when it is opened is set in [Settings](settings.md) for the first three ("… on open"); documents open editable unless mod is started with [`-ro`](command-line.md). See [Read-only mode](read-only.md) for Read Only.
+Line Numbers, Syntax Coloring, Word Wrap and [View Mode](view-mode.md), each a check mark, then Pin Folder Tree, which keeps the [folder tree](folder-tree.md) shown beside the views for the session, or lets it go back to showing only while you are in it. Syntax Coloring covers Markdown too: Markdown files are styled exactly when it is on. Each document has its own: they change only the document you are in (in every [split view](documents.md#split-views) of it), and the check marks show that document's. What a document starts with when it is opened is set in [Settings](settings.md) for the first three ("… on open"); documents open editable unless mod is started with [`-v`](command-line.md). See [View mode](view-mode.md) for View Mode.
 
 Split and Unsplit divide the screen into several views and remove them again; see [Split views](documents.md#split-views).
 

@@ -69,7 +69,7 @@ Run run_app(const std::string& name, const std::vector<File>& files, std::vector
         std::ofstream(dir / "config" / "mod" / "settings.json") << setup.settings_json;
     }
     CliOptions options;
-    options.read_only = setup.read_only;
+    options.view = setup.read_only;
     for (const File& f : files) {
         fs::create_directories((dir / f.name).parent_path());
         std::ofstream(dir / f.name, std::ios::binary) << f.text;
@@ -586,5 +586,35 @@ TEST_CASE("with the mouse setting off, clicks do nothing") {
                               {"the cursor stays", "\x1b[C", status_has("1:2")},
                               {"quit", "\x11", nullptr}},
                              settings_setup(R"({"mouse": false})"));
+    check_steps(run);
+}
+
+TEST_CASE("view mode: Markdown laid out without line numbers, other files read-only as text") {
+    const auto md = run_app("view-md", {File{"notes.md", "# Notes\n\nSome **bold** text.\n"}},
+                            {{"laid out, no gutter", "", row_is(0, "Notes")},
+                             {"typing is refused", "x", status_has("view mode")},
+                             {"quit", "\x11", nullptr}},
+                            read_only_setup());
+    check_steps(md);
+    const auto txt = run_app("view-txt", {File{"plain.txt", "alpha\n"}},
+                             {{"the text with its numbers", "", row_is(0, "  1 alpha")},
+                              {"marked [view]", "", status_has("[view]")},
+                              {"typing is refused", "x", row_is(0, "  1 alpha")},
+                              {"quit", "\x11", nullptr}},
+                             read_only_setup());
+    check_steps(txt);
+    // No extension, a heading on the first line: Markdown.
+    const auto bare = run_app("view-bare", {File{"NOTES", "# Heading\n\nText.\n"}},
+                              {{"laid out", "", row_is(0, "Heading")}, {"quit", "\x11", nullptr}}, read_only_setup());
+    check_steps(bare);
+}
+
+TEST_CASE("View > View Mode turns view mode on and off") {
+    const auto run = run_app("view-toggle", {File{"notes.md", "# Notes\n\ntext\n"}},
+                             {{"editing: the source", "", row_is(0, "  1 # Notes")},
+                              {"View > View Mode", "\x1bxvv", row_is(0, "Notes")},
+                              {"marked", "", status_has("[view]")},
+                              {"and off again", "\x1bxvv", row_is(0, "  1 # Notes")},
+                              {"quit", "\x11", nullptr}});
     check_steps(run);
 }

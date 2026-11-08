@@ -54,6 +54,22 @@ bool is_markdown(const fs::path& p) {
     return ext == ".md" || ext == ".markdown" || ext == ".mdown" || ext == ".mkd";
 }
 
+// What view mode lays a document out as. Only Markdown has a layout yet: a Markdown extension,
+// or a file with no extension at all whose first line is an ATX heading ("# Title"); anything
+// else is shown as its text, read-only.
+enum class ViewLayout { text, markdown };
+
+ViewLayout view_layout_of(const Document& doc) {
+    if (doc.is_untitled()) return ViewLayout::text;
+    const fs::path& p = doc.path();
+    if (is_markdown(p)) return ViewLayout::markdown;
+    if (!p.extension().empty()) return ViewLayout::text;
+    const std::string head = doc.text().read(0, std::min<std::uint64_t>(doc.text().size(), 8));
+    std::size_t hashes = 0;
+    while (hashes < head.size() && hashes < 6 && head[hashes] == '#') ++hashes;
+    return hashes > 0 && hashes < head.size() && head[hashes] == ' ' ? ViewLayout::markdown : ViewLayout::text;
+}
+
 std::optional<Motion> motion_of(CommandId id, bool& extend) {
     const auto v = std::to_underlying(id);
     const auto first_move = std::to_underlying(CommandId::MoveLeft);
@@ -115,7 +131,7 @@ App::App(const CliOptions& options, std::unique_ptr<Terminal> terminal)
     }
     if (first) show_document(*first);
     if (!failure.empty()) set_status(failure);
-    apply_start_options(options.read_only, options.persist_history);
+    apply_start_options(options.view, options.persist_history);
 }
 
 // Every document open at startup came from the command line (the untitled buffer aside).
@@ -338,11 +354,13 @@ ViewOptions App::options_on_open() const {
 // The slot's view follows its document's View options.
 void App::apply_options(DocumentSlot& s) {
     if (!s.view || !s.options) return;
-    s.view->set_line_numbers(s.options->line_numbers);
+    // View mode lays Markdown out for reading, wrapped to the window and without line numbers;
+    // any other file is its text, read-only, with the View options it has.
+    const bool reading = s.options->read_only && s.doc && view_layout_of(*s.doc) == ViewLayout::markdown;
+    s.view->set_line_numbers(s.options->line_numbers && !reading);
     s.view->set_word_wrap(s.options->word_wrap);
     s.view->set_read_only(s.options->read_only);
-    // Markdown in read-only mode is drawn laid out for reading.
-    s.view->set_reading(s.options->read_only && s.doc && !s.doc->is_untitled() && is_markdown(s.doc->path()));
+    s.view->set_reading(reading);
 }
 
 void App::apply_options_to_views_of(const ViewOptions* options) {
@@ -1146,7 +1164,7 @@ void App::run_command(CommandId id) {
             apply_options_to_views_of(shown().options.get());
             break;
         case CommandId::PinFolderTree: pin_tree(!tree_pinned_); break;
-        case CommandId::ToggleReadOnly:
+        case CommandId::ToggleViewMode:
             if (help_viewer_.is_open()) {
                 set_status("the manual is always read-only");
             } else {
@@ -1559,7 +1577,7 @@ void App::dispatch_key(const KeyEvent& key) {
     }
 }
 
-void App::refuse_edit() { set_status("read-only: View > Read Only to edit"); }
+void App::refuse_edit() { set_status("view mode: View > View Mode to edit"); }
 
 // ---- help -------------------------------------------------------------------------------
 
@@ -1570,7 +1588,7 @@ bool App::stays_in_help(CommandId id) {
         case CommandId::About:
         case CommandId::Suspend:
         case CommandId::ToggleSyntax:
-        case CommandId::ToggleReadOnly:
+        case CommandId::ToggleViewMode:
         case CommandId::PinFolderTree:
         case CommandId::UserSettings:
         case CommandId::KeyBindings:
@@ -1620,7 +1638,7 @@ TrailEntry App::here() const {
     return TrailEntry{shown().doc->path(), shown().editor->cursor(), shown().view->top()};
 }
 
-bool App::shown_is_markdown() const { return !shown().doc->is_untitled() && is_markdown(shown().doc->path()); }
+bool App::shown_is_markdown() const { return view_layout_of(*shown().doc) == ViewLayout::markdown; }
 
 const MarkdownOutline& App::outline() {
     const Document* d = shown().doc.get();
@@ -1638,7 +1656,7 @@ void App::toggle_read_only() {
         ro().nav.reset(here());
         apply_options(shown());
         set_read_only_in_other_views(true);
-        set_status(shown_is_markdown() ? "read-only view: Tab moves between links, Enter follows one" : "read-only view");
+        set_status(shown_is_markdown() ? "view mode: Tab moves between links, Enter follows one" : "view mode: read-only");
         return;
     }
     if (!ro().away) {
@@ -1982,7 +2000,7 @@ void App::render() {
             case CommandId::ToggleLineNumbers: return shown().options && shown().options->line_numbers;
             case CommandId::ToggleSyntax: return shown().options && shown().options->syntax;
             case CommandId::ToggleWordWrap: return shown().options && shown().options->word_wrap;
-            case CommandId::ToggleReadOnly: return read_only();
+            case CommandId::ToggleViewMode: return read_only();
             case CommandId::PinFolderTree: return tree_pinned_;
             default: break;
         }

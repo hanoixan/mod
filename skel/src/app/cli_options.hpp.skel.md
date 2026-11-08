@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source a6ca2e42, stand-in 570eb787
+stamp: source 8b10c20f, stand-in c13607ae
 ---
 # module: cli_options
 
@@ -12,7 +12,7 @@ The command line, parsed into what [App](./app.hpp.skel.md#class-app) starts wit
 | `--` | ends the options; what follows is a path even if it starts with `-` |
 | `-h`, `--help` | print the usage and exit |
 | `--version` | print `mod <version>` and exit |
-| `-ro`, `--read-only` | open the named files in [read-only mode](../../docs/manual/read-only.md.skel.md) |
+| `-v`, `--view` | open the named files in [view mode](../../docs/manual/view-mode.md.skel.md) (`view`): read-only, Markdown laid out for reading. `-ro` and `--read-only`, its old names, are unknown options now |
 | `--persist-history` | turn Persist History on for the named files, creating their `.history` sidecars |
 | `--<setting>=<value>` | a session value for a scalar [setting](./settings.hpp.skel.md#function-setting_specs), never saved: the key with dashes for underscores (`--tab-width=8`, `--darkness=night`); a choice's value may use dashes for its spaces (`--read-only-copy=visible-text`) |
 | `--<boolean>`, `--no-<boolean>` | a boolean setting on or off; `=on`, `off`, `true`, `false`, `yes`, `no`, `1` and `0` also work |

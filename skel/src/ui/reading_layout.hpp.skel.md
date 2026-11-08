@@ -1,16 +1,16 @@
 ---
 role: product
-stamp: source ea62c087, stand-in fde95baf
+stamp: source c6202ad8, stand-in 860ff00f
 ---
 # module: reading_layout
 
-A Markdown document laid out for reading in read-only mode ([render_markdown](../syntax/markdown_render.hpp.skel.md#function-render_markdown)), with the arithmetic that keeps the editor's cursor, selection, Find and links working on the source while the screen shows the laid-out text. Pure, so it is tested on its own; [EditorView](./editor_view.hpp.skel.md#class-editorview) holds one while it draws a document this way.
+A Markdown document laid out for reading in view mode ([render_markdown](../syntax/markdown_render.hpp.skel.md#function-render_markdown)), with the arithmetic that keeps the editor's cursor, selection, Find and links working on the source while the screen shows the laid-out text. Pure, so it is tested on its own; [EditorView](./editor_view.hpp.skel.md#class-editorview) holds one while it draws a document this way.
 
 A **position** is a place the cursor can be shown: the start of each code point that shows source text, and the end of each line that has any (just past its last such code point). Each has a source offset, a rendered line, a byte in that line and a display column. A line with none (a blank line, a heading's underline, a rule) is passed over by the cursor.
 
 - **Owns:** the rendered page and its positions.
 - **Access:** public. Main thread.
-- **Required:** optional — read-only Markdown only.
+- **Required:** optional — Markdown in view mode only.
 - **Failure modes:** none: an offset no position has (a hidden mark, the inside of a link's target) shows at the next position after it, or the last.
 - **Depends on:** [render_markdown](../syntax/markdown_render.hpp.skel.md#function-render_markdown)
 - **Depends on:** [Motion](../edit/editor.hpp.skel.md#symbol-motion)
@@ -18,7 +18,7 @@ A **position** is a place the cursor can be shown: the start of each code point 
 
 ## class: ReadingLayout
 
-- **Inputs:** `text` (the whole document) and `width` (at least 20 columns), laid out at construction.
+- **Inputs:** `text` (the whole document), `width` (at least 20 columns) and `wrap` (default false; passed to render_markdown), laid out at construction.
 - **State changes:** none after construction; a new width or a change to the text makes a new one.
 - **Owns:** see the module.
 - **Access:** EditorView, App (through EditorView), tests.

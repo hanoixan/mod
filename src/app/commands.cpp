@@ -34,7 +34,7 @@ constexpr std::array<CommandInfo, kCommandCount> kTable{{
     {C::ToggleLineNumbers, "ToggleLineNumbers", "Line Numbers"},
     {C::ToggleSyntax, "ToggleSyntax", "Syntax Coloring"},
     {C::ToggleWordWrap, "ToggleWordWrap", "Word Wrap"},
-    {C::ToggleReadOnly, "ToggleReadOnly", "Read Only"},
+    {C::ToggleViewMode, "ToggleViewMode", "View Mode"},
     {C::PinFolderTree, "PinFolderTree", "Pin Folder Tree"},
     {C::Split, "Split", "Split"},
     {C::Unsplit, "Unsplit", "Unsplit"},
@@ -107,6 +107,7 @@ std::span<const CommandInfo> all_commands() { return kTable; }
 
 std::optional<CommandId> command_by_name(std::string_view name) {
     if (name == "PruneHistory") return C::TrimHistory;  // its name before it was renamed
+    if (name == "ToggleReadOnly") return C::ToggleViewMode;  // View mode replaced Read Only
     for (const CommandInfo& info : kTable) {
         if (info.name == name) return info.id;
     }

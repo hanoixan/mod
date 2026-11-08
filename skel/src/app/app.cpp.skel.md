@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./app.hpp.skel.md
-stamp: source dda4ef04, stand-in 558a07b0
+stamp: source 171dd604, stand-in 558a07b0
 ---
 # module: app (implementation)
 

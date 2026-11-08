@@ -7,7 +7,7 @@
 
 namespace mod {
 
-ReadingLayout::ReadingLayout(std::string_view text, int width) : page_(render_markdown(text, width)) {
+ReadingLayout::ReadingLayout(std::string_view text, int width, bool wrap) : page_(render_markdown(text, width, wrap)) {
     for (std::size_t l = 0; l < page_.lines.size(); ++l) {
         const RenderedLine& line = page_.lines[l];
         int col = 0;

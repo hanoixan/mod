@@ -16,7 +16,7 @@ struct CliOptions {
     enum class Action { run, help, version };
     Action action = Action::run;
     std::vector<std::filesystem::path> paths;
-    bool read_only = false;        // -ro, --read-only: the named files open read-only
+    bool view = false;             // -v, --view: the named files open in view mode
     bool persist_history = false;  // --persist-history: their history goes to the sidecar
     // Session values for scalar settings, by schema key, in command-line order.
     std::vector<std::pair<std::string, std::int64_t>> settings;

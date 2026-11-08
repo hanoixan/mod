@@ -8,11 +8,11 @@ mod can have several files open, one shown at a time.
 - File > Close closes the shown document, asking first if it has unsaved changes, and shows the one you were looking at before it. Closing the last one leaves an empty, untitled buffer.
 - Quitting asks about each document with unsaved changes in turn.
 
-Each document keeps its own cursor, scroll position, selection, search and View options (Line Numbers, Syntax Coloring, Word Wrap and [Read Only](read-only.md)) while another is shown. Settings, key bindings and the clipboard are shared, so you can copy in one document and paste in another.
+Each document keeps its own cursor, scroll position, selection, search and View options (Line Numbers, Syntax Coloring, Word Wrap and [View Mode](view-mode.md)) while another is shown. Settings, key bindings and the clipboard are shared, so you can copy in one document and paste in another.
 
 Documents of one language in one project share a [language server](language-servers.md).
 
-The terminal's title, which most terminal apps show on the tab, names the document of the view you are in, as `mod:notes.md`, with ` *` after it while it has unsaved changes. A view following a link in [read-only](read-only.md) mode keeps its own document's name. When mod exits, or is suspended with Ctrl+T, the terminal's own title comes back. A VT100 has no title.
+The terminal's title, which most terminal apps show on the tab, names the document of the view you are in, as `mod:notes.md`, with ` *` after it while it has unsaved changes. A view following a link in [view mode](view-mode.md) keeps its own document's name. When mod exits, or is suspended with Ctrl+T, the terminal's own title comes back. A VT100 has no title.
 
 ## Split views
 

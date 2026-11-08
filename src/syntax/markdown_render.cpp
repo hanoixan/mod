@@ -203,7 +203,7 @@ std::string repeat(std::string_view s, int n) {
 
 class Renderer {
 public:
-    explicit Renderer(int width) : width_(std::max(kMinWidth, width)) {}
+    Renderer(int width, bool wrap) : width_(std::max(kMinWidth, width)), wrap_(wrap) {}
 
     RenderedPage run(std::string_view text);
 
@@ -493,6 +493,109 @@ private:
         }
     }
 
+    // A code block's line, indented four columns. Wrapping, a line wider than the page goes on
+    // at the indent on the rows below, cut at a character; otherwise it runs past the edge.
+    void code_line(std::string_view text, std::uint64_t at, std::uint32_t src) {
+        RenderedLine* out = &new_line(src);
+        append(*out, "    ", Style::Default, -1);
+        if (!wrap_ || text_columns(text) + 4 <= width_) {
+            if (!text.empty()) append(*out, text, Style::md_code_block, -1, at);
+            return;
+        }
+        const int room = std::max(1, width_ - 4);
+        int col = 0;
+        std::size_t from = 0;
+        for (std::size_t b = 0; b < text.size();) {
+            const Decoded d = decode(std::as_bytes(std::span(text.data() + b, text.size() - b)));
+            const std::size_t len = std::max<std::size_t>(1, d.len);
+            const int w = d.valid ? std::max(0, display_width(d, 0, 1)) : 1;
+            if (col + w > room && col > 0) {
+                append(*out, text.substr(from, b - from), Style::md_code_block, -1, at + from);
+                out = &new_line(src);
+                append(*out, "    ", Style::Default, -1);
+                from = b;
+                col = 0;
+            }
+            col += w;
+            b += len;
+        }
+        if (from < text.size()) append(*out, text.substr(from), Style::md_code_block, -1, at + from);
+    }
+
+    // Word-wraps one table cell to `width` columns: its rows, each a run of units, the spaces
+    // between words kept (with their source) and the spaces at the breaks dropped; a word wider
+    // than the column is cut at a character.
+    static std::vector<Units> wrap_cell(const Units& units, int width) {
+        std::vector<Units> rows(1);
+        int col = 0;
+        std::size_t i = 0;
+        while (i < units.size()) {
+            if (units[i].space) {
+                ++i;
+                continue;
+            }
+            std::size_t j = i;
+            int w = 0;
+            while (j < units.size() && !units[j].space) w += units[j++].width;
+            const Unit* gap = i > 0 && units[i - 1].space ? &units[i - 1] : nullptr;
+            if (col > 0 && col + 1 + w > width) {
+                rows.emplace_back();
+                col = 0;
+            }
+            if (col > 0) {
+                rows.back().push_back(gap ? *gap : Unit{" ", 1, Style::Default, -1, true, kGenerated});
+                ++col;
+            }
+            for (std::size_t k = i; k < j; ++k) {
+                if (col > 0 && col + units[k].width > width) {
+                    rows.emplace_back();
+                    col = 0;
+                }
+                rows.back().push_back(units[k]);
+                col += units[k].width;
+            }
+            i = j;
+        }
+        return rows;
+    }
+
+    // The columns' widths for a table whose cells are naturally `natural` wide, fitted into
+    // the page with " │ " between them: a column that fits its fair share keeps its width, the
+    // others share what is left evenly. Empty when they cannot fit at all (under three
+    // columns each), and the table then runs past the edge as it would without wrapping.
+    std::vector<int> fit_columns(const std::vector<int>& natural) const {
+        const int n = static_cast<int>(natural.size());
+        const int room = width_ - 3 * (n - 1);
+        int total = 0;
+        for (int w : natural) total += w;
+        if (total <= room) return natural;
+        if (n == 0 || room < 3 * n) return {};
+        std::vector<int> out(natural.size(), 0);
+        std::vector<bool> fixed(natural.size(), false);
+        int left = room;
+        int open = n;
+        for (bool changed = true; changed && open > 0;) {
+            changed = false;
+            const int share = left / open;
+            for (std::size_t c = 0; c < natural.size(); ++c) {
+                if (fixed[c] || natural[c] > share) continue;
+                out[c] = natural[c];
+                fixed[c] = true;
+                left -= natural[c];
+                --open;
+                changed = true;
+            }
+        }
+        // The rest share what is left; the first ones take the columns left over.
+        int k = 0;
+        for (std::size_t c = 0; c < natural.size(); ++c) {
+            if (fixed[c]) continue;
+            out[c] = left / open + (k < left % open ? 1 : 0);
+            ++k;
+        }
+        return out;
+    }
+
     void table(const std::vector<std::string_view>& rows, const std::vector<std::uint64_t>& at, std::uint32_t src) {
         blank_before();
         std::vector<std::vector<Units>> cells;
@@ -507,6 +610,13 @@ private:
                 r.push_back(std::move(u));
             }
             cells.push_back(std::move(r));
+        }
+        // Wrapping, the columns are fitted to the page and each cell wraps within its column.
+        if (wrap_) {
+            if (const std::vector<int> fitted = fit_columns(widths); !fitted.empty() && fitted != widths) {
+                wrapped_table(cells, fitted, src);
+                return;
+            }
         }
         // Links were numbered while parsing; their pieces are placed as the rows are laid out.
         for (std::size_t r = 0; r < cells.size(); ++r) {
@@ -527,7 +637,44 @@ private:
         }
     }
 
+    // A table laid out with `widths` fitted to the page: each row as many lines as its tallest
+    // cell, every cell padded to its column, the header's rule after the first row.
+    void wrapped_table(const std::vector<std::vector<Units>>& cells, const std::vector<int>& widths, std::uint32_t src) {
+        std::string rule;
+        for (std::size_t c = 0; c < widths.size(); ++c) {
+            if (c > 0) rule += "─┼─";
+            rule += repeat("─", widths[c]);
+        }
+        for (std::size_t r = 0; r < cells.size(); ++r) {
+            // Body rows several lines tall are told apart by a dimmed rule between them.
+            if (r > 1) append(new_line(src + static_cast<std::uint32_t>(r + 1)), rule, Style::md_markup, -1);
+            const auto row_src = src + static_cast<std::uint32_t>(r == 0 ? 0 : r + 1);
+            std::vector<std::vector<Units>> pieces;
+            std::size_t height = 1;
+            for (std::size_t c = 0; c < cells[r].size() && c < widths.size(); ++c) {
+                pieces.push_back(wrap_cell(cells[r][c], widths[c]));
+                height = std::max(height, pieces.back().size());
+            }
+            for (std::size_t k = 0; k < height; ++k) {
+                RenderedLine& line = new_line(row_src);
+                for (std::size_t c = 0; c < pieces.size(); ++c) {
+                    if (c > 0) append(line, " │ ", Style::Default, -1);
+                    int w = 0;
+                    if (k < pieces[c].size()) {
+                        for (const Unit& u : pieces[c][k]) {
+                            append(line, u.bytes, u.style, u.link, u.src);
+                            w += u.width;
+                        }
+                    }
+                    if (c + 1 < pieces.size()) append(line, std::string(static_cast<std::size_t>(std::max(0, widths[c] - w)), ' '), Style::Default, -1);
+                }
+            }
+            if (r == 0) append(new_line(src + 1), rule, Style::Default, -1);
+        }
+    }
+
     int width_;
+    bool wrap_;
     RenderedPage page_;
     std::map<std::string, int> slug_count_;
 };
@@ -564,9 +711,7 @@ RenderedPage Renderer::run(std::string_view text) {
             for (; j < lines.size(); ++j) {
                 const auto [c2, n2] = fence(lines[j]);
                 if (c2 == fc && n2 >= fn && trim(lines[j]).size() == n2) break;
-                RenderedLine& out = new_line(static_cast<std::uint32_t>(j + 1));
-                append(out, "    ", Style::Default, -1);
-                if (!lines[j].empty()) append(out, lines[j], Style::md_code_block, -1, starts[j]);
+                code_line(lines[j], starts[j], static_cast<std::uint32_t>(j + 1));
             }
             i = std::min(lines.size(), j + 1);
             in_list = false;
@@ -600,17 +745,36 @@ RenderedPage Renderer::run(std::string_view text) {
         }
         if (is_quote(line)) {
             blank_before();
+            // Each run of lines at one depth (`>`, `> >`, …) is a paragraph, with a bar a level.
             Src joined;
+            int depth = 0;
+            std::uint32_t para_src = src;
+            auto flush = [&] {
+                if (joined.text.empty()) return;
+                Units units;
+                parse_inline(joined, Style::md_quote, -1, units);
+                const std::string bars = repeat("│ ", depth);
+                wrap(units, bars, bars, Style::md_quote, para_src);
+                joined = Src{};
+            };
             std::size_t j = i;
             for (; j < lines.size() && is_quote(lines[j]); ++j) {
-                std::string_view q = lines[j].substr(indent_of(lines[j]) + 1);
-                if (q.starts_with(' ')) q.remove_prefix(1);
+                std::string_view q = lines[j].substr(indent_of(lines[j]));
+                int d = 0;
+                while (q.starts_with('>')) {
+                    q.remove_prefix(1);
+                    ++d;
+                    if (q.starts_with(' ')) q.remove_prefix(1);
+                }
+                if (d != depth) {
+                    flush();
+                    depth = d;
+                    para_src = static_cast<std::uint32_t>(j + 1);
+                }
                 add_part(joined, j, q);
                 joined.add_byte(' ', end_of(j));
             }
-            Units units;
-            parse_inline(joined, Style::md_quote, -1, units);
-            wrap(units, "│ ", "│ ", Style::md_quote, src);
+            flush();
             i = j;
             in_list = false;
             continue;
@@ -662,6 +826,6 @@ RenderedPage Renderer::run(std::string_view text) {
 
 }  // namespace
 
-RenderedPage render_markdown(std::string_view text, int width) { return Renderer(width).run(text); }
+RenderedPage render_markdown(std::string_view text, int width, bool wrap) { return Renderer(width, wrap).run(text); }
 
 }  // namespace mod

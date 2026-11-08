@@ -460,7 +460,7 @@ TEST_CASE("read_only_copy: markdown or visible text, markdown by default") {
     REQUIRE(spec->choices.size() == 2);
     CHECK(spec->choices[0] == "markdown");
     CHECK(spec->choices[1] == "visible text");
-    CHECK(spec->label == std::string_view("Copy in read-only Markdown"));
+    CHECK(spec->label == std::string_view("Copy in Markdown view"));
 }
 
 TEST_CASE("override: a session value that is never written; set replaces it, other writes leave it out") {

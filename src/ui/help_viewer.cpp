@@ -36,13 +36,13 @@ Status HelpViewer::load(const std::filesystem::path& page) {
     if (!in) return std::unexpected(make_error(ErrorCode::io, "cannot read it"));
     text_.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
     page_ = page.lexically_normal();
-    rendered_ = render_markdown(text_, width_);
+    rendered_ = render_markdown(text_, width_, true);
     return {};
 }
 
 void HelpViewer::relayout() {
     const std::uint32_t source_top = top_ < rendered_.lines.size() ? rendered_.lines[top_].source_line : 1;
-    rendered_ = render_markdown(text_, width_);
+    rendered_ = render_markdown(text_, width_, true);
     top_ = line_for_source(source_top);
 }
 

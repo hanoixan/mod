@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 5d9732b3, stand-in 2fd292c4
+stamp: source 869f8cdf, stand-in 2fd292c4
 ---
 # resource: settings.md
 

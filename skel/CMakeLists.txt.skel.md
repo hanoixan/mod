@@ -1,6 +1,6 @@
 ---
 role: manifest
-stamp: source c8c96af1, stand-in 28048796
+stamp: source 4fd3e0bb, stand-in 4483f436
 ---
 # resource: CMakeLists.txt
 
@@ -8,7 +8,7 @@ The top-level CMake build. It defines the `mod` executable, selects the platform
 
 Contract for the implementer:
 
-- `cmake_minimum_required(VERSION 3.25)`, `project(mod VERSION 1.0.0 LANGUAGES CXX)`. The version is written only there: `mod_core` carries the public compile definition `MOD_VERSION="${PROJECT_VERSION}"`, which `--version`, the About box and the language-server handshake use.
+- `cmake_minimum_required(VERSION 3.25)`, `project(mod VERSION <major.minor.patch> LANGUAGES CXX)`, the version a release pull request sets (see CONTRIBUTING.md). The version is written only there: `mod_core` carries the public compile definition `MOD_VERSION="${PROJECT_VERSION}"`, which `--version`, the About box and the language-server handshake use.
 - Set `CMAKE_CXX_STANDARD 23`, `CMAKE_CXX_STANDARD_REQUIRED ON` and `CMAKE_CXX_EXTENSIONS OFF`. Restrict code to the GCC 13 subset in [SYSTEM.md](./SYSTEM.md).
 - Warnings: `-Wall -Wextra -Wpedantic -Wconversion -Wshadow` on GCC and Clang. MSVC is not a target. Add an option `MOD_WERROR` (OFF by default). Apply the warning flags to `mod` and `mod_core` only, never to the fetched dependencies.
 - Sources: the common list plus the `*_posix.cpp` backends, on every platform. There are no other backends: Windows builds use the MSYS2 MSYS environment, where the POSIX backends build unchanged. No Windows build is made in this phase, so there is no Windows-specific logic.
@@ -81,7 +81,7 @@ Contract for the implementer:
 - **Depends on:** [docs/manual/undo-history.md](./docs/manual/undo-history.md.skel.md)
 - **Depends on:** [docs/manual/search.md](./docs/manual/search.md.skel.md)
 - **Depends on:** [docs/manual/settings.md](./docs/manual/settings.md.skel.md)
-- **Depends on:** [docs/manual/read-only.md](./docs/manual/read-only.md.skel.md)
+- **Depends on:** [docs/manual/view-mode.md](./docs/manual/view-mode.md.skel.md)
 - **Depends on:** [docs/manual/folder-tree.md](./docs/manual/folder-tree.md.skel.md)
 - **Depends on:** [docs/manual/documents.md](./docs/manual/documents.md.skel.md)
 - **Depends on:** [docs/manual/language-servers.md](./docs/manual/language-servers.md.skel.md)

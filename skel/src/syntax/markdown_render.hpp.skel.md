@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source 4d1f4223, stand-in 52984766
+stamp: source 02b98bf5, stand-in 1efd25c0
 ---
 # module: markdown_render
 
-Lays a Markdown page out for reading: the help viewer, and a Markdown document in read-only mode, show what the Markdown **means**, never its marks. Pure: text and a width in, laid-out lines out; it is re-run when the width changes.
+Lays a Markdown page out for reading: the help viewer, and a Markdown document in view mode, show what the Markdown **means**, never its marks. Pure: text and a width in, laid-out lines out; it is re-run when the width changes.
 
 | Markdown | Rendered |
 |---|---|
@@ -25,7 +25,7 @@ Lines are measured in display columns (UTF-8, wide characters counted as two). A
 
 - **Owns:** nothing.
 - **Access:** public. Pure functions.
-- **Required:** optional — the help viewer and read-only Markdown use it.
+- **Required:** optional — the help viewer and Markdown in view mode use it.
 - **Failure modes:** Markdown outside the subset above (HTML, footnotes, setext headings, reference links) is shown as plain text, marks and all.
 - **Depends on:** [Style](./highlight.hpp.skel.md#symbol-style)
 - **Depends on:** [heading_slug](./markdown.hpp.skel.md#function-heading_slug)
@@ -39,8 +39,8 @@ Lines are measured in display columns (UTF-8, wide characters counted as two). A
 
 ## function: render_markdown
 
-- **Inputs:** `text`: a whole Markdown page; `width`: the columns available.
-- **Returns:** a `RenderedPage`.
+- **Inputs:** `text`: a whole Markdown page; `width`: the columns available; `wrap` (default false): fit wide content to the width.
+- **Returns:** a `RenderedPage`. With `wrap`: a table whose natural columns (with ` │ ` between them) are wider than the page has its columns fitted (each column that fits an even share of the room keeps its width, the others share the rest evenly, the first ones taking any columns left over), every cell word-wrapped within its column (a word wider than it cut at a character, the spaces at breaks dropped and those kept mapping to their source), each row as tall as its tallest cell with the shorter cells padded, the header's rule after the first row and a rule in the `md_markup` style between body rows; a table that cannot fit at least three columns per column, or that fits as it is, is laid out exactly as without `wrap`. A fenced code line wider than the page goes on at its four-column indent on the rows below, cut at a character. Without `wrap`, tables and code lines are never wrapped, as before. Block quotes nest: each run of lines at one depth of `>` is a paragraph with a `│ ` bar a level.
 - **State changes:** none.
 - **Access:** [HelpViewer](../ui/help_viewer.hpp.skel.md#class-helpviewer), [ReadingLayout](../ui/reading_layout.hpp.skel.md#class-readinglayout), tests.
 - **Referred by:** [markdown_render (implementation)](./markdown_render.cpp.skel.md)

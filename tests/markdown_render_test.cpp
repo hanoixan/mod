@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "syntax/markdown_render.hpp"
+#include "text/utf8.hpp"
 #include "time_budget.hpp"
 
 using namespace mod;
@@ -281,4 +282,72 @@ TEST_CASE("hostile Markdown: deep nesting and unmatched marks lay out quickly, w
         CHECK(!page.lines.empty());
         CHECK(seconds < time_budget(5.0));
     }
+}
+
+TEST_CASE("wrapping: a wide table's columns fit the page and its cells wrap within them") {
+    const std::string md = "| A | B |\n|---|---|\n| one two three four five six seven | x |\n| short | eight nine ten eleven twelve |\n";
+    // Without wrapping, the rows run as wide as they need.
+    const RenderedPage plain = render_markdown(md, 20);
+    for (const RenderedLine& l : plain.lines) {
+        if (l.text.find("seven") != std::string::npos) CHECK(text_columns(l.text) > 20);
+    }
+    const RenderedPage p = render_markdown(md, 20, true);
+    const auto t = texts(p);
+    CAPTURE(t);
+    for (const std::string& line : t) CHECK(text_columns(line) <= 20);
+    // Every rendered line of the table has the column bar at the same place.
+    std::size_t bar = std::string::npos;
+    for (const std::string& line : t) {
+        const std::size_t at = line.find("│");
+        if (at == std::string::npos) continue;
+        const int col = text_columns(std::string_view(line).substr(0, at));
+        if (bar == std::string::npos) bar = static_cast<std::size_t>(col);
+        CHECK(static_cast<std::size_t>(col) == bar);
+    }
+    // The words survive, in order, and keep their source.
+    std::string all;
+    for (const std::string& line : t) all += line + " ";
+    CHECK(all.find("one two") != std::string::npos);
+    CHECK(all.find("twelve") != std::string::npos);
+    for (const RenderedLine& l : p.lines) {
+        const std::size_t at = l.text.find("twelve");
+        if (at != std::string::npos) CHECK(md.substr(l.source[at], 6) == "twelve");
+    }
+    // A table that fits is laid out as it always was.
+    CHECK(texts(render_markdown("| a | b |\n|---|---|\n| 1 | 2 |\n", 40, true)) == texts(render_markdown("| a | b |\n|---|---|\n| 1 | 2 |\n", 40)));
+}
+
+TEST_CASE("wrapping: too many columns to fit run past the edge as before") {
+    std::string md = "|";
+    for (int c = 0; c < 9; ++c) md += " head |";
+    md += "\n|";
+    for (int c = 0; c < 9; ++c) md += "---|";
+    md += "\n|";
+    for (int c = 0; c < 9; ++c) md += " cell text |";
+    md += "\n";
+    CHECK(texts(render_markdown(md, 20, true)) == texts(render_markdown(md, 20)));
+}
+
+TEST_CASE("wrapping: a long code line goes on at its indent, mapping to its source") {
+    const std::string md = "```\n" + std::string(50, 'x') + "\n```\n";
+    const RenderedPage p = render_markdown(md, 24, true);
+    std::vector<const RenderedLine*> code;
+    for (const RenderedLine& l : p.lines)
+        if (l.text.starts_with("    x")) code.push_back(&l);
+    REQUIRE(code.size() == 3);  // 20 + 20 + 10
+    CHECK(code[1]->text == "    " + std::string(20, 'x'));
+    CHECK(code[1]->source[4] == 4 + 20);
+    CHECK(code[2]->text == "    " + std::string(10, 'x'));
+    // Unwrapped, one line as before.
+    int whole = 0;
+    for (const RenderedLine& l : render_markdown(md, 24).lines) whole += l.text.starts_with("    x") ? 1 : 0;
+    CHECK(whole == 1);
+}
+
+TEST_CASE("nested quotes get a bar a level") {
+    const auto t = texts(render_markdown("> outer words\n> > inner words\n> back out\n", 40));
+    CAPTURE(t);
+    CHECK(std::ranges::find(t, "│ outer words") != t.end());
+    CHECK(std::ranges::find(t, "│ │ inner words") != t.end());
+    CHECK(std::ranges::find(t, "│ back out") != t.end());
 }
