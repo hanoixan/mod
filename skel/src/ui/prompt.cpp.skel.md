@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./prompt.hpp.skel.md
-stamp: source 0f28b845, stand-in 815e5dcb
+stamp: source d14a293f, stand-in 815e5dcb
 ---
 # module: prompt (implementation)
 

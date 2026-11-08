@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./sidecar.hpp.skel.md
-stamp: source 7d91b100, stand-in 5ddd415b
+stamp: source 7d91b100, stand-in dddb7824
 ---
 # module: sidecar (implementation)
 
@@ -21,5 +21,5 @@ Implements [Sidecar](./sidecar.hpp.skel.md#class-sidecar).
 - **Required:** optional — as for the header.
 - **Failure modes:** partial write followed by a successful retry, which would interleave garbage. Writes are append-only with `O_APPEND`, and any short write disables persistence for the rest of the session rather than retrying.
 - **Depends on:** [Sidecar](./sidecar.hpp.skel.md#class-sidecar)
-- **Depends on:** [sidecar format](../../docs/sidecar-format.md.skel.md)
+- **Depends on:** [sidecar format](../../docs/sidecar/sidecar-format.md.skel.md)
 - **Unknowns:** none

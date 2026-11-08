@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source a7687fe6, stand-in 20c7aa82
+stamp: source 37148b2c, stand-in e0344b35
 ---
 # module: editor_view
 
@@ -73,7 +73,7 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 
 - **Inputs:** a `Screen&`; `row`: the status row; `message`: the notification for the center (the transient message, a panel's key hints, or App's idle hint), or empty; `mark`: a `StatusMark` (`enum class StatusMark { none, focused, unfocused }`): App passes `focused` for the focused view's status line, with one view or several, and `unfocused` for the others; `focused` starts the line with `>` in place of its leading space, `col` and `width` (default: the whole row) are the columns it is drawn in, App passing the views' left edge beside the folder tree, as [draw_status_line](#function-render_status) takes them too; `unfocused` draws the whole line in [ColorTheme.unfocused_status](./theme.hpp.skel.md#class-colortheme), readable text on a darker band (on a VT100 the same look as the focused one, the `>` then telling the splits apart).
 - **Returns:** nothing.
-- **State changes:** draws the status line described in the module across the full width: the path or `[untitled]`, `*` when dirty, `line:col` (1-based; the line is `…` while unknown), the total line count once known, the history state when it is neither `attached` nor `session_only` (history kept in memory is the default, so it is not news; left out in a read-only view, which never edits), `[view]` after the name in a read-only view, `branch i/n` when the current node has siblings, the highlighter's `status()`, and `message` centered on the row. The message is centered on the whole row when that clears both side blocks, else placed as near the center as it can between them; when it does not fit between them, the right block is dropped and the message follows the left block, truncated at the edge.
+- **State changes:** draws the status line described in the module across the full width: the path or `[untitled]`, `*` when dirty, `line:col` (1-based; the line is `…` while unknown), the total line count once known, the history state when it is neither `attached` nor `session_only` (history kept in memory is the default, so it is not news; left out in a view in view mode, which never edits), `[view]` after the name in a view in view mode, `branch i/n` when the current node has siblings, the highlighter's `status()`, and `message` centered on the row. The message is centered on the whole row when that clears both side blocks, else placed as near the center as it can between them; when it does not fit between them, the right block is dropped and the message follows the left block, truncated at the edge.
 - **Access:** App.render.
 
 ### function: set_highlighter
@@ -154,14 +154,14 @@ The view's position is held as a **byte offset** (`top`), the start of the first
 - **Inputs:** `offset`: a byte offset.
 - **Returns:** nothing.
 - **State changes:** makes the line containing `offset` the first one shown (with word wrap, the row containing it, found at the next scroll or frame). The next `scroll_to_cursor` still brings the cursor into view.
-- **Access:** App, when read-only mode shows a place from its trail.
+- **Access:** App, when view mode shows a place from its trail.
 
-### function: set_read_only
+### function: set_view_mode
 
 - **Inputs:** `on`.
 - **Returns:** nothing.
 - **State changes:** marks the status line with `[view]` and leaves the history state off it.
-- **Access:** App, when read-only mode changes and when a document is shown in it.
+- **Access:** App, when view mode changes and when a document is shown in it.
 
 ### function: set_reading
 

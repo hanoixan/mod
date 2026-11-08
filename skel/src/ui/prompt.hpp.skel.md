@@ -1,7 +1,7 @@
 ---
 role: product
 untested: no test has been written for it yet
-stamp: source 8dd85eb3, stand-in 475ff9a9
+stamp: source ff4bebea, stand-in ae256091
 ---
 # module: prompt
 
@@ -49,7 +49,7 @@ The bottom-of-screen input bar and its modal overlays. It is a single reusable l
 
 ### function: open_find
 
-- **Inputs:** `allow_replace`: false in a read-only view, where Tab does not switch to replace (default true). `initial_text`: the selected text, or the last query; `origin`: the cursor offset the incremental search starts from; `cursor`: a callback returning the editor's cursor, which Enter and Shift+Enter search from (Searcher then steps past a match that is the selection).
+- **Inputs:** `allow_replace`: false in a view in view mode, where Tab does not switch to replace (default true). `initial_text`: the selected text, or the last query; `origin`: the cursor offset the incremental search starts from; `cursor`: a callback returning the editor's cursor, which Enter and Shift+Enter search from (Searcher then steps past a match that is the selection).
 - **Returns:** nothing.
 - **State changes:** opens the `find` prompt. Each edit of the find field calls `Searcher.set_query` and `Searcher.find_next(origin)`; App advances the job with `Searcher.step`. Enter and Shift+Enter call `Searcher.find_next` from `cursor()`, forward or backward. In `replace`, Enter calls `Searcher.replace_current` (which moves to the next match), or finds the first match when the selection is not one; Alt+A calls `Searcher.replace_all`. The search options persist between openings. Shift+Enter is delivered only by terminals that report modified Enter (`CSI 13;2u` or `CSI 27;2;13~`); elsewhere Edit > Find Previous and Shift+F3 remain. Tab opens the replace field; in `replace`, Tab moves between the two fields.
 - **Access:** App, on `Find`.

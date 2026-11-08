@@ -65,7 +65,7 @@ Design guidance: this module is on the hot path for both rendering and typing. K
 - **Referred by:** [wrap](./wrap.hpp.skel.md)
 - **Referred by:** [wrap_test](../../tests/wrap_test.cpp.skel.md)
 - **Referred by:** [markdown_links_test](../../tests/markdown_links_test.cpp.skel.md)
-- **Referred by:** [read_only_test](../../tests/read_only_test.cpp.skel.md)
+- **Referred by:** [view_mode_test](../../tests/view_mode_test.cpp.skel.md)
 
 ### function: insert
 

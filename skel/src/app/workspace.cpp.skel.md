@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./workspace.hpp.skel.md
-stamp: source cc738fa0, stand-in b592e955
+stamp: source 6090c614, stand-in b592e955
 ---
 # module: workspace (implementation)
 

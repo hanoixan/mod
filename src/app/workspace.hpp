@@ -10,15 +10,15 @@
 
 #include "app/document_list.hpp"
 #include "app/document_slot.hpp"
-#include "app/read_only.hpp"
+#include "app/view_mode.hpp"
 #include "syntax/markdown.hpp"
 
 namespace mod {
 
-// A view's read-only mode: where it has been, and, while it shows a followed link's target,
+// A view's view mode: where it has been, and, while it shows a followed link's target,
 // the document itself waiting in `base`.
-struct ReadOnlyState {
-    ReadOnlyNav nav;
+struct ViewModeState {
+    ViewModeNav nav;
     bool away = false;
     DocumentSlot base;
     const Document* outline_doc = nullptr;  // `outline` is for this document at this version
@@ -27,11 +27,11 @@ struct ReadOnlyState {
 };
 
 // One split view, or a parked document: which open document (`id`, 0 for none), its slot,
-// and its read-only state.
+// and its view-mode state.
 struct View {
     DocumentList::Id id = 0;
     DocumentSlot slot;
-    ReadOnlyState ro;
+    ViewModeState vm;
 };
 
 // The open documents and the split views onto them. A document is in one or more views or
@@ -98,7 +98,7 @@ public:
     void for_each_slot(Fn fn) {
         const auto visit = [&](View& v) {
             if (v.slot.doc) fn(v.slot);
-            if (v.ro.away && v.ro.base.doc) fn(v.ro.base);
+            if (v.vm.away && v.vm.base.doc) fn(v.vm.base);
         };
         for (View& v : views_) visit(v);
         for (auto& [id, v] : parked_) visit(v);

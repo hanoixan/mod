@@ -1,4 +1,4 @@
-#include "app/read_only.hpp"
+#include "app/view_mode.hpp"
 
 #include <utility>
 
@@ -39,7 +39,7 @@ std::string percent_decode(std::string_view s) {
 
 }  // namespace
 
-std::optional<MarkdownLink> ReadOnlyNav::next_link(const MarkdownOutline& outline, std::uint64_t pos, int direction) {
+std::optional<MarkdownLink> ViewModeNav::next_link(const MarkdownOutline& outline, std::uint64_t pos, int direction) {
     const auto& links = outline.links;
     if (links.empty()) return std::nullopt;
     if (direction >= 0) {
@@ -52,19 +52,19 @@ std::optional<MarkdownLink> ReadOnlyNav::next_link(const MarkdownOutline& outlin
     return links.back();
 }
 
-std::optional<MarkdownLink> ReadOnlyNav::link_at(const MarkdownOutline& outline, std::uint64_t pos) {
+std::optional<MarkdownLink> ViewModeNav::link_at(const MarkdownOutline& outline, std::uint64_t pos) {
     for (const MarkdownLink& l : outline.links)
         if (pos >= l.start && pos < l.end) return l;
     return std::nullopt;
 }
 
-std::optional<std::uint64_t> ReadOnlyNav::find_anchor(const MarkdownOutline& outline, std::string_view slug) {
+std::optional<std::uint64_t> ViewModeNav::find_anchor(const MarkdownOutline& outline, std::string_view slug) {
     for (const MarkdownHeading& h : outline.headings)
         if (h.slug == slug) return h.start;
     return std::nullopt;
 }
 
-LinkAction ReadOnlyNav::resolve(const MarkdownLink& link, const std::filesystem::path& shown, const MarkdownOutline& here) {
+LinkAction ViewModeNav::resolve(const MarkdownLink& link, const std::filesystem::path& shown, const MarkdownOutline& here) {
     LinkAction a;
     const std::string_view target = link.target;
     if (has_scheme(target)) {
@@ -92,26 +92,26 @@ LinkAction ReadOnlyNav::resolve(const MarkdownLink& link, const std::filesystem:
     return a;
 }
 
-void ReadOnlyNav::reset(TrailEntry base) {
+void ViewModeNav::reset(TrailEntry base) {
     trail_.clear();
     trail_.push_back(std::move(base));
     index_ = 0;
 }
 
-void ReadOnlyNav::visit(TrailEntry current, TrailEntry next) {
+void ViewModeNav::visit(TrailEntry current, TrailEntry next) {
     trail_[index_] = std::move(current);
     trail_.resize(index_ + 1);
     trail_.push_back(std::move(next));
     index_ = trail_.size() - 1;
 }
 
-std::optional<TrailEntry> ReadOnlyNav::back(TrailEntry current) {
+std::optional<TrailEntry> ViewModeNav::back(TrailEntry current) {
     if (index_ == 0) return std::nullopt;
     trail_[index_] = std::move(current);
     return trail_[--index_];
 }
 
-std::optional<TrailEntry> ReadOnlyNav::forward(TrailEntry current) {
+std::optional<TrailEntry> ViewModeNav::forward(TrailEntry current) {
     if (index_ + 1 >= trail_.size()) return std::nullopt;
     trail_[index_] = std::move(current);
     return trail_[++index_];

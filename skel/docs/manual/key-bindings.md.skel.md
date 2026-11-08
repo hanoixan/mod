@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source e88b92a2, stand-in 48a3296e
+stamp: source e88b92a2, stand-in df06cdd3
 ---
 # resource: key-bindings.md
 
-A page of the user manual, `docs/manual/`, in plain Markdown with relative links only, so it reads the same in any viewer, on a code host, and in mod's own read-only mode and F1 help. Written for people using mod, in short plain sentences; it states what mod does, never how the code does it. Installed to `<prefix>/share/mod/doc/` by [CMakeLists.txt](../../CMakeLists.txt.skel.md).
+A page of the user manual, `docs/manual/`, in plain Markdown with relative links only, so it reads the same in any viewer, on a code host, and in mod's own view mode and F1 help. Written for people using mod, in short plain sentences; it states what mod does, never how the code does it. Installed to `<prefix>/share/mod/doc/` by [CMakeLists.txt](../../CMakeLists.txt.skel.md).
 
 Contents: How the Key Bindings editor works (search, add, refuse a taken key, remove, reset, `*`), that only changes are stored, what cannot be bound, then tables of **every** default binding, one row per key with the key label in backticks and the command's display name, grouped by purpose; then the terminal notes.
 

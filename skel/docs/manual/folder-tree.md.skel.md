@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source db1c62c9, stand-in f70a3a3a
+stamp: source db1c62c9, stand-in 5c2d3323
 ---
 # resource: folder-tree.md
 
-A page of the user manual, `docs/manual/`, in plain Markdown with relative links only, so it reads the same in any viewer, on a code host, and in mod's own read-only mode and F1 help. Written for people using mod, in short plain sentences; it states what mod does, never how the code does it. Installed to `<prefix>/share/mod/doc/` by [CMakeLists.txt](../../CMakeLists.txt.skel.md).
+A page of the user manual, `docs/manual/`, in plain Markdown with relative links only, so it reads the same in any viewer, on a code host, and in mod's own view mode and F1 help. Written for people using mod, in short plain sentences; it states what mod does, never how the code does it. Installed to `<prefix>/share/mod/doc/` by [CMakeLists.txt](../../CMakeLists.txt.skel.md).
 
 Contents: what the panel lists (every entry, folders first, by name, hidden names dimmed), what hides it, that it shows only while you are in it unless pinned, View > Pin Folder Tree, the pin_folder_tree setting and its option; moving into it (Esc, Shift+Left) and what the view and the tree's own line show then; its keys (moving, panning a long name, Right and Left, Enter on a folder or a file, Space's read-only preview and Esc out of it, Shift+Right back to escape mode, Esc back to the view, other commands leaving it); the mouse: click to select, toggle or preview, double click to open, wheel.
 

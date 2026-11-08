@@ -11,7 +11,7 @@ namespace mod {
 
 Workspace::Workspace() : views_(1) {}
 
-const Document* Workspace::document_of(const View& v) { return v.ro.away ? v.ro.base.doc.get() : v.slot.doc.get(); }
+const Document* Workspace::document_of(const View& v) { return v.vm.away ? v.vm.base.doc.get() : v.slot.doc.get(); }
 
 std::optional<std::size_t> Workspace::other_view_of(DocumentList::Id id) const {
     for (std::size_t i = 0; i < views_.size(); ++i)

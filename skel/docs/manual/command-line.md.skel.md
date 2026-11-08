@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source 7cb504ef, stand-in d4e06270
+stamp: source 7cb504ef, stand-in 9aa8edff
 ---
 # resource: command-line.md
 
-A page of the user manual, `docs/manual/`, in plain Markdown with relative links only, so it reads the same in any viewer, on a code host, and in mod's own read-only mode and F1 help. Written for people using mod, in short plain sentences; it states what mod does, never how the code does it. Installed to `<prefix>/share/mod/doc/` by [CMakeLists.txt](../../CMakeLists.txt.skel.md).
+A page of the user manual, `docs/manual/`, in plain Markdown with relative links only, so it reads the same in any viewer, on a code host, and in mod's own view mode and F1 help. Written for people using mod, in short plain sentences; it states what mod does, never how the code does it. Installed to `<prefix>/share/mod/doc/` by [CMakeLists.txt](../../CMakeLists.txt.skel.md).
 
 Contents: the synopsis; on Windows, `C:\…` paths and a leading `~` (the user folder) in a path; `-v`/`--view` (the named files open in view mode; later ones as usual); `--persist-history` (the history file is written from the first change; an unreadable one is asked about); `--`; the session-only setting options generated from the schema (number, on/off with `--no-`, choices with dashes, `--color NAME=SPEC`), never saved, replaced by a change in the session; bad options stop mod with a message; examples.
 

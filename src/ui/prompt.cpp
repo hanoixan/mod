@@ -221,7 +221,7 @@ Prompt::Outcome Prompt::handle_find_key(const KeyEvent& key) {
         return Outcome::closed;
     }
     if (key.key == Key::Tab || key.key == Key::BackTab) {
-        if (!allow_replace_) return Outcome::consumed;  // a read-only view: find only
+        if (!allow_replace_) return Outcome::consumed;  // a view in view mode: find only
         if (kind_ == PromptKind::find) {
             kind_ = PromptKind::replace;
             active_ = 1;

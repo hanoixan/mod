@@ -146,7 +146,7 @@ std::vector<NodeOp> inline_ops(const std::vector<EditOp>& ops) {
 
 constexpr std::int64_t kT0 = 1'700'000'000'000;
 
-// The worked example of docs/sidecar-format.md: "hello\n", then two branches from it,
+// The worked example of docs/sidecar/sidecar-format.md: "hello\n", then two branches from it,
 // one of them saved.
 std::string build_worked_example(const fs::path& doc) {
     EventQueue q({});
@@ -169,7 +169,7 @@ std::string build_worked_example(const fs::path& doc) {
     return read_file(sidecar_path_for(doc));
 }
 
-// Bytes of the worked example, as printed in docs/sidecar-format.md.
+// Bytes of the worked example, as printed in docs/sidecar/sidecar-format.md.
 constexpr std::string_view kWorkedExampleHex = R"(
 4d4f444849535400 0100 0100 00000000 b873e5cf8b010000 0000000000000000
 3800000000000000 01

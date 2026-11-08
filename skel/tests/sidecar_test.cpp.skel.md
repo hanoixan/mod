@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source e55a5650, stand-in 931b4939
+stamp: source d4d07ab5, stand-in a9db3c29
 ---
 # module: sidecar_test
 
@@ -19,7 +19,7 @@ Round trip: write history, reopen, and check the tree and current node are ident
 - **Failure modes:** flaky timing-based tests are forbidden. Inject clocks, and use `EventQueue.drain` to run worker results deterministically.
 - **Depends on:** [Sidecar](../src/edit/sidecar.hpp.skel.md#class-sidecar)
 - **Depends on:** [Sidecar.rewrite](../src/edit/sidecar.hpp.skel.md#function-rewrite)
-- **Depends on:** [sidecar format](../docs/sidecar-format.md.skel.md)
+- **Depends on:** [sidecar format](../docs/sidecar/sidecar-format.md.skel.md)
 - **Depends on:** [fs_probe](./fs_probe.hpp.skel.md)
 - **Unknowns:** none. Tests use doctest; see [tests/CMakeLists.txt](./CMakeLists.txt.skel.md).
 - **Referred by:** [tests/CMakeLists.txt](./CMakeLists.txt.skel.md)

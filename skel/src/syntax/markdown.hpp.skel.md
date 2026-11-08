@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 0779cdbd, stand-in 3274b12c
+stamp: source 0779cdbd, stand-in 63b1ae46
 ---
 # module: markdown
 
@@ -37,18 +37,18 @@ What each construct paints: fence lines are `md_markup` and lines inside a fence
 `{ std::vector<MarkdownLink> links; std::vector<MarkdownHeading> headings; bool truncated; }`, in document order. `truncated` is set when the document is longer than the scan went, or has more than `kMaxOutlineLinks` (100 000) links, the rest being left out. `kMaxOutlineBytes` is 16 MiB. The inline scanner pairs parentheses once per line and remembers failed searches (a backtick run's closer, a reference's `]`; a `<destination>` is looked for within 4096 bytes), so no line costs more than linear time.
 
 - **Access:** public.
-- **Referred by:** [read_only](../app/read_only.hpp.skel.md)
+- **Referred by:** [view_mode](../app/view_mode.hpp.skel.md)
 
 ## function: scan_markdown
 
 - **Inputs:** `text`: a `const PieceTree&`; `max_bytes`: how far to scan, `kMaxOutlineBytes` by default.
 - **Returns:** the [MarkdownOutline](#symbol-markdownoutline) of the whole lines that end within `max_bytes`.
 - **State changes:** none. It reads the text line by line, tracking fence state as the highlighter does, so nothing inside a fenced code block counts. Links are found with the highlighter's own inline tokenizer (inline links and images, autolinks), plus reference links (`[text][label]`, `[label][]` and `[label]`), which resolve against `[label]: destination` definition lines anywhere in the scanned text, labels matched without regard to case or runs of spaces; an unresolved reference is plain text and is not listed. Definition lines are not scanned for links. Headings are ATX headings (1 to 6 `#` followed by a space or the end of the line, closing `#`s dropped) and setext headings (a paragraph line followed by a line of only `=` or only `-`). A second heading with the same slug gets `-1`, the third `-2`, and so on, as GitHub numbers them.
-- **Access:** App, for read-only mode.
+- **Access:** App, for view mode.
 - **Failure modes:** a document over 16 MiB is outlined only up to there, and its later links cannot be reached with Tab.
 - **Referred by:** [app](../app/app.hpp.skel.md)
 - **Referred by:** [markdown_links_test](../../tests/markdown_links_test.cpp.skel.md)
-- **Referred by:** [read_only_test](../../tests/read_only_test.cpp.skel.md)
+- **Referred by:** [view_mode_test](../../tests/view_mode_test.cpp.skel.md)
 - **Referred by:** [docs_test](../../tests/docs_test.cpp.skel.md)
 - **Referred by:** [fuzz_markdown](../../fuzz/fuzz_markdown.cpp.skel.md)
 

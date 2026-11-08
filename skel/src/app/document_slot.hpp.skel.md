@@ -1,7 +1,7 @@
 ---
 role: product
 untested: a plain holder of components; it is exercised through App, which no automated test drives
-stamp: source de67e234, stand-in 8f92efe6
+stamp: source 3797c8f9, stand-in 3b5d4087
 ---
 # module: document_slot
 
@@ -20,7 +20,7 @@ One view of a document with everything built on it, and the document's View opti
 
 ## class: ViewOptions
 
-A document's View options, shared (`std::shared_ptr`) by every slot that views the document, so its split views always agree: `line_numbers`, `syntax`, `word_wrap` and `read_only`. A new document's come from the `line_numbers`, `syntax_coloring` and `word_wrap` settings, with `read_only` off.
+A document's View options, shared (`std::shared_ptr`) by every slot that views the document, so its split views always agree: `line_numbers`, `syntax`, `word_wrap` and `view_mode`. A new document's come from the `line_numbers`, `syntax_coloring` and `word_wrap` settings, with `view_mode` off.
 
 - **Inputs:** none; a plain aggregate.
 - **State changes:** App sets the fields; the slots' views follow when App applies them.

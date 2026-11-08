@@ -21,7 +21,7 @@ The content hash is **SHA-256** ([FIPS 180-4](https://csrc.nist.gov/pubs/fips/18
 `std::array<std::byte, 32>`: the SHA-256 digest in the standard big-endian output byte order, exactly as `sha256sum` prints it. It supports equality comparison and lowercase hex formatting (64 characters) through the free function `std::string to_hex(const ContentHash&)`; because `ContentHash` is an alias of `std::array`, there is no `std::formatter` specialization.
 
 - **Access:** public.
-- **Referred by:** [sidecar-format.md](../../docs/sidecar-format.md.skel.md)
+- **Referred by:** [sidecar-format.md](../../docs/sidecar/sidecar-format.md.skel.md)
 - **Referred by:** [undo_tree](../edit/undo_tree.hpp.skel.md)
 
 ## class: ContentHasher

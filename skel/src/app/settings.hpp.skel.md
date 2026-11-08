@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1e4046b1, stand-in e48bd198
+stamp: source 1e4046b1, stand-in 31f8f5a7
 ---
 # module: settings
 
@@ -85,10 +85,10 @@ Settings are **global**: one value for every file and file type, kept in `settin
 - **Inputs:** none.
 - **Returns:** `settings.json` with every setting at its default: one member per scalar row of the schema in schema order (booleans as `true`/`false`), then `"keymap": {}`; two-space indent, one member per line, ending in a newline.
 - **State changes:** none.
-- **Access:** [gen_default_settings](../../tools/gen_default_settings.cpp.skel.md) and tests.
+- **Access:** [gen_default_settings](../../tools/gen/gen_default_settings.cpp.skel.md) and tests.
 - **Referred by:** [settings](../../config/settings.json.skel.md)
 - **Referred by:** [docs_test](../../tests/docs_test.cpp.skel.md)
-- **Referred by:** [gen_default_settings](../../tools/gen_default_settings.cpp.skel.md)
+- **Referred by:** [gen_default_settings](../../tools/gen/gen_default_settings.cpp.skel.md)
 
 ## class: Settings
 
