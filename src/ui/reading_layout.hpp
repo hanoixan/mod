@@ -23,7 +23,8 @@ public:
         int col = 0;           // display column
     };
 
-    ReadingLayout(std::string_view text, int width);
+    // `wrap`: tables and code lines fitted to `width` (see render_markdown).
+    ReadingLayout(std::string_view text, int width, bool wrap = false);
 
     const RenderedPage& page() const noexcept { return page_; }
     // The position at `offset`, else the first after it, else the last.

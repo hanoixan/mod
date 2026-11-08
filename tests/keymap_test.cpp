@@ -200,6 +200,9 @@ TEST_CASE("command display names") {
     CHECK_FALSE(command_info(C::RecentSetting3).bindable);
     CHECK(command_by_name("GotoLine") == C::GotoLine);
     CHECK_FALSE(command_by_name("gotoline").has_value());
+    // A saved keymap naming Read Only's old command still binds View Mode.
+    CHECK(command_by_name("ToggleReadOnly") == C::ToggleViewMode);
+    CHECK(command_by_name("ToggleViewMode") == C::ToggleViewMode);
 }
 
 TEST_CASE("Ctrl+T suspends and Ctrl+K cuts to the line end; Ctrl+Z and Ctrl+Y stay undo and redo") {
@@ -219,7 +222,7 @@ TEST_CASE("which commands edit the document, for read-only mode") {
         CAPTURE(command_info(c).name);
         CHECK(command_edits(c));
     }
-    for (C c : {C::Copy, C::Find, C::FindNext, C::Save, C::Open, C::MoveLeft, C::SelectRight, C::ToggleReadOnly, C::Exit, C::Suspend}) {
+    for (C c : {C::Copy, C::Find, C::FindNext, C::Save, C::Open, C::MoveLeft, C::SelectRight, C::ToggleViewMode, C::Exit, C::Suspend}) {
         CAPTURE(command_info(c).name);
         CHECK_FALSE(command_edits(c));
     }

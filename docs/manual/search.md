@@ -18,7 +18,7 @@ Tab in the find bar adds a Replace field.
 - Alt+A replaces every match at once, as one step you can undo.
 - With regular expressions on, `$1` and the like in the replacement refer to the groups of the match.
 
-In [read-only mode](read-only.md) only Find is available.
+In [view mode](view-mode.md) only Find is available.
 
 ## Go to Line
 

@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./settings.hpp.skel.md
-stamp: source da0e5782, stand-in 1087cfa4
+stamp: source a4226bc2, stand-in 1087cfa4
 ---
 # module: settings (implementation)
 

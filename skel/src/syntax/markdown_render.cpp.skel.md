@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./markdown_render.hpp.skel.md
-stamp: source 951ff723, stand-in 8385ce8f
+stamp: source c9c357c0, stand-in 8385ce8f
 ---
 # module: markdown_render (implementation)
 

@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source e8502aba, stand-in 8a4a3c6a
+stamp: source 53305d79, stand-in 8a4a3c6a
 ---
 # module: settings_test
 

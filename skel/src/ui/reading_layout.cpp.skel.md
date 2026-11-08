@@ -1,7 +1,7 @@
 ---
 role: product
 unit: ./reading_layout.hpp.skel.md
-stamp: source 9766fec3, stand-in 477446cb
+stamp: source 8e68bd3e, stand-in 477446cb
 ---
 # module: reading_layout (implementation)
 

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 19a08313, stand-in aa02e409
+stamp: source b4ac1e9d, stand-in aa02e409
 ---
 # resource: index.md
 

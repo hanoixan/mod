@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 3461b18c, stand-in 5fca5355
+stamp: source 3461b18c, stand-in 06a961f3
 ---
 # module: menu
 
@@ -13,7 +13,7 @@ Esc pressed **three times, each within 250 ms of the one before**, quits mod (se
 Menu contents:
 - **File:** Open…, Save (Ctrl+S), Save As…, Close, Suspend (Ctrl+T), Exit (Ctrl+Q). Clear History… and Trim History… are in the Undo History pane (Edit > Undo History…), not in a menu.
 - **Edit:** Undo (Ctrl+Z), Redo (Ctrl+Y), Undo History…, Next Branch, Previous Branch, Cut (Ctrl+X), Cut to Line End (Ctrl+K), Copy (Ctrl+C), Paste (Ctrl+V), Find/Replace (Ctrl+F), Find Next (F3), Find Previous (Shift+F3), Go to Line… (Ctrl+G).
-- **View:** Line Numbers ✓, Syntax Coloring ✓ (code and Markdown), Word Wrap ✓ (on by default), Read Only ✓ (per document, off when a file is opened), Pin Folder Tree ✓ (`f`; pins the folder tree, for the session), a separator, Split (`s` is Syntax Coloring's, so Split is **p**), Unsplit (**u**).
+- **View:** Line Numbers ✓, Syntax Coloring ✓ (code and Markdown), Word Wrap ✓ (on by default), View Mode ✓ (accelerator `v`; per document, off when a file is opened), Pin Folder Tree ✓ (`f`; pins the folder tree, for the session), a separator, Split (`s` is Syntax Coloring's, so Split is **p**), Unsplit (**u**).
 - **Documents:** the open documents in the order they were opened, numbered 1 to 9 (the number is the accelerator; later ones have none), with a check on the shown one and `*` after one with unsaved changes. A document in read-only mode that is showing a followed link reads "guide.md → keys.md". Choosing one shows it.
 - **Options:** User Settings… (opens the [SettingsView](./settings_view.hpp.skel.md#class-settingsview) panel), then the settings changed most recently, newest first and at most five, for quick changes: each is numbered 1 to 5 (the number is its accelerator), a boolean is a checkable item showing its state ("1 Line numbers at startup"), an integer shows its value ("2 Tab width: 8…"), and a choice its name ("3 Terminal mode: vt100"; choosing it steps to the next name). The list comes from [Settings.recent](../app/settings.hpp.skel.md#function-recent), so it survives restarts. After the recent settings come a separator, Key Bindings… (opens the [KeymapView](./keymap_view.hpp.skel.md#class-keymapview) editor) and Colors… (opens the [ColorsView](./colors_view.hpp.skel.md#class-colorsview) editor). There is no fixed Tab Width… item any more: the tab width is a setting like the others.
 - **Help:** Documentation (F1: the help screen), About mod. The key bindings list moved to Options > Key Bindings…, where it is also editable.

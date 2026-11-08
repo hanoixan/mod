@@ -1,11 +1,11 @@
 ---
 role: product
 unit: ./help_viewer.hpp.skel.md
-stamp: source 32848d62, stand-in ed375706
+stamp: source 12a8547c, stand-in 613973c0
 ---
 # module: help_viewer (implementation)
 
-Implements [HelpViewer](./help_viewer.hpp.skel.md#class-helpviewer).
+Implements [HelpViewer](./help_viewer.hpp.skel.md#class-helpviewer). Pages are rendered with `wrap` on, so the manual's wide tables fit the window.
 
 - **Owns:** nothing beyond the class.
 - **Access:** internal.

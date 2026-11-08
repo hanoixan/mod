@@ -39,7 +39,7 @@ enum class CommandId {
     ToggleLineNumbers,
     ToggleSyntax,
     ToggleWordWrap,
-    ToggleReadOnly,
+    ToggleViewMode,
     PinFolderTree,
     Split,
     Unsplit,

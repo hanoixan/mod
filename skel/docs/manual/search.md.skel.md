@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 25f1f338, stand-in 105563a8
+stamp: source 628469c0, stand-in 105563a8
 ---
 # resource: search.md
 

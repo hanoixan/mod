@@ -44,7 +44,7 @@ std::vector<Menu> menu_table() {
          {{"Line Numbers", 'l', C::ToggleLineNumbers, true},
           {"Syntax Coloring", 's', C::ToggleSyntax, true},
           {"Word Wrap", 'w', C::ToggleWordWrap, true},
-          {"Read Only", 'r', C::ToggleReadOnly, true},
+          {"View Mode", 'v', C::ToggleViewMode, true},
           {"Pin Folder Tree", 'f', C::PinFolderTree, true}, {}, {"Split", 'p', C::Split, false}, {"Unsplit", 'u', C::Unsplit, false}}},
         {"Documents", 'd', {}},
         {"Options", 'o', {{"User Settings…", 'u', C::UserSettings, false}, {}, {"Key Bindings…", 'k', C::KeyBindings, false}, {"Colors…", 'l', C::Colors, false}}},

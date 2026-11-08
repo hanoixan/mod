@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source c969f8a6, stand-in 539e03db
+stamp: source 85ab0437, stand-in 1607fc7a
 ---
 # module: commands
 
@@ -21,7 +21,7 @@ The closed set of user-level commands. Keys (through [Keymap](./keymap.hpp.skel.
 - **History:** `Undo`, `Redo`, `UndoHistory` (opens the [HistoryView](../ui/history_view.hpp.skel.md#class-historyview) panel), `NextBranch`, `PrevBranch`.
 - **Clipboard:** `Cut`, `CutToLineEnd`, `Copy`, `Paste`.
 - **Search and navigation:** `Find`, `FindNext`, `FindPrev`, `GotoLine`.
-- **View toggles:** `ToggleLineNumbers`, `ToggleSyntax` (also Markdown styling), `ToggleWordWrap`, `ToggleReadOnly`, `PinFolderTree` ("Pin Folder Tree": pins or unpins the folder tree, for the session). **Views:** `Split`, `Unsplit` (no default keys).
+- **View toggles:** `ToggleLineNumbers`, `ToggleSyntax` (also Markdown styling), `ToggleWordWrap`, `ToggleViewMode` ("View Mode"; `command_by_name("ToggleReadOnly")`, its old name, returns it), `PinFolderTree` ("Pin Folder Tree": pins or unpins the folder tree, for the session). **Views:** `Split`, `Unsplit` (no default keys).
 - **Options:** `Colors` (opens the [ColorsView](../ui/colors_view.hpp.skel.md#class-colorsview) editor), `KeyBindings` (opens the [KeymapView](../ui/keymap_view.hpp.skel.md#class-keymapview) editor), `UserSettings` (opens the [SettingsView](../ui/settings_view.hpp.skel.md#class-settingsview) panel), and `RecentSetting1` … `RecentSetting5`, the Options menu's recent-settings items, newest first. The five are consecutive, so [recent_setting_command](#function-recent_setting_command) and [recent_setting_index](#function-recent_setting_index) convert between a position and the command by arithmetic. Their menu labels are built by MenuBar, so their `menu_label` is empty.
 - **Documents:** `ShowDocument`, every item of the Documents menu; which document comes with the menu item (`MenuBar.chosen_arg`), so it cannot have keys.
 - **Help:** `ShowHelp` (F1, Help > Documentation: the help screen), `About`.

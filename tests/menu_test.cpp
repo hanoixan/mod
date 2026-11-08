@@ -250,15 +250,15 @@ TEST_CASE("File > Suspend shows Ctrl+T; Edit > Cut to Line End shows Ctrl+K") {
     CHECK(found);
 }
 
-TEST_CASE("View has a checkable Read Only item") {
+TEST_CASE("View has a checkable View Mode item") {
     Fixture f;
     const auto& view = f.menu.menus()[2];
     bool found = false;
     for (const MenuItem& item : view.items) {
-        if (item.command != CommandId::ToggleReadOnly) continue;
+        if (item.command != CommandId::ToggleViewMode) continue;
         found = true;
-        CHECK(item.label == "Read Only");
-        CHECK(item.accel == 'r');
+        CHECK(item.label == "View Mode");
+        CHECK(item.accel == 'v');
         CHECK(item.checkable);
     }
     CHECK(found);
@@ -444,7 +444,7 @@ TEST_CASE("View has no Markdown Formatting item: Syntax Coloring covers Markdown
     const auto& view = f.menu.menus()[2].items;
     std::vector<std::string> labels;
     for (const MenuItem& item : view) labels.push_back(item.label);
-    CHECK(labels == std::vector<std::string>{"Line Numbers", "Syntax Coloring", "Word Wrap", "Read Only", "Pin Folder Tree", "", "Split", "Unsplit"});
+    CHECK(labels == std::vector<std::string>{"Line Numbers", "Syntax Coloring", "Word Wrap", "View Mode", "Pin Folder Tree", "", "Split", "Unsplit"});
     CHECK_FALSE(command_by_name("ToggleMarkdown").has_value());
 }
 

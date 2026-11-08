@@ -66,7 +66,7 @@ On macOS, with Homebrew's LLVM (`brew install llvm ninja cmake`): `cmake --prese
 
 ```sh
 mod notes.md              # open a file (several files open as several documents)
-mod -ro README.md         # read a Markdown file laid out, without changing it
+mod -v README.md          # read a Markdown file laid out, without changing it
 mod --persist-history notes.md   # keep its undo history between sessions
 mod --help                # every option, including any setting for one session
 ```

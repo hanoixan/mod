@@ -106,8 +106,8 @@ std::expected<CliOptions, std::string> parse_cli(std::span<const std::string_vie
         } else if (arg == "--version") {
             o.action = CliOptions::Action::version;
             return o;
-        } else if (arg == "-ro" || arg == "--read-only") {
-            o.read_only = true;
+        } else if (arg == "-v" || arg == "--view") {
+            o.view = true;
         } else if (arg == "--persist-history") {
             o.persist_history = true;
         } else if (arg == "--color" || arg.starts_with("--color=")) {
@@ -154,7 +154,7 @@ std::string cli_usage() {
     std::string out =
         "usage: mod [OPTION...] [PATH...]\n"
         "  PATH                  files to edit, each as a document; without any, an untitled buffer\n"
-        "  -ro, --read-only      open the files in read-only mode\n"
+        "  -v, --view            open the files in view mode: read-only, Markdown laid out for reading\n"
         "  --persist-history     keep the files' undo history in their .history sidecars\n"
         "  --color NAME=SPEC     a color for this session, such as --color 'keyword=bold red'\n"
         "  -h, --help            print this and exit\n"

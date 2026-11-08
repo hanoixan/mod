@@ -92,13 +92,14 @@ const ReadingLayout* EditorView::layout_for(int area_cols) {
         layout_.reset();
         return nullptr;
     }
-    if (!layout_ || layout_version_ != doc_.version() || layout_width_ != width) {
+    if (!layout_ || layout_version_ != doc_.version() || layout_width_ != width || layout_wrap_ != wrap_) {
         const bool had = layout_ != nullptr;
         const std::uint64_t top_src = had ? 0 : top_;
         const PieceTree& t = doc_.text();
-        layout_ = std::make_unique<ReadingLayout>(t.read(0, t.size()), width);
+        layout_ = std::make_unique<ReadingLayout>(t.read(0, t.size()), width, wrap_);
         layout_version_ = doc_.version();
         layout_width_ = width;
+        layout_wrap_ = wrap_;
         if (!had) rtop_ = layout_->locate(top_src).line;
         rtop_ = std::min(rtop_, layout_->page().lines.empty() ? 0 : layout_->page().lines.size() - 1);
     }

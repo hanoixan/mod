@@ -57,8 +57,8 @@ constexpr SettingSpec kSpecs[] = {
     {"cursor_style", T::choice, 0, 0, 5, "Cursor style",
      "The text cursor's shape: a vertical bar, a block or an underline, steady or blinking. Some terminals "
      "ignore it, and it has no effect in vt100 mode.", kCursorStyles},
-    {"read_only_copy", T::choice, 0, 0, 1, "Copy in read-only Markdown",
-     "What Copy takes from a Markdown document shown laid out in read-only mode: markdown copies the source, marks "
+    {"read_only_copy", T::choice, 0, 0, 1, "Copy in Markdown view",
+     "What Copy takes from a Markdown document shown laid out in view mode: markdown copies the source, marks "
      "and all; visible text copies the text as it is shown.", kReadOnlyCopy},
     {"tab_inserts", T::choice, 0, 0, 1, "Tab inserts",
      "What the Tab key inserts: spaces up to the next tab stop (the tab width apart), or a tab character. "

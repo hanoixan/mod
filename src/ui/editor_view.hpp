@@ -168,6 +168,7 @@ private:
     std::unique_ptr<ReadingLayout> layout_;
     std::uint64_t layout_version_ = 0;
     int layout_width_ = 0;
+    bool layout_wrap_ = false;  // the word wrap the layout was made with
     std::size_t rtop_ = 0;  // the first rendered line shown
     int rhscroll_ = 0;      // the first display column shown, panned for wide lines
     std::size_t reading_rows_ = 1;
