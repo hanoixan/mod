@@ -15,3 +15,4 @@ Packages a Windows build into `dist/mod-<version>-windows-x86_64.zip`, run in an
 - **Depends on:** [CMakeLists.txt](../../CMakeLists.txt.skel.md)
 - **Unknowns:** none
 - **Referred by:** [package.sh](./package.sh.skel.md)
+- **Referred by:** [install_release.ps1](../release_install/install_release.ps1.skel.md)

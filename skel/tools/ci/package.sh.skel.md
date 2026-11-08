@@ -18,6 +18,7 @@ Steps, each stopping the script on failure:
 
 The version comes from `project(mod VERSION …)` in CMakeLists.txt. `MOD_SKIP_PACKAGE_TESTS=1` skips step 4.
 - **Referred by:** [install.sh](../../install.sh.skel.md)
+- **Referred by:** [install_release.sh](../release_install/install_release.sh.skel.md)
 
 ## Workflows
 
