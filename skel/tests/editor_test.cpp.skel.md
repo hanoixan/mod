@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source e8c84cf2, stand-in 62be14bc
+stamp: source a1a26106, stand-in 62be14bc
 ---
 # module: editor_test
 

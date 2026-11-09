@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <thread>
@@ -149,7 +150,7 @@ TEST_CASE("Left, Right, Backspace and Delete work on extended grapheme clusters"
     const std::string text = "a" + kFamily + "b" + kThumbTone + kFlagFr + kRi + kRi + kRi + kEAcute + kHangulLvt + kKsha +
                              "\r\n" + "\xFF\xFE" + "z";
     std::vector<std::uint64_t> stops{0};
-    for (std::size_t len : {1, 18, 1, 8, 8, 8, 4, 3, 9, 9, 2, 1, 1, 1}) stops.push_back(stops.back() + len);
+    for (const std::size_t len : std::initializer_list<std::size_t>{1, 18, 1, 8, 8, 8, 4, 3, 9, 9, 2, 1, 1, 1}) stops.push_back(stops.back() + len);
     REQUIRE(stops.back() == text.size());
     Fixture f("clusters.txt", text);
 

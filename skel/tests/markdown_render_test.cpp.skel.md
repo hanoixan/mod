@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source 6687512c, stand-in 10aa5fed
+stamp: source c1d19f88, stand-in 10aa5fed
 ---
 # module: markdown_render_test
 

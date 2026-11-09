@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source ad21af89, stand-in 26ccd70f
+stamp: source b4fd39de, stand-in 26ccd70f
 ---
 # module: terminal_output_test
 

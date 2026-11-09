@@ -58,7 +58,8 @@ ContentHash hash_of(std::string_view s) {
 std::string hex(std::string_view bytes) {
     std::string out;
     char buf[4];
-    for (unsigned char c : bytes) {
+    for (const char ch : bytes) {
+        const auto c = static_cast<unsigned char>(ch);
         std::snprintf(buf, sizeof buf, "%02x", c);
         out += buf;
     }
@@ -285,7 +286,7 @@ TEST_CASE("damaged sidecars") {
     {
         Sidecar s(doc, q, 0644);
         UndoTree t;
-        s.open(t, 1);
+        REQUIRE(s.open(t, 1));
         const NodeId root = t.add_root({}, 1, hash_of("x"));
         s.append_root(t.meta(root), 1, hash_of("x"));
         s.release_deferred(t);
@@ -404,7 +405,7 @@ TEST_CASE("a lock held by another instance gives read-only") {
     EventQueue q({});
     Sidecar first(doc, q, 0644);
     UndoTree t1;
-    first.open(t1, 1);
+    REQUIRE(first.open(t1, 1));
     const NodeId root = t1.add_root({}, 1, hash_of("x"));
     first.append_root(t1.meta(root), 1, hash_of("x"));
     first.release_deferred(t1);
@@ -437,7 +438,7 @@ TEST_CASE("payloads: inline up to 4096 bytes, PAYLOAD records from 4097, rebound
     std::vector<std::tuple<NodeId, std::uint32_t, Which, SidecarRef>> rebinds;
     s.set_callbacks({[&](NodeId n, std::uint32_t op, Which w, SidecarRef r) { rebinds.emplace_back(n, op, w, r); }, {}});
     UndoTree t;
-    s.open(t, 0);
+    REQUIRE(s.open(t, 0));
     const NodeId root = t.add_root({}, 0, hash_of(""));
     s.append_root(t.meta(root), 0, hash_of(""));
     s.release_deferred(t);
@@ -487,7 +488,7 @@ TEST_CASE("fsync runs once after a SAVE record and never after NODE records") {
     };
     Sidecar s(doc, q, 0644, seams);
     UndoTree t;
-    s.open(t, 1);
+    REQUIRE(s.open(t, 1));
     const NodeId root = t.add_root({}, 1, hash_of("x"));
     s.append_root(t.meta(root), 1, hash_of("x"));
     s.release_deferred(t);
@@ -516,7 +517,7 @@ TEST_CASE("a failed write disables persistence and reports it") {
     std::string message;
     s.set_callbacks({{}, [&](std::string m) { message = std::move(m); }});
     UndoTree t;
-    s.open(t, 1);
+    REQUIRE(s.open(t, 1));
     const NodeId root = t.add_root({}, 1, hash_of("x"));
     s.append_root(t.meta(root), 1, hash_of("x"));
     s.release_deferred(t);
@@ -524,7 +525,7 @@ TEST_CASE("a failed write disables persistence and reports it") {
         const NodeId n = t.commit({insert_op(0, "a")}, {});
         s.append_node(t.meta(n), inline_ops({insert_op(0, "a")}));
     }
-    s.flush(10000);
+    REQUIRE(s.flush(10000));  // fails only on timeout; the write error goes to the callback
     CHECK(s.state() == SidecarState::disabled);
     CHECK(message.find("short write") != std::string::npos);
 }
@@ -540,7 +541,7 @@ TEST_CASE("copy_to") {
     const PieceRun big_run = text.store(std::as_bytes(std::span(big.data(), big.size())));
 
     auto make = [&](Sidecar& s, UndoTree& t) {
-        s.open(t, 1);
+        REQUIRE(s.open(t, 1));
         const NodeId root = t.add_root({}, 1, hash_of("x"));
         s.append_root(t.meta(root), 1, hash_of("x"));
         s.release_deferred(t);
@@ -597,7 +598,7 @@ TEST_CASE("copy_to") {
         {
             Sidecar other(copy, q, 0644);
             UndoTree t;
-            other.open(t, 1);
+            REQUIRE(other.open(t, 1));
             const NodeId root = t.add_root({}, 1, hash_of("x"));
             other.append_root(t.meta(root), 1, hash_of("x"));
             other.release_deferred(t);
@@ -617,7 +618,7 @@ TEST_CASE("copy_to") {
     SUBCASE("a sidecar locked by another instance is left alone") {
         Sidecar other(copy, q, 0644);
         UndoTree ot;
-        other.open(ot, 1);
+        REQUIRE(other.open(ot, 1));
         const NodeId root = ot.add_root({}, 1, hash_of("x"));
         other.append_root(ot.meta(root), 1, hash_of("x"));
         other.release_deferred(ot);
@@ -673,7 +674,7 @@ TEST_CASE("copy_to") {
         UndoTree t3;
         side->reset();
         Sidecar reader(copy, q, 0644);
-        reader.open(t3, 1);
+        REQUIRE(reader.open(t3, 1));
         CHECK(t3.contains(mine));
         CHECK(t3.meta(mine).parent == 1);
     }
@@ -685,7 +686,7 @@ TEST_CASE("clear") {
     EventQueue q({});
     Sidecar s(doc, q, 0644);
     UndoTree t;
-    s.open(t, 1);
+    REQUIRE(s.open(t, 1));
     const NodeId root = t.add_root({}, 1, hash_of("x"));
     s.append_root(t.meta(root), 1, hash_of("x"));
     s.release_deferred(t);
