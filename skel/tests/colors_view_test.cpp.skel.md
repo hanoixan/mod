@@ -1,6 +1,6 @@
 ---
 role: test
-stamp: source f8483678, stand-in 973754fd
+stamp: source 40ee49b5, stand-in 973754fd
 ---
 # module: colors_view_test
 

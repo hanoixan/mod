@@ -36,8 +36,10 @@ std::string screen_row(const Screen& s, int row) {
 
 // The index of the row for `name`, or row_count() when there is none.
 std::size_t row_of(const ColorsView& v, std::string_view name) {
-    for (std::size_t i = 0; i < v.row_count(); ++i)
-        if (v.row_text(i).starts_with(std::string(name) + " ")) return i;
+    for (std::size_t i = 0; i < v.row_count(); ++i) {
+        const std::string text = v.row_text(i);
+        if (text.size() > name.size() && text.starts_with(name) && text[name.size()] == ' ') return i;
+    }
     return v.row_count();
 }
 

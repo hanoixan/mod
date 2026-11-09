@@ -210,7 +210,10 @@ TEST_CASE("no text drawn on the screen can reach the terminal as a control seque
             const std::string_view bytes(cell.utf8.data(), cell.len);
             CAPTURE(r);
             CAPTURE(c);
-            for (unsigned char b : bytes) CHECK((b >= 0x20 && b != 0x7f));
+            for (const char ch : bytes) {
+                const auto b = static_cast<unsigned char>(ch);
+                CHECK((b >= 0x20 && b != 0x7f));
+            }
             CHECK(bytes.find("\xc2\x80") == std::string_view::npos);
             for (unsigned char second = 0x80; second <= 0x9f; ++second) {
                 const char c1[] = {'\xc2', static_cast<char>(second), 0};

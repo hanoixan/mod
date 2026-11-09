@@ -46,7 +46,7 @@ std::vector<std::string> link_texts(const RenderedPage& p) {
 
 int columns(const std::string& s) {
     int n = 0;
-    for (unsigned char c : s) n += (c & 0xC0) != 0x80;
+    for (const char c : s) n += (static_cast<unsigned char>(c) & 0xC0) != 0x80;
     return n;
 }
 
