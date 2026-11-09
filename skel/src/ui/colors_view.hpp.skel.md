@@ -1,10 +1,10 @@
 ---
 role: product
-stamp: source 3a01ebf9, stand-in d96c5fa8
+stamp: source 3a01ebf9, stand-in 0b3d3f7e
 ---
 # module: colors_view
 
-The Colors editor, opened with Options > Colors… (or Enter on the "Colors" row of User Settings). A full-width panel like the Key Bindings editor: one row per [color name](./theme.hpp.skel.md#function-color_names), under the group headings Text, Markdown, Modifiers and Interface. Each row shows the name, a **sample** word drawn in that look (a modifier's sample is drawn as `variable` with the modifier on), the spec text, and `*` when it differs from the default.
+The Colors editor, opened with Options > Colors… (or Enter on the "Colors" row of User Settings). A full-width panel like the Key Bindings editor: one row per [color name](./theme.hpp.skel.md#function-color_names), under the group headings Text, Code (language servers), Markdown, Modifiers and Interface. Each row shows the name, a **sample** word drawn in that look (a modifier's sample is drawn as `variable` with the modifier on), the spec text, and `*` when it differs from the default.
 
 - Up, Down, Home, End, PageUp and PageDown move between rows (headings are skipped).
 - Enter asks App for a one-line prompt prefilled with the spec; App validates it with [parse_color_spec](./theme.hpp.skel.md#function-parse_color_spec) (the prompt stays open with the error until it parses) and sets it.

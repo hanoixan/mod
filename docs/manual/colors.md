@@ -4,7 +4,7 @@ Every color mod draws can be changed. Options > Colors… opens the Colors edito
 
 ## The Colors editor
 
-The editor lists every color under four headings: Text, Markdown, Modifiers and Interface. Each row shows the color's name, the word **Sample** drawn in that look, the look written as a color spec, and `*` when you have changed it.
+The editor lists every color under five headings: Text, Code (language servers), Markdown, Modifiers and Interface. Each row shows the color's name, the word **Sample** drawn in that look, the look written as a color spec, and `*` when you have changed it.
 
 | Key | Action |
 |---|---|
@@ -35,11 +35,16 @@ mod uses only the 16 standard terminal colors, so your terminal's own palette de
 
 ## Text
 
-These color the text of a file. Keywords, strings, comments, numbers and constants come from mod's own [syntax coloring](language-servers.md); most of the rest come from a language server, which names the parts of a program.
-
 | Name | Colors | Default |
 |---|---|---|
 | `text` | Text with no other color | `plain` |
+
+## Code (language servers)
+
+These color the parts of a program. The names are the kinds of token that every [language server](language-servers.md) reports, whatever the language, so some apply only to some languages (`struct`, `decorator`, `event`). Keywords, strings, comments, numbers and constants are also colored by mod's own syntax coloring, when no language server is running; `constant` is mod's own name.
+
+| Name | Colors | Default |
+|---|---|---|
 | `namespace` | Namespaces and modules | `cyan` |
 | `type` | Types | `cyan` |
 | `class` | Classes | `cyan` |
@@ -113,7 +118,6 @@ The editor shows a modifier's sample as a variable with the modifier on.
 | `statusUnfocused` | The status lines of the other split views | `white on-bright-black` |
 | `menu` | The menu bar and open menus | `black on-bright-white` |
 | `menuSelected` | The selected menu item | `bold black on-bright-blue` |
-| `menuAccel` | A menu item's underlined letter | `underline black on-bright-white` |
 | `error` | Error messages | `bold bright-white on-red` |
 | `historyReadOnly` | The read-only text in the Undo History pane | `dim` |
 | `overflowMarker` | The marks at the edge of a line that runs off the screen, in the view you are in (another split view's take `statusUnfocused`) | `black on-bright-white` |

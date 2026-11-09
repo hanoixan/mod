@@ -44,7 +44,7 @@ struct ColorEntry {
     std::optional<Style> style;
     std::uint8_t modifier_bit = 0;
     std::string_view default_spec;
-    std::string_view group;  // "Text", "Markdown", "Modifiers" or "Interface"
+    std::string_view group;  // "Text", "Code (language servers)", "Markdown", "Modifiers" or "Interface"
 };
 
 // Every style and modifier, grouped in the Colors editor's order.

@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source c83ea878, stand-in ae0deeca
+stamp: source c82aa7a8, stand-in c4bf8cc3
 ---
 # module: highlight
 
@@ -28,7 +28,7 @@ The common vocabulary for anything that colors text. Highlighters produce **styl
 - `page`: the text area's background, set by the theme's darkness.
 - `history_inserted`, `history_removed`: the Undo History pane's preview of a step's change.
 - Merge conflicts ([merge_colors](./merge_colors.hpp.skel.md)): `merge_banner` (a diff3 block's four marker lines), `merge_your_insertion`, `merge_your_deletion`, `merge_their_insertion`, `merge_their_deletion`, `merge_both_insertion` and `merge_both_deletion` (what yours, theirs or both added to the base, and the base's text that yours, theirs or both deleted or replaced), in that order after `list_selected_unfocused`.
-- UI: `search_match`, `search_other` (the other matches on screen while the find bar is open), `selection`, `gutter`, `gutter_current`, `status`, `menu`, `menu_selected`, `menu_accel`, `error`, `history_read_only` (dimmed read-only rows in the undo-history panel), `status_unfocused` (another split's status line), `list_selected` and `list_selected_unfocused` (a list's selected row, the folder tree's or the Undo History pane's, with and without the keys), `overflow_marker` (the `>` on a row whose line runs past the right edge; kept last, since the theme's tables are sized by it).
+- UI: `search_match`, `search_other` (the other matches on screen while the find bar is open), `selection`, `gutter`, `gutter_current`, `status`, `menu`, `menu_selected`, `error`, `history_read_only` (dimmed read-only rows in the undo-history panel), `status_unfocused` (another split's status line), `list_selected` and `list_selected_unfocused` (a list's selected row, the folder tree's or the Undo History pane's, with and without the keys), `overflow_marker` (the `>` on a row whose line runs past the right edge; kept last, since the theme's tables are sized by it).
 
 - **Access:** public.
 - **Referred by:** [theme](../ui/theme.hpp.skel.md)

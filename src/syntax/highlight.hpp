@@ -66,7 +66,6 @@ enum class Style : std::uint8_t {
     status,
     menu,
     menu_selected,
-    menu_accel,
     error,
     history_read_only,
     page,  // the text area's background, which darkness sets

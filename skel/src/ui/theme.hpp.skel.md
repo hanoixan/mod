@@ -1,6 +1,6 @@
 ---
 role: product
-stamp: source 1a669e53, stand-in bb0649cb
+stamp: source 9ace9b8b, stand-in 3369df79
 ---
 # module: theme
 
@@ -60,7 +60,6 @@ Each style and each modifier has a **name** (camelCase, the LSP's own names wher
 | `statusUnfocused` | `status_unfocused` | `white on-bright-black` |
 | `menu` | `menu` | `black on-bright-white` |
 | `menuSelected` | `menu_selected` | `bold black on-bright-blue` |
-| `menuAccel` | `menu_accel` | `underline black on-bright-white` |
 | `error` | `error` | `bold bright-white on-red` |
 | `historyReadOnly` | `history_read_only` | `dim` |
 | `overflowMarker` | `overflow_marker` | `black on-bright-white` |
@@ -87,7 +86,7 @@ Modifiers are applied on top of the style's look in this order, each adding its 
 | `deprecated` | `kModDeprecated` | `strike` |
 | `documentation` | `kModDocumentation` | `italic` |
 
-**In vt100 mode** there is no color, dim, italic or strike, so the theme answers from a fixed fallback table instead, and color overrides do not apply: keywords, modifiers, macros, Markdown headings and strong text, `gutterCurrent` and the `declaration` modifier are bold; comments, Markdown emphasis, quotes and links are underlined; strike (Markdown, `deprecated`, `historyRemoved` and the three merge deletions) becomes reverse; `historyInserted` and the three merge insertions are underlined; the bars and highlights stand out from plain text: `selection`, `status`, `statusUnfocused`, `menu`, `overflowMarker`, `searchMatch`, `listSelected` and `mergeBanner` are reverse, `menuAccel` reverse underline (only the focused status line's `>` tells the status lines apart), `listSelectedUnfocused` underlined, and `menuSelected` plain (cut out of the reverse menu); `error` is bold reverse; everything else, color-only text included, is plain. The vt100 look does not follow darkness: it is the same in normal, night and paper, the page included.
+**In vt100 mode** there is no color, dim, italic or strike, so the theme answers from a fixed fallback table instead, and color overrides do not apply: keywords, modifiers, macros, Markdown headings and strong text, `gutterCurrent` and the `declaration` modifier are bold; comments, Markdown emphasis, quotes and links are underlined; strike (Markdown, `deprecated`, `historyRemoved` and the three merge deletions) becomes reverse; `historyInserted` and the three merge insertions are underlined; the bars and highlights stand out from plain text: `selection`, `status`, `statusUnfocused`, `menu`, `overflowMarker`, `searchMatch`, `listSelected` and `mergeBanner` are reverse (only the focused status line's `>` tells the status lines apart), `listSelectedUnfocused` underlined, and `menuSelected` plain (cut out of the reverse menu); `error` is bold reverse; everything else, color-only text included, is plain. The vt100 look does not follow darkness: it is the same in normal, night and paper, the page included.
 
 **Darkness** (`enum class Darkness { night, normal, paper }`, the `darkness` [setting](../app/settings.hpp.skel.md#function-setting_specs)) changes the defaults of the page and the blues (the bars are the same in every look) (no default uses dark blue on a dark screen; paper's light page keeps it), and only the defaults: an override still wins, and a spec equal to the level's default is no override.
 
@@ -122,7 +121,7 @@ Modifiers are applied on top of the style's look in this order, each adding its 
 ## function: color_names
 
 - **Inputs:** none.
-- **Returns:** every style and modifier name in the tables' order, as `std::span<const ColorEntry>` where `ColorEntry` is `{ std::string_view name; std::optional<Style> style; uint8_t modifier_bit; std::string_view default_spec; std::string_view group; }` (`group`: "Text", "Markdown", "Modifiers" or "Interface", for the editor's headings). Exactly one of `style` and `modifier_bit` is set.
+- **Returns:** every style and modifier name in the tables' order, as `std::span<const ColorEntry>` where `ColorEntry` is `{ std::string_view name; std::optional<Style> style; uint8_t modifier_bit; std::string_view default_spec; std::string_view group; }` (`group`: "Text", "Code (language servers)", "Markdown", "Modifiers" or "Interface", for the editor's headings: `text` alone is Text, every other text style from `namespace` to `decorator` is Code (language servers)). Exactly one of `style` and `modifier_bit` is set.
 - **State changes:** none.
 - **Access:** ColorTheme, ColorsView, tests.
 - **Referred by:** [colors.md](../../docs/manual/colors.md.skel.md)

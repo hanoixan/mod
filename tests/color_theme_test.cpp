@@ -69,7 +69,6 @@ constexpr Attr legacy_attr(Style style, std::uint8_t modifiers = 0) {
         case Style::list_selected: a = {black, blue + bright, kBold}; break;
         case Style::list_selected_unfocused: a.flags = kReverse; break;
         case Style::menu_selected: a = {white + bright, blue, kBold}; break;
-        case Style::menu_accel: a = {black, white + bright, kUnderline}; break;
         case Style::error: a = {white + bright, red, kBold}; break;
         case Style::history_read_only: a.flags = kDim; break;
         case Style::page:
@@ -176,6 +175,8 @@ TEST_CASE("overrides: apply warns per bad entry") {
     CHECK_FALSE(t.is_default("keyword"));
     CHECK(t.spec_of("keyword") == "bold red");
     CHECK(t.spec_of("string") == "green");
+    // menuAccel was removed (the menu underlines its letters in the item's own look): a name like any unknown one.
+    CHECK(t.apply(*Json::parse(R"({"menuAccel": "red"})")) == std::vector<std::string>{"unknown color name menuAccel"});
     CHECK(t.apply(Json(7)) == std::vector<std::string>{"colors must be an object"});
     CHECK(t.is_default("keyword"));  // apply replaces every override
     CHECK(t.apply(Json()).empty());  // absent: no overrides, no warning
@@ -266,7 +267,6 @@ TEST_CASE("darkness: the bars are the same black on bright white in every look; 
         CHECK(t.attr(Style::status) == bar);
         CHECK(t.attr(Style::menu) == bar);
         CHECK(t.attr(Style::overflow_marker) == bar);
-        CHECK(t.attr(Style::menu_accel) == Attr{black, white + bright, kUnderline});
         CHECK(t.attr(Style::status_unfocused) == unfocused);
         CHECK(t.unfocused_status() == unfocused);
         CHECK(t.is_default("status"));
@@ -319,7 +319,6 @@ TEST_CASE("vt100: the bars, menus and lists stand out from text, the same in eve
         CHECK(t.attr(Style::status_unfocused) == Attr{kDefaultColor, kDefaultColor, kReverse});
         CHECK(t.unfocused_status() == t.attr(Style::status));
         CHECK(t.attr(Style::menu) == Attr{kDefaultColor, kDefaultColor, kReverse});
-        CHECK(t.attr(Style::menu_accel) == Attr{kDefaultColor, kDefaultColor, kReverse | kUnderline});
         CHECK(t.attr(Style::menu_selected) == Attr{});  // cut out of the reverse menu
         CHECK(t.attr(Style::list_selected) == Attr{kDefaultColor, kDefaultColor, kReverse});
         CHECK(t.attr(Style::list_selected_unfocused) == Attr{kDefaultColor, kDefaultColor, kUnderline});
