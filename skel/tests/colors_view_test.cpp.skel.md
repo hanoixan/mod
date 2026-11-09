@@ -1,10 +1,10 @@
 ---
 role: test
-stamp: source b21bdc6a, stand-in f13e07e9
+stamp: source f8483678, stand-in 973754fd
 ---
 # module: colors_view_test
 
-The editor lists every color name once under the four headings, in table order; headings are never selected; rows show the spec and `*` only for overridden entries; Enter asks to edit the selected name; Delete and Ctrl+R ask to reset it; Alt+R asks to reset all; Esc closes; rendering draws each sample in its look (checked cell by cell against `ColorTheme.attr`) and scrolls a short area.
+The editor lists every color name once under the five headings, in table order (the second, after `text`, Code (language servers)); headings are never selected; rows show the spec and `*` only for overridden entries; Enter asks to edit the selected name; Delete and Ctrl+R ask to reset it; Alt+R asks to reset all; Esc closes; rendering draws each sample in its look (checked cell by cell against `ColorTheme.attr`) and scrolls a short area.
 
 - **Owns:** test fixtures only.
 - **Access:** run by CTest.

@@ -46,8 +46,9 @@ TEST_CASE("every color name has one row under its group; headings are never sele
     ColorsView v;
     v.open(t);
     CHECK(v.is_open());
-    CHECK(v.row_count() == color_names().size() + 4);
+    CHECK(v.row_count() == color_names().size() + 5);
     CHECK(v.row_text(0) == "Text");
+    CHECK(v.row_text(2) == "Code (language servers)");
     CHECK(v.selected() == 1);  // the first entry, not the heading
     for (const ColorEntry& e : color_names()) {
         CAPTURE(e.name);
